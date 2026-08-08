@@ -14,7 +14,7 @@ defineProps({
 <template>
     <section
         id="hero"
-        class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 pb-32 pt-24 md:px-10 lg:pb-20"
+        class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 pb-24 pt-16 md:px-10 lg:pb-12"
     >
         <div class="absolute inset-0 z-0 overflow-hidden">
 

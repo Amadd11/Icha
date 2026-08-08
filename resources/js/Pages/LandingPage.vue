@@ -28,11 +28,12 @@ const isMenuOpen = ref(false);
 const { countdown } = useCountdown("2026-11-10T08:00:00+07:00");
 
 const navLinks = [
-    { href: "#about", label: "About" },
-    { href: "#conference", label: "Conference" },
-    { href: "#timeline", label: "Timeline" },
-    { href: "#speakers", label: "Speakers" },
-    { href: "#abstract", label: "Abstract" },
+    { href: "/#about", label: "About" },
+    { href: "/#conference", label: "Conference" },
+    { href: "/#timeline", label: "Timeline" },
+    { href: "/#speakers", label: "Speakers" },
+    { href: "/#abstract", label: "Abstract" },
+    { href: "/registration", label: "Registration" },
 ];
 
 const aboutStats = [
@@ -236,6 +237,7 @@ onMounted(() => {
             title="Conference Venue"
             description="See you in Surabaya!"
         />
+        
         <SponsorsSection
             eyebrow="Partnership Opportunities"
             title="Sponsorship & Exhibition"

@@ -62,7 +62,7 @@ const props = defineProps({
                     class="relative flex min-h-[320px] items-center justify-center bg-gradient-to-br from-[#c8e6f7] to-[#e8f4fd] p-10"
                 >
                     <img
-                        src="/logo/logo-umsura.png"
+                        src="/assets/logo/logo-umsura.png"
                         alt="UMSURA"
                         class="absolute inset-0 z-0 h-80 w-full object-contain object-center"
                     />

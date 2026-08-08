@@ -1,22 +1,31 @@
 <script setup>
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
 
 <template>
-    <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
-    >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
+    <div class="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 font-sans text-slate-800">
+        
+        <!-- Minimalist Logo -->
+        <div class="mb-8">
+            <Link href="/" class="group flex flex-col items-center gap-3">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white shadow-md transition-transform group-hover:scale-105">
+                    <span class="text-xl font-black">IC</span>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-primary">
+                    ICHA 2026
+                </span>
             </Link>
         </div>
 
-        <div
-            class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
-        >
+        <!-- Auth Card -->
+        <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white p-8 shadow-xl shadow-slate-200/50 sm:p-10 border border-slate-100">
             <slot />
         </div>
+        
+        <!-- Footer -->
+        <div class="mt-8 text-center text-xs text-slate-500">
+            &copy; 2026 PIPMARSI & Universitas Muhammadiyah Surabaya.
+        </div>
+        
     </div>
 </template>
