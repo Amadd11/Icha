@@ -1,6 +1,6 @@
 <script setup>
 import { Head } from "@inertiajs/vue3";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import NavbarSection from "@/Components/LandingPage/NavbarSection.vue";
 import HeroSection from "@/Components/LandingPage/HeroSection.vue";
 import AboutSection from "@/Components/LandingPage/AboutSection.vue";
@@ -20,6 +20,9 @@ const props = defineProps({
     },
     canRegister: {
         type: Boolean,
+    },
+    activeConference: {
+        type: Object,
     },
 });
 
@@ -49,7 +52,7 @@ const countdownUnits = [
     { label: "Seconds", key: "seconds" },
 ];
 
-const tracks = [
+const defaultTracks = [
     {
         badge: "Track 01",
         icon: "🎓",
@@ -87,6 +90,25 @@ const tracks = [
             "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
     },
 ];
+
+const tracks = computed(() => {
+    if (props.activeConference?.categories?.length) {
+        const bgClasses = [
+            "group overflow-hidden bg-gradient-to-br from-sidebar to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+            "group overflow-hidden bg-gradient-to-br from-primary-dark to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+            "group overflow-hidden bg-gradient-to-br from-sidebar to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+            "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+        ];
+        return props.activeConference.categories.map((c, i) => ({
+            badge: c.badge || `Track 0${i + 1}`,
+            icon: c.icon || "🎓",
+            title: c.name,
+            description: c.description,
+            cardClass: bgClasses[i % bgClasses.length],
+        }));
+    }
+    return defaultTracks;
+});
 
 const timelineItems = [
     {
