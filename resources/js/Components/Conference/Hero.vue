@@ -1,5 +1,9 @@
 <script setup>
 defineProps({
+    conference: {
+        type: Object,
+        default: null,
+    },
     countdown: {
         type: Object,
         required: true,
@@ -19,7 +23,14 @@ defineProps({
         <div class="absolute inset-0 z-0 overflow-hidden">
             <!-- Background Image -->
             <img
-                src="assets/images/umsura.png"
+                v-if="conference?.hero_image"
+                :src="'/storage/' + conference.hero_image"
+                :alt="conference?.title"
+                class="absolute inset-0 h-full w-full object-cover object-center"
+            />
+            <img
+                v-else
+                src="/assets/images/umsura.png"
                 alt="UMSURA Background"
                 class="absolute inset-0 h-full w-full object-cover object-center"
             />
@@ -67,7 +78,7 @@ defineProps({
             <p
                 class="mb-4 text-2xl font-bold uppercase tracking-[0.25em] text-gold"
             >
-                International Conference on Healthcare Administration
+                {{ conference?.title ? '' : 'International Conference on Healthcare Administration' }}
             </p>
 
             <!-- Main Title -->
@@ -76,17 +87,17 @@ defineProps({
             >
                 <span
                     class="text-transparent bg-clip-text bg-gradient-to-r from-gold via-white to-gold-dark drop-shadow-sm"
-                    >ICHA 2026</span
+                    >{{ conference?.title || 'ICHA 2026' }}</span
                 >
             </h1>
 
             <!-- Description -->
             <p class="mb-10 text-lg leading-relaxed text-slate-300 max-w-2xl">
                 <strong class="font-semibold text-white"
-                    >Musyawarah Nasional PIPMARSI</strong
+                    >{{ conference?.tagline || 'Musyawarah Nasional PIPMARSI' }}</strong
                 ><br />
                 <em class="not-italic text-white"
-                    >Leading the Future of Healthcare Administration</em
+                    >{{ conference?.theme || 'Leading the Future of Healthcare Administration' }}</em
                 >
             </p>
 
@@ -97,7 +108,6 @@ defineProps({
                     class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary-dark px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-dark/30 transition-all hover:scale-105 hover:shadow-primary-dark/50"
                 >
                     <span class="relative z-10">Submit Your Abstract</span>
-                    <!-- Right arrow SVG -->
                     <svg
                         class="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1"
                         fill="none"
@@ -161,7 +171,6 @@ defineProps({
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary"
                         >
-                            <!-- Calendar SVG -->
                             <svg
                                 class="h-6 w-6"
                                 fill="none"
@@ -192,7 +201,6 @@ defineProps({
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-full bg-gold/20 text-gold"
                         >
-                            <!-- Location SVG -->
                             <svg
                                 class="h-6 w-6"
                                 fill="none"
@@ -229,7 +237,6 @@ defineProps({
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-full bg-accent-red/20 text-accent-red"
                         >
-                            <!-- Document SVG -->
                             <svg
                                 class="h-6 w-6"
                                 fill="none"
@@ -276,13 +283,9 @@ defineProps({
                         class="flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-4 py-2 transition-colors hover:bg-white/20"
                     >
                         <img
-                            src="assets/logo/logo-pipmarsi.png"
+                            src="/assets/logo/logo-pipmarsi.png"
                             alt="PIPMARSI"
                             class="h-14 w-auto object-contain"
-                            onerror="
-                                this.outerHTML =
-                                    '<span class=\'text-[11px] font-medium tracking-wide text-slate-300\'>PIPMARSI</span>'
-                            "
                         />
                     </div>
 
@@ -291,13 +294,9 @@ defineProps({
                         class="flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-4 py-2 transition-colors hover:bg-white/20"
                     >
                         <img
-                            src="assets/logo/logo-umsura.png"
+                            src="/assets/logo/logo-umsura.png"
                             alt="Universitas Muhammadiyah Surabaya"
                             class="h-14 w-auto object-contain"
-                            onerror="
-                                this.outerHTML =
-                                    '<span class=\'text-[11px] font-medium tracking-wide text-slate-300\'>Universitas Muhammadiyah Surabaya</span>'
-                            "
                         />
                     </div>
 
@@ -306,13 +305,9 @@ defineProps({
                         class="flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-4 py-2 transition-colors hover:bg-white/20"
                     >
                         <img
-                            src="assets/logo/logo-ub.png"
+                            src="/assets/logo/logo-ub.png"
                             alt="Universitas Brawijaya"
                             class="h-14 w-auto object-contain"
-                            onerror="
-                                this.outerHTML =
-                                    '<span class=\'text-[11px] font-medium tracking-wide text-slate-300\'>Universitas Brawijaya</span>'
-                            "
                         />
                     </div>
                 </div>

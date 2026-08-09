@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import SectionHeading from './SectionHeading.vue';
+import SectionHeading from '@/Components/UI/SectionHeading.vue';
 
 const props = defineProps({
     registrationTypes: Array,

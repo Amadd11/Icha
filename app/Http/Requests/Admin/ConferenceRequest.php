@@ -15,8 +15,11 @@ class ConferenceRequest extends FormRequest
     {
         return [
             'title'       => ['required', 'string', 'max:255'],
+            'year'        => ['nullable', 'integer', 'min:2000', 'max:2100'],
             'tagline'     => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'logo'        => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+            'hero_image'  => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
             'start_date'  => ['nullable', 'date'],
             'end_date'    => ['nullable', 'date', 'after_or_equal:start_date'],
             'venue'       => ['nullable', 'string', 'max:255'],

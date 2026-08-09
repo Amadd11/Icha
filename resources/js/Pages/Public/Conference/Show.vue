@@ -1,43 +1,26 @@
 <script setup>
 import { Head } from "@inertiajs/vue3";
-import { onMounted, ref, computed } from "vue";
-import NavbarSection from "@/Components/LandingPage/NavbarSection.vue";
-import HeroSection from "@/Components/LandingPage/HeroSection.vue";
-import AboutSection from "@/Components/LandingPage/AboutSection.vue";
-import TracksSection from "@/Components/LandingPage/TracksSection.vue";
-import TimelineSection from "@/Components/LandingPage/TimelineSection.vue";
-import SpeakersSection from "@/Components/LandingPage/SpeakersSection.vue";
-import AbstractSection from "@/Components/LandingPage/AbstractSection.vue";
-import VenueSection from "@/Components/LandingPage/VenueSection.vue";
-import SponsorsSection from "@/Components/LandingPage/SponsorsSection.vue";
-import ContactSection from "@/Components/LandingPage/ContactSection.vue";
-import FooterSection from "@/Components/LandingPage/FooterSection.vue";
+import { onMounted, computed } from "vue";
+import PublicLayout from "@/Layouts/PublicLayout.vue";
+import Hero from "@/Components/Conference/Hero.vue";
+import About from "@/Components/Conference/About.vue";
+import Topics from "@/Components/Conference/Topics.vue";
+import Timeline from "@/Components/Conference/Timeline.vue";
+import Speakers from "@/Components/Conference/Speakers.vue";
+import Abstract from "@/Components/Conference/Abstract.vue";
+import Venue from "@/Components/Conference/Venue.vue";
+import Sponsors from "@/Components/Conference/Sponsors.vue";
+import Contact from "@/Components/Conference/Contact.vue";
 import { useCountdown } from "@/Composables/useCountdown";
 
 const props = defineProps({
-    canLogin: {
-        type: Boolean,
-    },
-    canRegister: {
-        type: Boolean,
-    },
-    activeConference: {
-        type: Object,
-    },
+    canLogin: Boolean,
+    canRegister: Boolean,
+    conference: Object,
+    availableConferences: Array,
 });
 
-const lang = ref("en");
-const isMenuOpen = ref(false);
 const { countdown } = useCountdown("2026-11-10T08:00:00+07:00");
-
-const navLinks = [
-    { href: "/#about", label: "About" },
-    { href: "/#conference", label: "Conference" },
-    { href: "/#timeline", label: "Timeline" },
-    { href: "/#speakers", label: "Speakers" },
-    { href: "/#abstract", label: "Abstract" },
-    { href: "/registration", label: "Registration" },
-];
 
 const aboutStats = [
     { value: "4", label: "Scientific Tracks" },
@@ -57,49 +40,41 @@ const defaultTracks = [
         badge: "Track 01",
         icon: "🎓",
         title: "Healthcare Administration Education",
-        description:
-            "Curriculum, learning innovation, and academic development in healthcare administration.",
-        cardClass:
-            "group overflow-hidden bg-gradient-to-br from-sidebar to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+        description: "Curriculum, learning innovation, and academic development in healthcare administration.",
+        cardClass: "group overflow-hidden bg-gradient-to-br from-sidebar to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
     },
     {
         badge: "Track 02",
         icon: "🏥",
         title: "Hospital Leadership & Management",
-        description:
-            "Leadership, governance, strategy, and operational excellence in healthcare organizations.",
-        cardClass:
-            "group overflow-hidden bg-gradient-to-br from-primary-dark to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+        description: "Leadership, governance, strategy, and operational excellence in healthcare organizations.",
+        cardClass: "group overflow-hidden bg-gradient-to-br from-primary-dark to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
     },
     {
         badge: "Track 03",
         icon: "🤖",
         title: "Quality, Innovation & Digital Health",
-        description:
-            "Quality improvement, patient safety, technology, and digital transformation in health services.",
-        cardClass:
-            "group overflow-hidden bg-gradient-to-br from-sidebar to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+        description: "Quality improvement, patient safety, technology, and digital transformation in health services.",
+        cardClass: "group overflow-hidden bg-gradient-to-br from-sidebar to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
     },
     {
         badge: "Track 04",
         icon: "🌍",
         title: "Health Policy, Research & Sustainability",
-        description:
-            "Health policy, health economics, research methods, and sustainable health systems development.",
-        cardClass:
-            "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
+        description: "Health policy, health economics, research methods, and sustainable health systems development.",
+        cardClass: "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
     },
 ];
 
 const tracks = computed(() => {
-    if (props.activeConference?.categories?.length) {
+    if (props.conference?.categories?.length) {
         const bgClasses = [
             "group overflow-hidden bg-gradient-to-br from-sidebar to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
             "group overflow-hidden bg-gradient-to-br from-primary-dark to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
             "group overflow-hidden bg-gradient-to-br from-sidebar to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
             "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
         ];
-        return props.activeConference.categories.map((c, i) => ({
+        return props.conference.categories.map((c, i) => ({
             badge: c.badge || `Track 0${i + 1}`,
             icon: c.icon || "🎓",
             title: c.name,
@@ -145,8 +120,8 @@ const defaultTimelineItems = [
 ];
 
 const timelineItems = computed(() => {
-    if (props.activeConference?.timelines?.length) {
-        return props.activeConference.timelines.map(t => ({
+    if (props.conference?.timelines?.length) {
+        return props.conference.timelines.map(t => ({
             period: t.period || 'Schedule',
             title: t.title,
             points: t.description ? t.description.split('\n') : [],
@@ -155,14 +130,6 @@ const timelineItems = computed(() => {
     }
     return defaultTimelineItems;
 });
-
-function setLang(value) {
-    lang.value = value;
-}
-
-function toggleMenu() {
-    isMenuOpen.value = !isMenuOpen.value;
-}
 
 onMounted(() => {
     const observer = new IntersectionObserver(
@@ -173,7 +140,7 @@ onMounted(() => {
                 }
             });
         },
-        { threshold: 0.1 },
+        { threshold: 0.1 }
     );
 
     document.querySelectorAll(".fade-in").forEach((el) => observer.observe(el));
@@ -185,77 +152,55 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="ICHA 2026" />
+    <Head :title="props.conference?.title || 'Conference'" />
 
-    <div class="min-h-screen bg-white text-slate-800">
-        <NavbarSection
-            :links="navLinks"
-            :can-login="props.canLogin"
-            :lang="lang"
-            :is-menu-open="isMenuOpen"
-            @set-lang="setLang"
-            @toggle-menu="toggleMenu"
-        />
+    <PublicLayout
+        :conference="props.conference"
+        :available-conferences="props.availableConferences"
+        :can-login="props.canLogin"
+        :can-register="props.canRegister"
+    >
+        <Hero :conference="props.conference" :countdown="countdown" :countdown-units="countdownUnits" />
 
-        <HeroSection :countdown="countdown" :countdown-units="countdownUnits" />
-
-        <AboutSection
+        <About
             eyebrow="About the Conference"
-            :title="props.activeConference?.theme || 'Healthcare Administration for a Sustainable Future'"
-            :description="props.activeConference?.description || 'ICHA 2026 brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices for the future of health systems.'"
+            :title="props.conference?.theme || 'Healthcare Administration for a Sustainable Future'"
+            :description="props.conference?.description || 'ICHA brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices.'"
             :stats="aboutStats"
         />
 
-        <TracksSection
+        <Topics
             eyebrow="Scientific Programme"
             title="Scientific Tracks"
             description="Four focused tracks covering the full spectrum of healthcare administration research and practice."
             :items="tracks"
         />
 
-        <TimelineSection
+        <Timeline
             eyebrow="Preparation Schedule"
             title="Conference Timeline"
             description="Key milestones from preparation through to the conference event."
             :items="timelineItems"
         />
 
-        <SpeakersSection
+        <Speakers
             eyebrow="Distinguished Guests"
             title="Keynote & Invited Speakers"
             description="Keynote and plenary speakers representing leading institutions."
-            :speakers="props.activeConference?.speakers"
+            :speakers="props.conference?.speakers"
         />
 
-        <AbstractSection />
-        <VenueSection
-            eyebrow="Location"
-            title="Conference Venue"
-            description="See you in Surabaya!"
-        />
-        
-        <SponsorsSection
+        <Abstract />
+
+        <Venue />
+
+        <Sponsors
             eyebrow="Partnership Opportunities"
             title="Sponsorship & Exhibition"
             description="Join us as a sponsor and connect with the healthcare administration community."
-            :sponsors="props.activeConference?.sponsors"
+            :sponsors="props.conference?.sponsors"
         />
-        <ContactSection />
-        <FooterSection />
-    </div>
+
+        <Contact />
+    </PublicLayout>
 </template>
-
-<style scoped>
-.fade-in {
-    opacity: 0;
-    transform: translateY(24px);
-    transition:
-        opacity 0.5s ease,
-        transform 0.5s ease;
-}
-
-.fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-</style>

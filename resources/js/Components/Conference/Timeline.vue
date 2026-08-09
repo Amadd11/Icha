@@ -1,5 +1,5 @@
 <script setup>
-import SectionHeading from "@/Components/LandingPage/SectionHeading.vue";
+import SectionHeading from "@/Components/UI/SectionHeading.vue";
 
 const props = defineProps({
     eyebrow: {
@@ -22,7 +22,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <section id="timeline" class="bg-[#f5f7fa] px-5 py-16 md:px-10 md:py-24">
+    <section id="timeline" class="bg-slate-50 px-5 py-16 md:px-10 md:py-24">
         <div class="mx-auto max-w-7xl">
             <SectionHeading
                 :eyebrow="props.eyebrow"
@@ -30,26 +30,22 @@ const props = defineProps({
                 :description="props.description"
             />
 
-            <div
-                class="mb-14 mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
-            >
+            <div class="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div
                     v-for="item in props.items"
                     :key="item.title"
-                    class="fade-in rounded-xl border-l-4 bg-white p-6 shadow-sm"
-                    :class="item.borderClass"
+                    :class="['fade-in rounded-2xl border-t-4 bg-white p-6 shadow-sm', item.borderClass]"
                 >
-                    <div
-                        class="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#7c3aed]"
-                    >
+                    <span class="mb-2 block text-xs font-bold uppercase tracking-wider text-primary">
                         {{ item.period }}
-                    </div>
-                    <h4 class="mb-2 text-[0.95rem] font-bold text-[#2d0f4f]">
+                    </span>
+                    <h3 class="mb-4 text-lg font-bold text-slate-900">
                         {{ item.title }}
-                    </h4>
-                    <ul class="space-y-1 text-sm text-slate-600">
-                        <li v-for="point in item.points" :key="point">
-                            • {{ point }}
+                    </h3>
+                    <ul class="space-y-2 text-sm text-slate-600">
+                        <li v-for="point in item.points" :key="point" class="flex items-start gap-2">
+                            <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+                            <span>{{ point }}</span>
                         </li>
                     </ul>
                 </div>

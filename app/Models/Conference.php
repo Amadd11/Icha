@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Conference extends Model
 {
     protected $fillable = [
         'title',
+        'slug',
+        'year',
         'tagline',
         'description',
         'start_date',
@@ -19,9 +22,28 @@ class Conference extends Model
         'theme',
         'website',
         'email',
+        'logo',
+        'hero_image',
         'status',
         'is_active',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($conference) {
+            if (empty($conference->slug)) {
+                $conference->slug = Str::slug($conference->title);
+            }
+        });
+        
+        static::updating(function ($conference) {
+            if (empty($conference->slug)) {
+                $conference->slug = Str::slug($conference->title);
+            }
+        });
+    }
 
     protected function casts(): array
     {

@@ -1,22 +1,24 @@
 <script setup>
-import { Head } from "@inertiajs/vue3";
 import { ref } from "vue";
-import NavbarSection from "@/Components/LandingPage/NavbarSection.vue";
-import FooterSection from "@/Components/LandingPage/FooterSection.vue";
-import RegistrationSection from "@/Components/LandingPage/RegistrationSection.vue";
+import Navbar from "@/Components/Navigation/Navbar.vue";
+import Footer from "@/Components/Navigation/Footer.vue";
 
 const props = defineProps({
+    conference: {
+        type: Object,
+        default: null,
+    },
+    availableConferences: {
+        type: Array,
+        default: () => [],
+    },
     canLogin: {
         type: Boolean,
+        default: false,
     },
     canRegister: {
         type: Boolean,
-    },
-    activeConference: {
-        type: Object,
-    },
-    registrationTypes: {
-        type: Array,
+        default: false,
     },
 });
 
@@ -25,7 +27,8 @@ const isMenuOpen = ref(false);
 
 const navLinks = [
     { href: "/#about", label: "About" },
-    { href: "/#conference", label: "Conference" },
+    { isDropdown: true, label: "Conferences" },
+    { href: "/#tracks", label: "Tracks" },
     { href: "/#timeline", label: "Timeline" },
     { href: "/#speakers", label: "Speakers" },
     { href: "/#abstract", label: "Abstract" },
@@ -42,23 +45,23 @@ function toggleMenu() {
 </script>
 
 <template>
-    <Head title="Registration - ICHA 2026" />
-
     <div class="min-h-screen bg-white text-slate-800">
-        <NavbarSection
+        <Navbar
+            :conference="props.conference"
+            :available-conferences="props.availableConferences"
             :links="navLinks"
             :can-login="props.canLogin"
             :lang="lang"
             :is-menu-open="isMenuOpen"
             @set-lang="setLang"
             @toggle-menu="toggleMenu"
+            @close-menu="isMenuOpen = false"
         />
 
-        <!-- Main Content -->
-        <main class="min-h-screen">
-            <RegistrationSection :registration-types="props.registrationTypes" />
+        <main>
+            <slot />
         </main>
 
-        <FooterSection />
+        <Footer />
     </div>
 </template>

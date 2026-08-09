@@ -10,15 +10,17 @@ use App\Models\RegistrationType;
 use App\Models\Speaker;
 use App\Models\Sponsor;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\ConferenceController;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-use App\Http\Controllers\FrontendController;
-
 // Public routes
-Route::get('/', [FrontendController::class, 'home'])->name('home');
-Route::get('/registration', [FrontendController::class, 'registration'])->name('registration');
+Route::get('/', HomeController::class)->name('home');
+Route::get('/conferences', [ConferenceController::class, 'index'])->name('conferences.index');
+Route::get('/conferences/{conference:slug}', [ConferenceController::class, 'show'])->name('conferences.show');
+Route::get('/registration', [ConferenceController::class, 'registration'])->name('registration');
 
 // Authenticated participant routes
 Route::middleware(['auth', 'verified'])->group(function () {
