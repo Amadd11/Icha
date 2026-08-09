@@ -7,9 +7,11 @@ import { Link } from '@inertiajs/vue3';
         
         <!-- Minimalist Logo -->
         <div class="mb-8">
-            <Link href="/" class="group flex flex-col items-center gap-3">
-                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white shadow-md transition-transform group-hover:scale-105">
-                    <span class="text-xl font-black">IC</span>
+            <Link href="/" class="group flex flex-col items-center gap-4">
+                <div class="flex items-center gap-3 px-4 py-2 transition-transform group-hover:scale-105">
+                    <img src="/assets/logo/logo-pipmarsi.png" alt="PIP MARSI" class="h-12 w-auto object-contain" />
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <img src="/assets/logo/logo-umsura.png" alt="UMSURA" class="h-12 w-auto object-contain" />
                 </div>
                 <span class="text-xl font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-primary">
                     ICHA 2026

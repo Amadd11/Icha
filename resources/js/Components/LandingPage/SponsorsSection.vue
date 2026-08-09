@@ -14,11 +14,20 @@ const props = defineProps({
         type: String,
         default: "",
     },
-    items: {
+    sponsors: {
         type: Array,
         default: () => [],
     },
 });
+
+const tierBadge = (tier) => ({
+    title:     'bg-sidebar text-white',
+    platinum:  'bg-slate-200 text-slate-700',
+    gold:      'bg-gold text-sidebar',
+    silver:    'bg-slate-100 text-slate-500',
+    bronze:    'bg-amber-100 text-amber-700',
+    exhibitor: 'bg-primary/10 text-primary',
+}[tier] ?? 'bg-slate-100 text-slate-600');
 </script>
 
 <template>
@@ -30,28 +39,28 @@ const props = defineProps({
                 :description="props.description"
             />
 
-            <div
-                class="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6"
-            >
-                <div
-                    v-for="sponsor in props.items"
-                    :key="sponsor.title"
-                    class="fade-in rounded-xl border-2 p-5 text-center"
-                    :class="sponsor.className"
+            <!-- Dynamic Sponsors Grid -->
+            <div v-if="props.sponsors && props.sponsors.length > 0" class="mt-12 flex flex-wrap items-center justify-center gap-6">
+                <a
+                    v-for="s in props.sponsors"
+                    :key="s.id"
+                    :href="s.website ?? '#'"
+                    :target="s.website ? '_blank' : '_self'"
+                    class="fade-in flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 p-6 shadow-sm transition-all hover:bg-white hover:shadow-md"
                 >
-                    <h4
-                        class="mb-1.5 text-[0.8rem] font-bold uppercase tracking-[0.2em]"
-                        :class="sponsor.className"
-                    >
-                        {{ sponsor.title }}
-                    </h4>
-                    <div class="text-2xl font-extrabold text-[#2d0f4f]">
-                        {{ sponsor.value }}
+                    <div class="mb-3 flex h-16 w-32 items-center justify-center">
+                        <img v-if="s.logo" :src="'/storage/' + s.logo" :alt="s.name" class="max-h-full max-w-full object-contain" />
+                        <span v-else class="text-base font-extrabold text-slate-800">{{ s.name }}</span>
                     </div>
-                    <div class="mt-0.5 text-[0.72rem] text-[#6b7280]">
-                        {{ sponsor.note }}
-                    </div>
-                </div>
+                    <span :class="['rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest', tierBadge(s.tier)]">
+                        {{ s.tier }} Sponsor
+                    </span>
+                </a>
+            </div>
+
+            <!-- Placeholder -->
+            <div v-else class="mt-10 text-center text-sm text-slate-400">
+                Sponsors will be updated soon.
             </div>
         </div>
     </section>

@@ -12,6 +12,12 @@ const props = defineProps({
     canRegister: {
         type: Boolean,
     },
+    activeConference: {
+        type: Object,
+    },
+    registrationTypes: {
+        type: Array,
+    },
 });
 
 const lang = ref("en");
@@ -50,7 +56,7 @@ function toggleMenu() {
 
         <!-- Main Content -->
         <main class="min-h-screen">
-            <RegistrationSection />
+            <RegistrationSection :registration-types="props.registrationTypes" />
         </main>
 
         <FooterSection />

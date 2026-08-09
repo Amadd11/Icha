@@ -1,7 +1,12 @@
 <script setup>
+import { computed } from 'vue';
 import SectionHeading from './SectionHeading.vue';
 
-const pricingData = [
+const props = defineProps({
+    registrationTypes: Array,
+});
+
+const defaultPricingData = [
     {
         title: 'Student',
         colorClass: 'from-sidebar to-primary',
@@ -21,6 +26,40 @@ const pricingData = [
         ]
     }
 ];
+
+const pricingData = computed(() => {
+    if (props.registrationTypes && props.registrationTypes.length > 0) {
+        const formatPrice = (idr, usd) => {
+            let str = `IDR ${Number(idr).toLocaleString()}`;
+            if (Number(usd) > 0) {
+                str += ` / USD $${usd}`;
+            }
+            return str;
+        };
+
+        const studentItems = props.registrationTypes
+            .filter(t => t.category === 'student')
+            .map(t => ({
+                category: t.name.replace('Student - ', ''),
+                earlyBird: formatPrice(t.early_bird_price_idr, t.early_bird_price_usd),
+                regular: formatPrice(t.regular_price_idr, t.regular_price_usd),
+            }));
+
+        const nonStudentItems = props.registrationTypes
+            .filter(t => t.category === 'non_student')
+            .map(t => ({
+                category: t.name.replace('Non-Student - ', ''),
+                earlyBird: formatPrice(t.early_bird_price_idr, t.early_bird_price_usd),
+                regular: formatPrice(t.regular_price_idr, t.regular_price_usd),
+            }));
+
+        return [
+            { title: 'Student', colorClass: 'from-sidebar to-primary', items: studentItems },
+            { title: 'Non-Student', colorClass: 'from-primary-dark to-primary', items: nonStudentItems },
+        ];
+    }
+    return defaultPricingData;
+});
 </script>
 
 <template>
@@ -29,7 +68,7 @@ const pricingData = [
             <SectionHeading
                 eyebrow="Pricing"
                 title="Registration Fees"
-                description="Secure your spot at the PIPMARSI National Conference. Take advantage of our early bird rates."
+                description="Secure your spot at the ICHA National & International Conference. Take advantage of early bird rates."
                 align="center"
             />
 

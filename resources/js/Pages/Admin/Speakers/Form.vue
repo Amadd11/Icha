@@ -145,9 +145,3 @@ function submit() {
         </div>
     </AuthenticatedLayout>
 </template>
-
-<style>
-.admin-input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 shadow-sm transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
-}
-</style>

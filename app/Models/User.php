@@ -41,6 +41,18 @@ class User extends Authenticatable
         ];
     }
 
+    // ─── Relationships ──────────────────────────────────────────────
+
+    public function profile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Profile::class);
+    }
+
+    public function registrations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Registration::class);
+    }
+
     // ─── Role Helpers ───────────────────────────────────────────────
 
     public function isSuperAdmin(): bool

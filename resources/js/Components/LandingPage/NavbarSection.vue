@@ -25,15 +25,22 @@ const emit = defineEmits(["set-lang", "toggle-menu"]);
 
 <template>
     <nav
-        class="sticky top-0 z-[999] flex h-16 items-center justify-between bg-sidebar px-5 shadow-lg md:px-10"
+        class="sticky top-0 z-999 flex h-16 items-center justify-between bg-sidebar px-5 shadow-lg md:px-10"
     >
         <div class="flex items-center gap-3 text-lg font-bold text-white">
-            <div
-                class="rounded bg-gold px-2 py-1 text-[0.7rem] font-extrabold tracking-wider text-sidebar"
-            >
-                ICHA
+            <div class="flex items-center gap-1.5 p-1 rounded-md">
+                <img
+                    src="/assets/logo/logo-pipmarsi.png"
+                    alt="PIP MARSI"
+                    class="h-6 w-auto object-contain"
+                />
+                <img
+                    src="/assets/logo/logo-umsura.png"
+                    alt="UMSURA"
+                    class="h-6 w-auto object-contain"
+                />
             </div>
-            <span>2026 · Surabaya</span>
+            <span>ICHA 2026</span>
         </div>
 
         <ul class="hidden list-none gap-7 lg:flex">
@@ -98,7 +105,7 @@ const emit = defineEmits(["set-lang", "toggle-menu"]);
             </a>
 
             <button
-                class="flex flex-col gap-[5px] lg:hidden"
+                class="flex flex-col gap-1.25 lg:hidden"
                 @click="emit('toggle-menu')"
             >
                 <span class="block h-0.5 w-6 bg-white"></span>

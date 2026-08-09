@@ -110,7 +110,7 @@ const tracks = computed(() => {
     return defaultTracks;
 });
 
-const timelineItems = [
+const defaultTimelineItems = [
     {
         period: "July - August 2026",
         title: "Preparation & Launch",
@@ -144,44 +144,17 @@ const timelineItems = [
     },
 ];
 
-const sponsors = [
-    {
-        title: "Title Sponsor",
-        value: "1",
-        note: "slot available",
-        className: "border-primary bg-primary/10 text-sidebar",
-    },
-    {
-        title: "Platinum",
-        value: "2",
-        note: "slots available",
-        className: "border-primary-dark bg-primary/10 text-sidebar",
-    },
-    {
-        title: "Gold",
-        value: "4",
-        note: "slots available",
-        className: "border-primary bg-primary/5 text-primary-dark",
-    },
-    {
-        title: "Silver",
-        value: "6",
-        note: "slots available",
-        className: "border-gold bg-gold/10 text-primary",
-    },
-    {
-        title: "Bronze",
-        value: "10",
-        note: "slots available",
-        className: "border-primary/50 bg-primary/5 text-primary",
-    },
-    {
-        title: "Exhibitor",
-        value: "20",
-        note: "booths available",
-        className: "border-primary/30 bg-primary/5 text-primary-dark",
-    },
-];
+const timelineItems = computed(() => {
+    if (props.activeConference?.timelines?.length) {
+        return props.activeConference.timelines.map(t => ({
+            period: t.period || 'Schedule',
+            title: t.title,
+            points: t.description ? t.description.split('\n') : [],
+            borderClass: 'border-primary',
+        }));
+    }
+    return defaultTimelineItems;
+});
 
 function setLang(value) {
     lang.value = value;
@@ -228,8 +201,8 @@ onMounted(() => {
 
         <AboutSection
             eyebrow="About the Conference"
-            title="Healthcare Administration for a Sustainable Future"
-            description="ICHA 2026 brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices for the future of health systems."
+            :title="props.activeConference?.theme || 'Healthcare Administration for a Sustainable Future'"
+            :description="props.activeConference?.description || 'ICHA 2026 brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices for the future of health systems.'"
             :stats="aboutStats"
         />
 
@@ -250,7 +223,8 @@ onMounted(() => {
         <SpeakersSection
             eyebrow="Distinguished Guests"
             title="Keynote & Invited Speakers"
-            description="Announcements coming soon. Follow us for updates."
+            description="Keynote and plenary speakers representing leading institutions."
+            :speakers="props.activeConference?.speakers"
         />
 
         <AbstractSection />
@@ -263,8 +237,8 @@ onMounted(() => {
         <SponsorsSection
             eyebrow="Partnership Opportunities"
             title="Sponsorship & Exhibition"
-            description="Join us as a sponsor and connect with the healthcare administration community. Multiple tiers available."
-            :items="sponsors"
+            description="Join us as a sponsor and connect with the healthcare administration community."
+            :sponsors="props.activeConference?.sponsors"
         />
         <ContactSection />
         <FooterSection />
