@@ -4,11 +4,11 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ConferenceRequest extends FormRequest
+class StoreConferenceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->isAdmin();
+        return true;
     }
 
     public function rules(): array
@@ -30,6 +30,24 @@ class ConferenceRequest extends FormRequest
             'email'       => ['nullable', 'email', 'max:255'],
             'status'      => ['required', 'in:draft,active,archived'],
             'is_active'   => ['boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Judul konferensi wajib diisi saat membuat konferensi baru.',
+            'title.max' => 'Judul konferensi maksimal 255 karakter.',
+            'year.integer' => 'Tahun harus berupa angka.',
+            'logo.image' => 'Logo harus berupa berkas gambar.',
+            'logo.max' => 'Ukuran logo maksimal 2MB.',
+            'hero_image.image' => 'Gambar utama (hero) harus berupa berkas gambar.',
+            'hero_image.max' => 'Ukuran gambar utama maksimal 5MB.',
+            'end_date.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
+            'website.url' => 'Format URL situs web tidak valid.',
+            'email.email' => 'Format email tidak valid.',
+            'status.required' => 'Status konferensi wajib dipilih.',
+            'status.in' => 'Status konferensi tidak valid.',
         ];
     }
 }

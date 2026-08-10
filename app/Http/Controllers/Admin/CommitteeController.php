@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\CommitteeRequest;
+use App\Http\Requests\Admin\StoreCommitteeRequest;
+use App\Http\Requests\Admin\UpdateCommitteeRequest;
 use App\Models\Committee;
 use App\Models\Conference;
 use Inertia\Inertia;
@@ -33,7 +34,7 @@ class CommitteeController extends Controller
         ]);
     }
 
-    public function store(CommitteeRequest $request)
+    public function store(StoreCommitteeRequest $request)
     {
         Committee::create($request->validated());
 
@@ -49,7 +50,7 @@ class CommitteeController extends Controller
         ]);
     }
 
-    public function update(CommitteeRequest $request, Committee $committee)
+    public function update(UpdateCommitteeRequest $request, Committee $committee)
     {
         $committee->update($request->validated());
 

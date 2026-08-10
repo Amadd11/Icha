@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Participant;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Participant\SubmitAbstractRequest;
-use App\Http\Requests\Participant\SubmitPaperRequest;
+use App\Http\Requests\Participant\StoreAbstractRequest;
+use App\Http\Requests\Participant\StorePaperRequest;
 use App\Services\Participant\SubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +24,7 @@ class SubmissionController extends Controller
         return Inertia::render('Participant/Submission/Index', $data);
     }
 
-    public function storeAbstract(SubmitAbstractRequest $request): RedirectResponse
+    public function storeAbstract(StoreAbstractRequest $request): RedirectResponse
     {
         $this->submissionService->submitAbstract(
             $request->user(),
@@ -35,7 +35,7 @@ class SubmissionController extends Controller
         return redirect()->back()->with('success', 'Abstract submitted successfully!');
     }
 
-    public function storePaper(SubmitPaperRequest $request): RedirectResponse
+    public function storePaper(StorePaperRequest $request): RedirectResponse
     {
         $this->submissionService->submitPaper(
             $request->user(),

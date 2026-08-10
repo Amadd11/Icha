@@ -4,11 +4,11 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CommitteeRequest extends FormRequest
+class UpdateCommitteeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->isAdmin();
+        return true;
     }
 
     public function rules(): array
@@ -19,7 +19,17 @@ class CommitteeRequest extends FormRequest
             'role'          => ['required', 'string', 'max:255'],
             'institution'   => ['nullable', 'string', 'max:255'],
             'group'         => ['required', 'in:steering,organizing,scientific'],
-            'order'         => ['integer', 'min:0'],
+            'order'         => ['nullable', 'integer', 'min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'conference_id.required' => 'Konferensi wajib dipilih.',
+            'name.required'          => 'Nama komite wajib diisi.',
+            'role.required'          => 'Jabatan/peran komite wajib diisi.',
+            'group.required'         => 'Kelompok komite wajib dipilih.',
         ];
     }
 }

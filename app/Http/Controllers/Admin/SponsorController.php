@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\SponsorRequest;
+use App\Http\Requests\Admin\StoreSponsorRequest;
+use App\Http\Requests\Admin\UpdateSponsorRequest;
 use App\Models\Conference;
 use App\Models\Sponsor;
 use Illuminate\Support\Facades\Storage;
@@ -34,7 +35,7 @@ class SponsorController extends Controller
         ]);
     }
 
-    public function store(SponsorRequest $request)
+    public function store(StoreSponsorRequest $request)
     {
         $validated = $request->validated();
 
@@ -57,7 +58,7 @@ class SponsorController extends Controller
         ]);
     }
 
-    public function update(SponsorRequest $request, Sponsor $sponsor)
+    public function update(UpdateSponsorRequest $request, Sponsor $sponsor)
     {
         $validated = $request->validated();
 

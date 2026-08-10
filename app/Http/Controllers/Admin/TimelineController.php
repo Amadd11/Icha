@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\TimelineRequest;
+use App\Http\Requests\Admin\StoreTimelineRequest;
+use App\Http\Requests\Admin\UpdateTimelineRequest;
 use App\Models\Conference;
 use App\Models\Timeline;
 use Inertia\Inertia;
@@ -32,7 +33,7 @@ class TimelineController extends Controller
         ]);
     }
 
-    public function store(TimelineRequest $request)
+    public function store(StoreTimelineRequest $request)
     {
         Timeline::create($request->validated());
 
@@ -48,7 +49,7 @@ class TimelineController extends Controller
         ]);
     }
 
-    public function update(TimelineRequest $request, Timeline $timeline)
+    public function update(UpdateTimelineRequest $request, Timeline $timeline)
     {
         $timeline->update($request->validated());
 

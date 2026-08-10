@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\SpeakerRequest;
+use App\Http\Requests\Admin\StoreSpeakerRequest;
+use App\Http\Requests\Admin\UpdateSpeakerRequest;
 use App\Models\Conference;
 use App\Models\Speaker;
 use Illuminate\Support\Facades\Storage;
@@ -34,7 +35,7 @@ class SpeakerController extends Controller
         ]);
     }
 
-    public function store(SpeakerRequest $request)
+    public function store(StoreSpeakerRequest $request)
     {
         $validated = $request->validated();
 
@@ -57,7 +58,7 @@ class SpeakerController extends Controller
         ]);
     }
 
-    public function update(SpeakerRequest $request, Speaker $speaker)
+    public function update(UpdateSpeakerRequest $request, Speaker $speaker)
     {
         $validated = $request->validated();
 

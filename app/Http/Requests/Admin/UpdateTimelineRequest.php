@@ -4,11 +4,11 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class TimelineRequest extends FormRequest
+class UpdateTimelineRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->isAdmin();
+        return true;
     }
 
     public function rules(): array
@@ -20,7 +20,15 @@ class TimelineRequest extends FormRequest
             'date'          => ['nullable', 'date'],
             'period'        => ['nullable', 'string', 'max:100'],
             'is_completed'  => ['boolean'],
-            'order'         => ['integer', 'min:0'],
+            'order'         => ['nullable', 'integer', 'min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'conference_id.required' => 'Konferensi wajib dipilih.',
+            'title.required'          => 'Judul kegiatan wajib diisi.',
         ];
     }
 }

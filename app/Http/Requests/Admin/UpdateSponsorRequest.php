@@ -4,11 +4,11 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SponsorRequest extends FormRequest
+class UpdateSponsorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->isAdmin();
+        return true;
     }
 
     public function rules(): array
@@ -20,8 +20,19 @@ class SponsorRequest extends FormRequest
             'tier'          => ['required', 'in:title,platinum,gold,silver,bronze,exhibitor'],
             'description'   => ['nullable', 'string'],
             'is_active'     => ['boolean'],
-            'order'         => ['integer', 'min:0'],
+            'order'         => ['nullable', 'integer', 'min:0'],
             'logo'          => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,svg', 'max:2048'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'conference_id.required' => 'Konferensi wajib dipilih.',
+            'name.required'          => 'Nama sponsor wajib diisi.',
+            'tier.required'          => 'Tingkat sponsorship wajib dipilih.',
+            'logo.image'             => 'Logo harus berupa gambar.',
+            'logo.max'               => 'Ukuran logo maksimal 2MB.',
         ];
     }
 }

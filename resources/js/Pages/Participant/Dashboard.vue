@@ -79,28 +79,32 @@ const props = defineProps({
                     <StatusCard
                         title="Payment Status"
                         :status="props.paymentStatus || 'unpaid'"
-                        :description="props.paymentStatus === 'verified' ? 'Payment confirmed by Admin' : 'Upload payment receipt to verify'"
+                        :description="props.paymentStatus === 'verified' ? 'Payment confirmed by Admin' : (props.paymentStatus === 'pending' ? 'Verification in progress' : 'Upload payment receipt to verify')"
                         :variant="props.paymentStatus === 'verified' ? 'success' : (props.paymentStatus === 'pending' ? 'warning' : 'default')"
                     />
                     <StatusCard
                         title="Abstract Submission"
-                        status="not_submitted"
-                        description="Call for Abstract is open"
+                        :status="props.abstract ? props.abstract.status.replace('_', ' ') : 'not submitted'"
+                        :description="props.abstract ? ('Code: ' + props.abstract.abstract_code) : 'Call for Abstract is open'"
+                        :variant="props.abstract?.status === 'accepted' ? 'success' : (props.abstract ? 'warning' : 'default')"
                     />
                     <StatusCard
                         title="Full Paper"
-                        status="not_submitted"
-                        description="Opens after abstract acceptance"
+                        :status="props.fullPaper ? props.fullPaper.status.replace('_', ' ') : 'not submitted'"
+                        :description="props.fullPaper ? ('Code: ' + props.fullPaper.paper_code) : (props.abstract?.status === 'accepted' ? 'Ready to submit full paper' : 'Requires accepted abstract')"
+                        :variant="props.fullPaper?.status === 'accepted' ? 'success' : (props.fullPaper ? 'warning' : 'default')"
                     />
                     <StatusCard
                         title="Presentation"
-                        status="not_submitted"
-                        description="Schedule to be announced"
+                        :status="props.abstract?.status === 'accepted' ? 'eligible' : 'pending'"
+                        :description="props.abstract?.status === 'accepted' ? 'Author Presentation Eligible' : 'Schedule to be announced post acceptance'"
+                        :variant="props.abstract?.status === 'accepted' ? 'success' : 'default'"
                     />
                     <StatusCard
                         title="Certificate"
-                        status="not_available"
-                        description="Available post-conference"
+                        :status="props.hasCertificate ? 'issued' : 'locked'"
+                        :description="props.hasCertificate ? 'Verified E-Certificate Ready to Download' : 'Available post-payment or presentation'"
+                        :variant="props.hasCertificate ? 'success' : 'default'"
                     />
                 </div>
             </div>

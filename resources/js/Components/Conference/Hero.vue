@@ -61,7 +61,7 @@ defineProps({
         >
             <!-- Badge -->
             <div
-                class="mb-6 inline-flex items-center gap-3 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-purple-200 backdrop-blur-md shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all hover:bg-purple-500/20"
+                class="mb-6 inline-flex items-center gap-3 rounded-full border border-purple-500/30 bg-purple-950/70 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all hover:bg-purple-900/70"
             >
                 <span class="relative flex h-2 w-2">
                     <span
@@ -127,7 +127,7 @@ defineProps({
                 </a>
                 <a
                     href="#about"
-                    class="inline-flex items-center justify-center rounded-xl border border-slate-600 bg-slate-800/50 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-slate-700 hover:border-slate-400"
+                    class="inline-flex items-center justify-center rounded-xl border border-slate-600 bg-slate-900/80 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-slate-800 hover:border-slate-400"
                 >
                     Learn More
                 </a>
@@ -139,13 +139,13 @@ defineProps({
             >
                 <!-- Glass Countdown Tracker -->
                 <div
-                    class="relative z-20 flex w-full lg:w-auto flex-col items-center justify-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl"
+                    class="relative z-20 flex w-full lg:w-auto flex-col items-center justify-center gap-4 rounded-3xl border border-white/10 bg-slate-900/85 p-6 shadow-2xl"
                 >
                     <div class="flex flex-wrap justify-center gap-3 xl:gap-4">
                         <div
                             v-for="unit in countdownUnits"
                             :key="unit.key"
-                            class="flex min-w-[70px] xl:min-w-[80px] flex-col items-center justify-center rounded-2xl bg-slate-900/50 px-3 py-3 xl:px-4 xl:py-4 shadow-inner"
+                            class="flex min-w-[70px] xl:min-w-[80px] flex-col items-center justify-center rounded-2xl bg-slate-950/70 px-3 py-3 xl:px-4 xl:py-4 shadow-inner border border-white/5"
                         >
                             <div
                                 class="text-3xl xl:text-4xl font-black tabular-nums tracking-tight text-white drop-shadow-md"
@@ -161,12 +161,12 @@ defineProps({
                     </div>
                 </div>
 
-                <!-- Info Cards Grid (Glassmorphism) -->
+                <!-- Info Cards Grid -->
                 <div
                     class="grid w-full lg:w-auto flex-1 grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-5"
                 >
                     <div
-                        class="flex flex-col items-center justify-center text-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5 xl:p-6 backdrop-blur-lg transition-colors hover:bg-white/[0.06]"
+                        class="flex flex-col items-center justify-center text-center gap-3 rounded-3xl border border-white/10 bg-slate-900/75 p-5 xl:p-6 transition-colors hover:bg-slate-900/90"
                     >
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary"
@@ -196,7 +196,7 @@ defineProps({
                         </div>
                     </div>
                     <div
-                        class="flex flex-col items-center justify-center text-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5 xl:p-6 backdrop-blur-lg transition-colors hover:bg-white/[0.06]"
+                        class="flex flex-col items-center justify-center text-center gap-3 rounded-3xl border border-white/10 bg-slate-900/75 p-5 xl:p-6 transition-colors hover:bg-slate-900/90"
                     >
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-full bg-gold/20 text-gold"
@@ -232,7 +232,7 @@ defineProps({
                         </div>
                     </div>
                     <div
-                        class="flex flex-col items-center justify-center text-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5 xl:p-6 backdrop-blur-lg transition-colors hover:bg-white/[0.06]"
+                        class="flex flex-col items-center justify-center text-center gap-3 rounded-3xl border border-white/10 bg-slate-900/75 p-5 xl:p-6 transition-colors hover:bg-slate-900/90"
                     >
                         <div
                             class="flex h-12 w-12 items-center justify-center rounded-full bg-accent-red/20 text-accent-red"

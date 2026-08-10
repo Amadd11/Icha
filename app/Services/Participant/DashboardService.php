@@ -49,6 +49,11 @@ class DashboardService
         $abstractStatus = $abstract ? $abstract->status : 'not_submitted';
         $fullPaperStatus = $fullPaper ? $fullPaper->status : 'not_submitted';
 
+        // Certificate real status
+        $hasCertificate = \App\Models\Certificate::where('user_id', $user->id)
+            ->where('conference_id', $activeConference?->id)
+            ->exists();
+
         // Determine Next Action
         $nextAction = [
             'title' => 'Register for Conference',
@@ -92,6 +97,13 @@ class DashboardService
                 'button_label' => 'Submit Full Paper',
                 'url' => route('participant.submission.index'),
             ];
+        } elseif ($hasCertificate) {
+            $nextAction = [
+                'title' => 'Download E-Certificate',
+                'description' => 'Your official verified E-Certificate is issued and ready for download!',
+                'button_label' => 'Get Certificate',
+                'url' => route('participant.certificate.index'),
+            ];
         }
 
         // Timeline / Stages array
@@ -123,14 +135,14 @@ class DashboardService
             [
                 'key' => 'presentation',
                 'label' => 'Presentation',
-                'status' => 'pending',
-                'desc' => 'Pending',
+                'status' => $abstractStatus === 'accepted' ? 'current' : 'pending',
+                'desc' => $abstractStatus === 'accepted' ? 'Ready' : 'Pending',
             ],
             [
                 'key' => 'certificate',
                 'label' => 'Certificate',
-                'status' => 'pending',
-                'desc' => 'Not Available',
+                'status' => $hasCertificate ? 'completed' : 'pending',
+                'desc' => $hasCertificate ? 'Issued' : 'Not Issued',
             ],
         ];
 
@@ -152,6 +164,7 @@ class DashboardService
             'paymentStatus' => $paymentStatus,
             'abstract' => $abstract,
             'fullPaper' => $fullPaper,
+            'hasCertificate' => $hasCertificate,
             'stages' => $stages,
             'nextAction' => $nextAction,
             'nearestDeadline' => $nearestDeadline,

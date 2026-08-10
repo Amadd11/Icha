@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\ConferenceRequest;
+use App\Http\Requests\Admin\StoreConferenceRequest;
+use App\Http\Requests\Admin\UpdateConferenceRequest;
 use App\Models\Conference;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -27,7 +28,7 @@ class ConferenceController extends Controller
         ]);
     }
 
-    public function store(ConferenceRequest $request)
+    public function store(StoreConferenceRequest $request)
     {
         $data = $request->validated();
 
@@ -61,7 +62,7 @@ class ConferenceController extends Controller
         ]);
     }
 
-    public function update(ConferenceRequest $request, Conference $conference)
+    public function update(UpdateConferenceRequest $request, Conference $conference)
     {
         $data = $request->validated();
 

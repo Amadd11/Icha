@@ -4,11 +4,11 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CategoryRequest extends FormRequest
+class StoreCategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->isAdmin();
+        return true;
     }
 
     public function rules(): array
@@ -19,7 +19,16 @@ class CategoryRequest extends FormRequest
             'badge'         => ['nullable', 'string', 'max:50'],
             'description'   => ['nullable', 'string'],
             'icon'          => ['nullable', 'string', 'max:50'],
-            'order'         => ['integer', 'min:0'],
+            'order'         => ['nullable', 'integer', 'min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'conference_id.required' => 'Konferensi wajib dipilih.',
+            'name.required'          => 'Nama topik/kategori ilmiah wajib diisi.',
+            'name.max'               => 'Nama topik ilmiah maksimal 255 karakter.',
         ];
     }
 }
