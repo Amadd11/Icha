@@ -32,7 +32,7 @@ function deleteCommittee(id) {
                 <div>
                     <Link
                         :href="route('admin.committees.create')"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold text-xs shadow-lg shadow-purple-500/20 transition cursor-pointer"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition cursor-pointer"
                     >
                         <span class="material-symbols-outlined text-[18px]">add_circle</span>
                         Add Committee Member

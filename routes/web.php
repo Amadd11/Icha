@@ -50,8 +50,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('submission.abstract.store');
         Route::post('/submission/paper', [\App\Http\Controllers\Participant\SubmissionController::class, 'storePaper'])
             ->name('submission.paper.store');
+
+        // Certificate routes
+        Route::get('/certificate', [\App\Http\Controllers\Participant\CertificateController::class, 'index'])
+            ->name('certificate.index');
     });
 });
+
+// Certificate printable/view route
+Route::middleware('auth')->get('/certificate/{certificate}/download', [\App\Http\Controllers\Participant\CertificateController::class, 'download'])
+    ->name('certificate.download');
 
 // Admin routes
 Route::prefix('admin')
@@ -75,6 +83,10 @@ Route::prefix('admin')
         // Abstract Reviews
         Route::get('abstracts', [Admin\AbstractController::class, 'index'])->name('abstracts.index');
         Route::post('abstracts/{abstract}/review', [Admin\AbstractController::class, 'review'])->name('abstracts.review');
+
+        // Full Paper Reviews
+        Route::get('papers', [Admin\PaperController::class, 'index'])->name('papers.index');
+        Route::post('papers/{paper}/review', [Admin\PaperController::class, 'review'])->name('papers.review');
     });
 
 // Legacy profile routes

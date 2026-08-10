@@ -29,7 +29,7 @@ function destroy(id) {
             </div>
             <Link
                 :href="route('admin.conferences.create')"
-                class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
+                class="inline-flex items-center gap-2 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition px-4 py-2"
             >
                 + New Conference
             </Link>

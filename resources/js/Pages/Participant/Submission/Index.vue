@@ -300,28 +300,76 @@ function submitPaper() {
                             No submissions uploaded yet. Use the form above to submit your abstract or paper.
                         </div>
 
-                        <div v-else class="space-y-3">
-                            <div v-for="abs in props.abstracts" :key="'abs-'+abs.id" class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                                <div>
-                                    <span class="inline-block px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 font-mono text-[10px] font-bold mb-1">
-                                        ABSTRACT: {{ abs.abstract_code }}
-                                    </span>
-                                    <h4 class="text-xs font-bold text-slate-900">{{ abs.title }}</h4>
-                                    <p class="text-[10px] text-slate-500 mt-0.5">Topic: {{ abs.category?.name || 'General' }}</p>
+                        <div v-else class="space-y-4">
+                            <!-- Abstract Items -->
+                            <div v-for="abs in props.abstracts" :key="'abs-'+abs.id" class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <span class="inline-block px-2.5 py-0.5 rounded-md bg-purple-100 text-purple-700 font-mono text-[10px] font-bold mb-1">
+                                            ABSTRACT: {{ abs.abstract_code }}
+                                        </span>
+                                        <h4 class="text-xs font-bold text-slate-900">{{ abs.title }}</h4>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Topic: {{ abs.category?.name || 'General' }}</p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <span :class="[
+                                            'px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider',
+                                            abs.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
+                                            abs.status === 'rejected' ? 'bg-rose-100 text-rose-700' :
+                                            abs.status === 'revision_required' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-slate-200 text-slate-700'
+                                        ]">
+                                            {{ abs.status.replace('_', ' ') }}
+                                        </span>
+                                        <a :href="'/storage/' + abs.file_path" target="_blank" class="block text-[10px] font-bold text-primary hover:underline mt-1.5">
+                                            View Abstract File &rarr;
+                                        </a>
+                                    </div>
                                 </div>
-                                <div class="text-right">
-                                    <span :class="[
-                                        'px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider',
-                                        abs.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
-                                        abs.status === 'rejected' ? 'bg-rose-100 text-rose-700' :
-                                        abs.status === 'revision_required' ? 'bg-amber-100 text-amber-700' :
-                                        'bg-slate-200 text-slate-700'
-                                    ]">
-                                        {{ abs.status.replace('_', ' ') }}
-                                    </span>
-                                    <a :href="'/storage/' + abs.file_path" target="_blank" class="block text-[10px] font-bold text-primary hover:underline mt-1">
-                                        View File &rarr;
-                                    </a>
+
+                                <!-- Reviewer Feedback Box -->
+                                <div v-if="abs.review_notes" class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
+                                    <div class="flex items-center gap-1.5 font-bold text-[11px] text-amber-800">
+                                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                        Reviewer Feedback / Catatan Panitia:
+                                    </div>
+                                    <p class="text-[11px] leading-relaxed text-amber-900/90 whitespace-pre-line pl-5">{{ abs.review_notes }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Full Paper Items -->
+                            <div v-for="paper in props.papers" :key="'paper-'+paper.id" class="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <span class="inline-block px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-mono text-[10px] font-bold mb-1">
+                                            FULL PAPER: {{ paper.paper_code }}
+                                        </span>
+                                        <h4 class="text-xs font-bold text-slate-900">{{ paper.title }}</h4>
+                                        <p v-if="paper.abstract" class="text-[10px] text-slate-500 mt-0.5">Linked Abstract: {{ paper.abstract.abstract_code }}</p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <span :class="[
+                                            'px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider',
+                                            paper.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
+                                            paper.status === 'rejected' ? 'bg-rose-100 text-rose-700' :
+                                            paper.status === 'revision_required' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-slate-200 text-slate-700'
+                                        ]">
+                                            {{ paper.status.replace('_', ' ') }}
+                                        </span>
+                                        <a :href="'/storage/' + paper.file_path" target="_blank" class="block text-[10px] font-bold text-primary hover:underline mt-1.5">
+                                            View Manuscript File &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Reviewer Feedback Box -->
+                                <div v-if="paper.review_notes" class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
+                                    <div class="flex items-center gap-1.5 font-bold text-[11px] text-amber-800">
+                                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                        Reviewer Feedback / Catatan Panitia:
+                                    </div>
+                                    <p class="text-[11px] leading-relaxed text-amber-900/90 whitespace-pre-line pl-5">{{ paper.review_notes }}</p>
                                 </div>
                             </div>
                         </div>

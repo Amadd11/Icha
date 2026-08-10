@@ -46,7 +46,7 @@ const navigationGroups = [
         name: "Submissions",
         items: [
             { name: "Abstracts", routeName: "admin.abstracts.index" },
-            { name: "Full Papers", routeName: null },
+            { name: "Full Papers", routeName: "admin.papers.index" },
             { name: "Presentations", routeName: null },
             { name: "Publications", routeName: null },
         ]
@@ -92,49 +92,49 @@ function logout() {
         <!-- Sidebar Desktop (Rounded & Purple/Gold Theme) -->
         <transition
             enter-active-class="transition-all duration-300 ease-in-out"
-            enter-from-class="-ml-64 opacity-0"
+            enter-from-class="-ml-80 opacity-0"
             enter-to-class="ml-0 opacity-100"
             leave-active-class="transition-all duration-300 ease-in-out"
             leave-from-class="ml-0 opacity-100"
-            leave-to-class="-ml-64 opacity-0"
+            leave-to-class="-ml-80 opacity-0"
         >
             <aside
                 v-show="isDesktopSidebarOpen"
-                class="hidden w-64 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden"
+                class="hidden w-80 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden"
             >
                 <!-- Brand Header -->
                 <div
-                    class="flex h-16 items-center px-6 border-b border-purple-800/50 gap-3"
+                    class="flex h-18 items-center px-6 border-b border-purple-800/50 gap-3"
                 >
                     <div
-                        class="flex h-9 w-9 items-center justify-center rounded-xl bg-gold text-slate-950 font-black text-sm shadow-sm"
+                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gold text-slate-950 font-black text-base shadow-sm shrink-0"
                     >
                         IC
                     </div>
                     <div>
                         <span
-                            class="font-extrabold text-sm tracking-tight text-white block"
+                            class="font-extrabold text-base tracking-tight text-white block"
                             >ICHA Admin</span
                         >
                         <span
-                            class="text-[10px] text-gold font-semibold block -mt-0.5"
+                            class="text-xs text-gold font-semibold block -mt-0.5"
                             >Management Portal</span
                         >
                     </div>
                 </div>
 
                 <!-- Navigation Links -->
-                <nav class="flex-1 px-3 py-5 overflow-y-auto [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none; -ms-overflow-style: none;">
-                    <div v-for="(group, idx) in navigationGroups" :key="idx" class="mb-5 last:mb-0">
-                        <p class="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-purple-300/70">
+                <nav class="flex-1 px-4 py-6 overflow-y-auto [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none; -ms-overflow-style: none;">
+                    <div v-for="(group, idx) in navigationGroups" :key="idx" class="mb-6 last:mb-0">
+                        <p class="px-3 mb-2.5 text-xs font-black uppercase tracking-widest text-purple-300/70">
                             {{ group.name }}
                         </p>
-                        <div class="space-y-1">
+                        <div class="space-y-1.5">
                             <Link
                                 v-for="item in group.items"
                                 :key="item.name"
                                 :href="item.routeName ? route(item.routeName) : '#'"
-                                class="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200"
+                                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
                                 :class="
                                     item.routeName && route().current(item.routeName)
                                         ? 'bg-gold text-slate-950 font-bold shadow-md'
@@ -149,19 +149,19 @@ function logout() {
 
                 <!-- User Footer -->
                 <div
-                    class="p-4 border-t border-purple-800/50 flex items-center justify-between bg-purple-950/40"
+                    class="p-5 border-t border-purple-800/50 flex items-center justify-between bg-purple-950/40"
                 >
-                    <div class="truncate mr-2">
-                        <p class="text-xs font-bold text-white truncate">
+                    <div class="truncate mr-3">
+                        <p class="text-sm font-bold text-white truncate">
                             {{ $page.props.auth.user.name }}
                         </p>
-                        <p class="text-[10px] text-purple-200 capitalize truncate">
+                        <p class="text-xs text-purple-200 capitalize truncate">
                             {{ $page.props.auth.user.role }}
                         </p>
                     </div>
                     <button
                         @click="logout"
-                        class="text-xs font-bold text-gold hover:text-yellow-300 transition"
+                        class="text-sm font-bold text-gold hover:text-yellow-300 transition shrink-0 cursor-pointer"
                     >
                         Logout
                     </button>

@@ -10,6 +10,7 @@ const navigation = [
     { name: 'Registration', routeName: 'participant.registration.create' },
     { name: 'Payment', routeName: 'participant.payment.index' },
     { name: 'Submission', routeName: 'participant.submission.index' },
+    { name: 'Certificate', routeName: 'participant.certificate.index' },
 ];
 
 function logout() {
@@ -20,26 +21,26 @@ function logout() {
 <template>
     <div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col md:flex-row">
         <!-- Sidebar Desktop (Rounded & Purple/Gold Theme) -->
-        <aside class="hidden w-64 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden">
+        <aside class="hidden w-80 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden">
             <!-- Brand Header -->
-            <div class="flex h-16 items-center px-6 border-b border-purple-800/50 gap-3">
-                <Link href="/" class="flex items-center gap-2.5">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gold text-slate-950 font-black text-xs shadow-sm">
+            <div class="flex h-18 items-center px-6 border-b border-purple-800/50 gap-3">
+                <Link href="/" class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gold text-slate-950 font-black text-base shadow-sm shrink-0">
                         IC
                     </div>
                     <div>
-                        <span class="font-extrabold text-sm tracking-tight text-white block">Participant Portal</span>
-                        <span class="text-[10px] text-gold font-semibold block -mt-0.5">ICHA Conference</span>
+                        <span class="font-extrabold text-base tracking-tight text-white block">Participant Portal</span>
+                        <span class="text-xs text-gold font-semibold block -mt-0.5">ICHA Conference</span>
                     </div>
                 </Link>
             </div>
 
-            <nav class="flex-1 space-y-1.5 px-3 py-5 overflow-y-auto">
+            <nav class="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
                 <Link
                     v-for="item in navigation"
                     :key="item.name"
                     :href="route(item.routeName)"
-                    class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200"
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200"
                     :class="route().current(item.routeName) ? 'bg-gold text-slate-950 font-bold shadow-md' : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'"
                 >
                     <span>{{ item.name }}</span>
@@ -47,12 +48,12 @@ function logout() {
             </nav>
 
             <!-- User Footer -->
-            <div class="p-4 border-t border-purple-800/50 flex items-center justify-between bg-purple-950/40">
-                <div class="truncate mr-2">
-                    <p class="text-xs font-bold text-white truncate">{{ $page.props.auth.user.name }}</p>
-                    <p class="text-[10px] text-purple-200 truncate">{{ $page.props.auth.user.email }}</p>
+            <div class="p-5 border-t border-purple-800/50 flex items-center justify-between bg-purple-950/40">
+                <div class="truncate mr-3">
+                    <p class="text-sm font-bold text-white truncate">{{ $page.props.auth.user.name }}</p>
+                    <p class="text-xs text-purple-200 truncate">{{ $page.props.auth.user.email }}</p>
                 </div>
-                <button @click="logout" class="text-xs font-bold text-gold hover:text-yellow-300 transition">Logout</button>
+                <button @click="logout" class="text-sm font-bold text-gold hover:text-yellow-300 transition shrink-0 cursor-pointer">Logout</button>
             </div>
         </aside>
 
