@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -32,11 +32,12 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Payment & Invoice" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h1 class="text-lg font-bold text-slate-800">Payment & Invoice</h1>
-        </template>
+    <Head title="Payment Confirmation" />
+    <ParticipantLayout>
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-slate-900">Payment & Invoice</h1>
+            <p class="text-xs text-slate-500">Upload payment receipt for verification</p>
+        </div>
 
         <div class="grid gap-8 lg:grid-cols-2">
 
@@ -120,5 +121,5 @@ function submit() {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </ParticipantLayout>
 </template>

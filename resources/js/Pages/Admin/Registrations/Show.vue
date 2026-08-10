@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -8,15 +8,20 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head title="Invoice Detail" />
-    <AuthenticatedLayout>
-        <template #header>
-            <div class="flex items-center gap-2">
-                <Link :href="route('admin.registrations.index')" class="text-sm text-slate-400 hover:text-primary">Registrations</Link>
-                <span class="text-slate-300">/</span>
-                <h1 class="text-lg font-bold text-slate-800">Invoice {{ registration.invoice_number }}</h1>
+    <Head title="Registration Detail - Admin" />
+    <AdminLayout>
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Registration Detail</h1>
+                <p class="text-xs text-slate-500">Invoice: {{ registration.invoice_number }}</p>
             </div>
-        </template>
+            <Link
+                :href="route('admin.registrations.index')"
+                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+                &larr; Back to List
+            </Link>
+        </div>
 
         <div class="max-w-3xl space-y-6">
             <!-- Invoice Header Card -->
@@ -67,5 +72,5 @@ const props = defineProps({
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </AdminLayout>
 </template>

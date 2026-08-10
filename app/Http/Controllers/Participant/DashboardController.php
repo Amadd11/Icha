@@ -3,28 +3,21 @@
 namespace App\Http\Controllers\Participant;
 
 use App\Http\Controllers\Controller;
-use App\Models\Conference;
+use App\Services\Participant\DashboardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
-    {
-        $user = $request->user()->load([
-            'profile',
-            'registrations.payment',
-            'registrations.registrationType',
-        ]);
-        $activeConference = Conference::active()->first();
-        $registration = $user->registrations
-            ->where('conference_id', $activeConference?->id)
-            ->first();
+    public function __construct(
+        protected DashboardService $dashboardService
+    ) {}
 
-        return Inertia::render('Dashboard', [
-            'profile' => $user->profile,
-            'registration' => $registration,
-            'activeConference' => $activeConference,
-        ]);
+    public function index(Request $request): Response
+    {
+        $data = $this->dashboardService->getDashboardData($request->user());
+
+        return Inertia::render('Participant/Dashboard', $data);
     }
 }

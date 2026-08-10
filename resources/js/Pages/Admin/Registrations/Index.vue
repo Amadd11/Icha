@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -8,11 +8,10 @@ const props = defineProps({
 });
 
 const statusColor = (status) => ({
-    pending:              'bg-slate-100 text-slate-600',
+    unpaid:               'bg-slate-100 text-slate-600',
     waiting_verification: 'bg-amber-100 text-amber-700',
     paid:                 'bg-green-100 text-green-700',
-    rejected:             'bg-red-100 text-red-700',
-    expired:              'bg-slate-200 text-slate-500',
+    cancelled:            'bg-red-100 text-red-700',
 }[status] ?? 'bg-slate-100 text-slate-600');
 
 function filterStatus(status) {
@@ -22,15 +21,18 @@ function filterStatus(status) {
 
 <template>
     <Head title="Registrations - Admin" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h1 class="text-lg font-bold text-slate-800">Conference Registrations</h1>
-        </template>
+    <AdminLayout>
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Registrations</h1>
+                <p class="text-xs text-slate-500">{{ registrations.total ?? registrations.data?.length ?? 0 }} registration(s) found</p>
+            </div>
+        </div>
 
         <!-- Filter Tabs -->
         <div class="mb-6 flex gap-2 overflow-x-auto pb-2">
             <button
-                v-for="s in [null, 'pending', 'waiting_verification', 'paid', 'rejected']"
+                v-for="s in [null, 'unpaid', 'waiting_verification', 'paid', 'cancelled']"
                 :key="s"
                 @click="filterStatus(s)"
                 :class="[
@@ -89,5 +91,5 @@ function filterStatus(status) {
                 </tbody>
             </table>
         </div>
-    </AuthenticatedLayout>
+    </AdminLayout>
 </template>

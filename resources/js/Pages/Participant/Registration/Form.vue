@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -26,11 +26,12 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Conference Registration" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h1 class="text-lg font-bold text-slate-800">Conference Registration</h1>
-        </template>
+    <Head title="Conference Ticket Registration" />
+    <ParticipantLayout>
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-slate-900">Conference Registration</h1>
+            <p class="text-xs text-slate-500">Select your registration category for {{ activeConference?.title || 'the conference' }}</p>
+        </div>
 
         <!-- Profile Warning -->
         <div v-if="!userProfile" class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
@@ -155,5 +156,5 @@ function submit() {
                 </div>
             </form>
         </div>
-    </AuthenticatedLayout>
+    </ParticipantLayout>
 </template>

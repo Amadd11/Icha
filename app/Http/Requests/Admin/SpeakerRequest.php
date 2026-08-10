@@ -19,6 +19,7 @@ class SpeakerRequest extends FormRequest
             'title'         => ['nullable', 'string', 'max:100'],
             'institution'   => ['nullable', 'string', 'max:255'],
             'country'       => ['nullable', 'string', 'max:100'],
+            'country_code'  => ['nullable', 'string', 'size:2'],
             'bio'           => ['nullable', 'string'],
             'email'         => ['nullable', 'email', 'max:255'],
             'type'          => ['required', 'in:keynote,invited,plenary'],

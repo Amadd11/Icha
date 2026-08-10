@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -41,14 +41,12 @@ function submit() {
 
 <template>
     <Head :title="isEdit ? 'Edit Conference' : 'New Conference'" />
-    <AuthenticatedLayout>
-        <template #header>
-            <div class="flex items-center gap-2">
-                <Link :href="route('admin.conferences.index')" class="text-sm text-slate-400 hover:text-primary">Conferences</Link>
-                <span class="text-slate-300">/</span>
-                <h1 class="text-lg font-bold text-slate-800">{{ isEdit ? 'Edit' : 'New' }} Conference</h1>
-            </div>
-        </template>
+    <AdminLayout>
+        <div class="mb-6 flex items-center gap-2">
+            <Link :href="route('admin.conferences.index')" class="text-sm font-semibold text-slate-500 hover:text-indigo-600">Conferences</Link>
+            <span class="text-slate-300">/</span>
+            <h1 class="text-lg font-bold text-slate-800">{{ isEdit ? 'Edit' : 'New' }} Conference</h1>
+        </div>
 
         <div class="max-w-3xl">
             <form @submit.prevent="submit" class="space-y-6">
@@ -180,5 +178,5 @@ function submit() {
                 </div>
             </form>
         </div>
-    </AuthenticatedLayout>
+    </AdminLayout>
 </template>

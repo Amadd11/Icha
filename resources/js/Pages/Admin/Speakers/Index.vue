@@ -1,10 +1,9 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     speakers: Array,
-    conferences: Array,
 });
 
 const typeColor = (type) => ({
@@ -22,18 +21,17 @@ function destroy(id) {
 
 <template>
     <Head title="Speakers - Admin" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h1 class="text-lg font-bold text-slate-800">Speakers</h1>
-        </template>
-
+    <AdminLayout>
         <div class="mb-6 flex items-center justify-between">
-            <p class="text-sm text-slate-500">{{ speakers.length }} speaker(s)</p>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Speakers</h1>
+                <p class="text-xs text-slate-500">{{ speakers.length }} speaker(s) found</p>
+            </div>
             <Link
                 :href="route('admin.speakers.create')"
-                class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-dark"
+                class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700"
             >
-                + Add Speaker
+                + New Speaker
             </Link>
         </div>
 
@@ -68,5 +66,5 @@ function destroy(id) {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </AdminLayout>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -43,15 +43,13 @@ function submit() {
 </script>
 
 <template>
-    <Head :title="isEdit ? 'Edit Sponsor' : 'Add Sponsor'" />
-    <AuthenticatedLayout>
-        <template #header>
-            <div class="flex items-center gap-2">
-                <Link :href="route('admin.sponsors.index')" class="text-sm text-slate-400 hover:text-primary">Sponsors</Link>
-                <span class="text-slate-300">/</span>
-                <h1 class="text-lg font-bold text-slate-800">{{ isEdit ? 'Edit' : 'Add' }} Sponsor</h1>
-            </div>
-        </template>
+    <Head :title="isEdit ? 'Edit Sponsor' : 'New Sponsor'" />
+    <AdminLayout>
+        <div class="mb-6 flex items-center gap-2">
+            <Link :href="route('admin.sponsors.index')" class="text-sm font-semibold text-slate-500 hover:text-indigo-600">Sponsors</Link>
+            <span class="text-slate-300">/</span>
+            <h1 class="text-lg font-bold text-slate-800">{{ isEdit ? 'Edit' : 'New' }} Sponsor</h1>
+        </div>
 
         <div class="max-w-2xl">
             <form @submit.prevent="submit" class="space-y-6">
@@ -137,5 +135,5 @@ function submit() {
                 </div>
             </form>
         </div>
-    </AuthenticatedLayout>
+    </AdminLayout>
 </template>

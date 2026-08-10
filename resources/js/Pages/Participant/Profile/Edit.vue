@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -8,9 +8,14 @@ const props = defineProps({
 });
 
 const form = useForm({
+    title:               props.profile?.title               ?? '',
+    full_name_with_degree: props.profile?.full_name_with_degree ?? '',
     name:                 props.user?.name                 ?? '',
     phone:                props.profile?.phone                ?? '',
+    whatsapp:             props.profile?.whatsapp             ?? '',
     institution:          props.profile?.institution          ?? '',
+    department:           props.profile?.department           ?? '',
+    position:             props.profile?.position             ?? '',
     country:              props.profile?.country              ?? 'Indonesia',
     city:                 props.profile?.city                 ?? '',
     address:              props.profile?.address              ?? '',
@@ -25,11 +30,12 @@ function submit() {
 </script>
 
 <template>
-    <Head title="My Profile" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h1 class="text-lg font-bold text-slate-800">My Profile</h1>
-        </template>
+    <Head title="Participant Profile" />
+    <ParticipantLayout>
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-slate-900">Participant Profile</h1>
+            <p class="text-xs text-slate-500">Update your personal and professional information</p>
+        </div>
 
         <div class="max-w-2xl">
             <form @submit.prevent="submit" class="space-y-6">
@@ -115,5 +121,5 @@ function submit() {
                 </div>
             </form>
         </div>
-    </AuthenticatedLayout>
+    </ParticipantLayout>
 </template>

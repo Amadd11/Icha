@@ -13,6 +13,7 @@ class Speaker extends Model
         'title',
         'institution',
         'country',
+        'country_code',
         'bio',
         'photo',
         'email',

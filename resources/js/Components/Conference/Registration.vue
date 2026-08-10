@@ -63,7 +63,7 @@ const pricingData = computed(() => {
 </script>
 
 <template>
-    <section id="registration" class="relative bg-slate-50 py-20 lg:py-32">
+    <section id="registration" class="relative bg-slate-50 py-10 lg:py-10">
         <div class="container mx-auto px-6 md:px-12 xl:px-24">
             <SectionHeading
                 eyebrow="Pricing"

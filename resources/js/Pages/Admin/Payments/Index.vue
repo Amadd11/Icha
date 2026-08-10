@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -45,10 +45,13 @@ function filterStatus(status) {
 
 <template>
     <Head title="Payment Verification - Admin" />
-    <AuthenticatedLayout>
-        <template #header>
-            <h1 class="text-lg font-bold text-slate-800">Payment Verification Queue</h1>
-        </template>
+    <AdminLayout>
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Payment Verification Queue</h1>
+                <p class="text-xs text-slate-500">Review and verify participant payments</p>
+            </div>
+        </div>
 
         <!-- Filter Tabs -->
         <div class="mb-6 flex gap-2 overflow-x-auto pb-2">
@@ -145,5 +148,5 @@ function filterStatus(status) {
                 </form>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </AdminLayout>
 </template>

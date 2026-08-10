@@ -31,7 +31,6 @@ const navLinks = [
     { href: "/#tracks", label: "Tracks" },
     { href: "/#timeline", label: "Timeline" },
     { href: "/#speakers", label: "Speakers" },
-    { href: "/#abstract", label: "Abstract" },
     { href: "/registration", label: "Registration" },
 ];
 

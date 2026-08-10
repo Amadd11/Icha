@@ -7,6 +7,7 @@
     --color-gold: #FACE68;
     --color-gold-dark: #eab308;
     --color-accent-red: #ef4444;
+    --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 .admin-input {

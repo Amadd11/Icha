@@ -191,15 +191,6 @@ const isHashLink = (href) => {
                     ID
                 </button>
             </div>
-
-            <a
-                href="#abstract"
-                @click="scrollToSection($event, '#abstract')"
-                class="hidden rounded-md bg-gold px-5 py-2 text-sm font-bold text-sidebar transition-colors hover:bg-gold-dark lg:inline-block"
-            >
-                Submit Abstract
-            </a>
-
             <button
                 class="flex flex-col gap-1.25 lg:hidden"
                 @click="emit('toggle-menu')"
