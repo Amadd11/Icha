@@ -2,7 +2,10 @@
 
 namespace App\Services\Participant;
 
+use App\Models\AbstractSubmission;
 use App\Models\Conference;
+use App\Models\FullPaper;
+use App\Models\Timeline;
 use App\Models\User;
 
 class DashboardService
@@ -32,13 +35,21 @@ class DashboardService
         $isPaid = $payment && $payment->status === 'verified';
         $paymentStatus = $payment ? $payment->status : 'unpaid';
 
-        // Abstract, Paper, Presentation, Certificate statuses (defaults for current phase)
-        $abstractStatus = 'not_submitted';
-        $fullPaperStatus = 'not_submitted';
-        $presentationStatus = 'not_submitted';
-        $certificateStatus = 'not_available';
+        // Abstract & Paper real status
+        $abstract = AbstractSubmission::where('user_id', $user->id)
+            ->where('conference_id', $activeConference?->id)
+            ->latest()
+            ->first();
 
-        // Determine Next Action and Nearest Deadline
+        $fullPaper = FullPaper::where('user_id', $user->id)
+            ->where('conference_id', $activeConference?->id)
+            ->latest()
+            ->first();
+
+        $abstractStatus = $abstract ? $abstract->status : 'not_submitted';
+        $fullPaperStatus = $fullPaper ? $fullPaper->status : 'not_submitted';
+
+        // Determine Next Action
         $nextAction = [
             'title' => 'Register for Conference',
             'description' => 'You have not registered for ' . ($activeConference?->title ?? 'the active conference') . '.',
@@ -67,12 +78,19 @@ class DashboardService
                 'button_label' => 'View Payment Status',
                 'url' => route('participant.payment.index'),
             ];
-        } elseif ($isPaid && $abstractStatus === 'not_submitted') {
+        } elseif ($abstractStatus === 'not_submitted') {
             $nextAction = [
                 'title' => 'Submit Abstract',
                 'description' => 'Submit your abstract before the upcoming submission deadline.',
                 'button_label' => 'Submit Abstract',
-                'url' => '#abstract',
+                'url' => route('participant.submission.index'),
+            ];
+        } elseif ($fullPaperStatus === 'not_submitted' && $abstractStatus === 'accepted') {
+            $nextAction = [
+                'title' => 'Submit Full Paper',
+                'description' => 'Your abstract has been accepted! Submit your full paper.',
+                'button_label' => 'Submit Full Paper',
+                'url' => route('participant.submission.index'),
             ];
         }
 
@@ -93,14 +111,14 @@ class DashboardService
             [
                 'key' => 'abstract',
                 'label' => 'Abstract',
-                'status' => 'pending',
-                'desc' => 'Not Submitted',
+                'status' => $abstract ? ($abstractStatus === 'accepted' ? 'completed' : 'current') : 'pending',
+                'desc' => $abstract ? ucfirst(str_replace('_', ' ', $abstractStatus)) : 'Not Submitted',
             ],
             [
                 'key' => 'full_paper',
                 'label' => 'Full Paper',
-                'status' => 'pending',
-                'desc' => 'Not Submitted',
+                'status' => $fullPaper ? ($fullPaperStatus === 'accepted' ? 'completed' : 'current') : 'pending',
+                'desc' => $fullPaper ? ucfirst(str_replace('_', ' ', $fullPaperStatus)) : 'Not Submitted',
             ],
             [
                 'key' => 'presentation',
@@ -116,18 +134,27 @@ class DashboardService
             ],
         ];
 
+        // Dynamic Nearest Deadline from Timeline model
+        $nextTimeline = $activeConference
+            ? Timeline::where('conference_id', $activeConference->id)->orderBy('order')->first()
+            : null;
+
+        $nearestDeadline = [
+            'title' => $nextTimeline?->title ?? 'Abstract Submission Deadline',
+            'date' => $nextTimeline?->period ?? '03 October 2026',
+        ];
+
         return [
             'user' => $user,
             'activeConference' => $activeConference,
             'activeRegistration' => $activeRegistration,
             'payment' => $payment,
             'paymentStatus' => $paymentStatus,
+            'abstract' => $abstract,
+            'fullPaper' => $fullPaper,
             'stages' => $stages,
             'nextAction' => $nextAction,
-            'nearestDeadline' => [
-                'title' => 'Abstract Submission Deadline',
-                'date' => '03 October 2026',
-            ],
+            'nearestDeadline' => $nearestDeadline,
         ];
     }
 }

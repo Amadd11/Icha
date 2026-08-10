@@ -45,7 +45,7 @@ const navigationGroups = [
     {
         name: "Submissions",
         items: [
-            { name: "Abstracts", routeName: null },
+            { name: "Abstracts", routeName: "admin.abstracts.index" },
             { name: "Full Papers", routeName: null },
             { name: "Presentations", routeName: null },
             { name: "Publications", routeName: null },
@@ -100,7 +100,7 @@ function logout() {
         >
             <aside
                 v-show="isDesktopSidebarOpen"
-                class="hidden w-64 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-[2rem] shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden"
+                class="hidden w-64 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden"
             >
                 <!-- Brand Header -->
                 <div
@@ -262,6 +262,17 @@ function logout() {
                                 {{ conf.title }} ({{ conf.year || "Default" }})
                             </option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Right side: User info -->
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:flex flex-col items-end">
+                        <span class="text-xs font-bold text-slate-800 leading-tight">{{ $page.props.auth.user.name }}</span>
+                        <span class="text-[10px] text-slate-400 capitalize leading-tight">{{ $page.props.auth.user.role?.replace('_', ' ') }}</span>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-sidebar flex items-center justify-center text-white text-xs font-black shadow-sm">
+                        {{ $page.props.auth.user.name?.charAt(0).toUpperCase() }}
                     </div>
                 </div>
             </header>

@@ -26,7 +26,6 @@ const lang = ref("en");
 const isMenuOpen = ref(false);
 
 const navLinks = [
-    { href: "/#about", label: "About" },
     { isDropdown: true, label: "Conferences" },
     { href: "/#tracks", label: "Tracks" },
     { href: "/#timeline", label: "Timeline" },

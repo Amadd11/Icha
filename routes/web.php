@@ -42,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('payment.index');
         Route::post('/payment', [ParticipantCtrl\RegistrationController::class, 'submitPayment'])
             ->name('payment.submit');
+
+        // Submission routes (Abstract & Full Paper)
+        Route::get('/submission', [\App\Http\Controllers\Participant\SubmissionController::class, 'index'])
+            ->name('submission.index');
+        Route::post('/submission/abstract', [\App\Http\Controllers\Participant\SubmissionController::class, 'storeAbstract'])
+            ->name('submission.abstract.store');
+        Route::post('/submission/paper', [\App\Http\Controllers\Participant\SubmissionController::class, 'storePaper'])
+            ->name('submission.paper.store');
     });
 });
 
@@ -63,6 +71,10 @@ Route::prefix('admin')
         Route::resource('registrations', Admin\RegistrationController::class)->only(['index', 'show']);
         Route::get('payments', [Admin\PaymentController::class, 'index'])->name('payments.index');
         Route::post('payments/{payment}/verify', [Admin\PaymentController::class, 'verify'])->name('payments.verify');
+
+        // Abstract Reviews
+        Route::get('abstracts', [Admin\AbstractController::class, 'index'])->name('abstracts.index');
+        Route::post('abstracts/{abstract}/review', [Admin\AbstractController::class, 'review'])->name('abstracts.review');
     });
 
 // Legacy profile routes

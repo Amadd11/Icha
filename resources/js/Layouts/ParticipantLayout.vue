@@ -9,6 +9,7 @@ const navigation = [
     { name: 'Profile', routeName: 'participant.profile.edit' },
     { name: 'Registration', routeName: 'participant.registration.create' },
     { name: 'Payment', routeName: 'participant.payment.index' },
+    { name: 'Submission', routeName: 'participant.submission.index' },
 ];
 
 function logout() {
@@ -19,7 +20,7 @@ function logout() {
 <template>
     <div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col md:flex-row">
         <!-- Sidebar Desktop (Rounded & Purple/Gold Theme) -->
-        <aside class="hidden w-64 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-[2rem] shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden">
+        <aside class="hidden w-64 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden">
             <!-- Brand Header -->
             <div class="flex h-16 items-center px-6 border-b border-purple-800/50 gap-3">
                 <Link href="/" class="flex items-center gap-2.5">
@@ -43,15 +44,6 @@ function logout() {
                 >
                     <span>{{ item.name }}</span>
                 </Link>
-
-                <div v-if="['super_admin', 'admin'].includes($page.props.auth.user.role)" class="pt-4 mt-4 border-t border-purple-800/50">
-                    <Link
-                        :href="route('admin.dashboard')"
-                        class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-600 shadow-sm transition-all"
-                    >
-                        &rarr; Switch to Admin
-                    </Link>
-                </div>
             </nav>
 
             <!-- User Footer -->
@@ -86,15 +78,6 @@ function logout() {
                     {{ item.name }}
                 </Link>
 
-                <div v-if="['super_admin', 'admin'].includes($page.props.auth.user.role)" class="pt-2 mt-2 border-t border-purple-800/50">
-                    <Link
-                        :href="route('admin.dashboard')"
-                        class="block px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-600"
-                    >
-                        &rarr; Switch to Admin
-                    </Link>
-                </div>
-
                 <button @click="logout" class="block w-full text-left px-3.5 py-2.5 text-xs text-gold font-bold">
                     Logout
                 </button>
@@ -106,11 +89,8 @@ function logout() {
             <!-- Header Bar -->
             <header class="hidden md:flex h-16 bg-white border-b border-slate-200 px-6 items-center justify-between sticky top-0 z-30 shadow-xs">
                 <div>
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Participant Workspace</span>
+                    <span class="text-md font-bold text-black uppercase">Participant Workspace</span>
                 </div>
-                <Link href="/" class="text-xs font-bold text-purple-700 hover:text-purple-900 transition">
-                    View Public Website &rarr;
-                </Link>
             </header>
 
             <main class="flex-1 p-6">
