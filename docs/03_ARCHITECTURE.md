@@ -1,136 +1,139 @@
-# ARCHITECTURE — ICHA
+# ARCHITECTURE — ICHA Laravel 13 + Inertia Vue (Reviewer Revised)
 
 ## Stack
 - Laravel 13
-- PHP compatible with Laravel 13
+- PHP
 - MySQL
-- Blade
-- Tailwind CSS
+- Inertia.js
+- Vue 3
 - Vite
+- Tailwind CSS
 - Laravel Storage
-- Laravel Authentication
-- Policies / Form Requests
+- Form Requests
+- Policies
+- Services
 
-## Architecture Pattern
-Use a pragmatic Service Layer.
+## Architecture
+```text
+Browser → Vue → Inertia → Route → Middleware/Auth/Role
+→ Controller → Form Request → Policy → Service → Eloquent → MySQL
+```
 
-Browser
-→ Route
-→ Middleware/Auth
-→ Controller
-→ Form Request
-→ Service
-→ Eloquent Model
-→ MySQL
+Controllers stay thin. Business workflows belong in Services.
 
-Controllers stay thin. Business logic belongs in Services. Validation belongs in Form Requests. Authorization belongs in Policies.
+## Application Areas
+### Public
+PublicLayout and dynamic conference pages.
 
-## Suggested Structure
+### Participant
+ParticipantLayout, registration, payment, submissions, papers, presentations and certificates.
+
+### Reviewer
+ReviewerLayout, dashboard, topics, assigned abstracts, review form, completed reviews and profile.
+
+### Admin
+AdminLayout, conference management, participants, payments, submissions, reviewer assignment, papers, presentations, certificates and publications.
+
+## Roles
+```text
+super_admin
+admin
+reviewer
+participant
+```
+
+Redirect:
+```text
+participant → /participant/dashboard
+reviewer    → /reviewer/dashboard
+admin       → /admin/dashboard
+super_admin → /admin/dashboard
+```
+
+## Backend Structure
+```text
 app/
+├── Enums/
+│   ├── UserRole.php
+│   ├── AbstractStatus.php
+│   ├── ReviewStatus.php
+│   ├── ReviewType.php
+│   └── RecommendationType.php
 ├── Http/
-│   ├── Controllers/
-│   └── Requests/
+│   ├── Controllers/{Public,Participant,Reviewer,Admin}
+│   ├── Requests/{Participant,Reviewer,Admin}
+│   └── Resources/
 ├── Models/
-├── Services/
+│   ├── User.php
+│   ├── ReviewerProfile.php
+│   ├── Conference.php
+│   ├── Topic.php
+│   ├── Submission.php
+│   ├── ReviewRound.php
+│   ├── ReviewAssignment.php
+│   └── Review.php
 ├── Policies/
-├── Notifications/
-└── Jobs/                 # optional only
+└── Services/
+    ├── ReviewerService.php
+    ├── ReviewAssignmentService.php
+    └── ReviewService.php
+```
 
-resources/views/
-├── components/
-├── layouts/
-├── conferences/
-├── admin/
-└── participant/
+## Vue Structure
+```text
+resources/js/
+├── Layouts/
+│   ├── PublicLayout.vue
+│   ├── ParticipantLayout.vue
+│   ├── ReviewerLayout.vue
+│   └── AdminLayout.vue
+├── Components/Reviewer/
+│   ├── ReviewerProfileForm.vue
+│   ├── TopicCard.vue
+│   ├── ReviewCriteria.vue
+│   ├── ReviewSummary.vue
+│   └── ReviewConfirmationModal.vue
+└── Pages/Reviewer/
+    ├── Dashboard.vue
+    ├── Profile.vue
+    ├── Topics/Index.vue
+    ├── Abstracts/Index.vue
+    ├── Abstracts/Show.vue
+    └── Reviews/Completed.vue
+```
 
-## Core Models
-Conference
-User
-Participant
-Speaker
-CommitteeMember
-Category
-Timeline
-RegistrationType
-Registration
-Payment
+## Review Domain
+Do not store reviewer_id directly on submissions.
+
+Use:
+```text
 Submission
-Author
-PaperVersion
-Presentation
-Certificate
-Publication
-Sponsor
-Faq
+ → ReviewRound
+ → ReviewAssignment
+ → Review
+```
 
-## Conference Root
-Conference has relationships to conference-specific records.
+A new revision creates a new review round and preserves history.
 
-Example:
-`$conference->speakers()`
-`$conference->categories()`
-`$conference->timelines()`
-`$conference->sponsors()`
-`$conference->registrations()`
-`$conference->submissions()`
+## Blinded Review
+Backend resources must not expose author name, email, institution or corresponding-author identity to reviewers when blinded review is enabled.
 
-## Conference Fields
-Recommended:
-- id
-- title
-- slug unique
-- year
-- tagline nullable
-- description nullable
-- theme nullable
-- start_date nullable
-- end_date nullable
-- venue nullable
-- city nullable
-- country default Indonesia
-- email nullable
-- phone nullable
-- website nullable
-- logo nullable
-- hero_image nullable
-- status: draft/published/archived
-- is_active boolean
-- timestamps
+## ReviewService
+Must:
+1. verify assignment ownership
+2. verify round is open
+3. verify reviewer profile is complete
+4. validate two criteria
+5. validate score 1–5
+6. calculate total
+7. calculate recommendation
+8. create review atomically
+9. mark assignment submitted
+10. count submitted reviews
+11. lock after required count
+12. trigger optional notification after commit
 
-## Routing
-Use route model binding:
-`Route::get('/conferences/{conference:slug}', ...)`
+Use a transaction and concurrency-safe locking.
 
-Never use year-specific hardcoded routes.
-
-## Data Isolation
-Every conference-specific query must be scoped to the selected conference.
-Use relationships and explicit `conference_id` checks.
-Policies must prevent participants from accessing another participant's data.
-
-## Transactions
-Use `DB::transaction()` for multi-record business operations such as payment verification and submission state changes.
-
-## Jobs
-No core workflow may require a queue worker.
-Jobs may be introduced later for:
-- bulk email
-- bulk certificate generation
-- large reports
-- image processing
-- large imports/exports
-
-Do not require Redis, Supervisor, Docker or Reverb.
-
-## File Storage
-Use Laravel Storage. Validate MIME type and size. Generate safe filenames. Private files must be authorized before download.
-
-## Security
-- CSRF
-- authentication
-- authorization/policies
-- Form Request validation
-- mass-assignment protection
-- safe file uploads
-- protected private downloads
-- APP_DEBUG=false in production
+## Shared Hosting
+Review submission is a synchronous HTTP request. No Redis, queue worker or WebSocket is required.

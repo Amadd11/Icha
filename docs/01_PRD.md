@@ -1,123 +1,110 @@
-# PRD — ICHA Conference Management System
+# PRD — ICHA Conference Management System (Reviewer Revised)
 
 ## Product
-A multi-year conference website and management system. One Laravel application manages multiple conference editions such as ICHA 2026, ICHA 2027, and future editions.
+ICHA is a multi-year conference website and management system using one Laravel application for ICHA 2026, 2027 and future editions.
 
 Modules:
-- Public conference website
-- Dynamic conference landing pages
-- Conference CMS
-- Participant registration
-- Payment verification
+- Public conference website and CMS
+- Participant registration and payment
 - Abstract submission
-- Author management
-- Full paper submission
-- Presentation management
-- Certificate management
-- Publication management
-- Sponsor management
+- Abstract peer review
+- Full paper submission/review
+- Presentation
+- Certificate
+- Publication
+- Speakers, committee, topics, timeline, sponsors and FAQ
 
-There is NO external reviewer role.
-
-## Multi-Conference Rule
-`Conference` is the root entity. Conference-specific records must belong to a `conference_id`.
-
-Examples:
-- speakers
-- topics/categories
-- committee
-- timelines
-- registration types
-- sponsors
-- registrations
-- payments
-- submissions
-- presentations
-- certificates
-- publications
-
-Data from different conference editions must never be mixed.
-
-## URLs
-- `/` = conference portal
-- `/conferences` = conference archive/list
-- `/conferences/{conference:slug}` = dynamic conference landing page
-- `/conferences/{conference:slug}/speakers`
-- `/conferences/{conference:slug}/registration`
-- `/conferences/{conference:slug}/submissions`
-
-Never hardcode a year in reusable views.
+## Deployment
+Primary target is shared hosting. Core transactions MUST work synchronously without Redis, Supervisor, Docker, persistent workers or WebSockets. Jobs are optional only for non-critical tasks.
 
 ## Roles
 ### super_admin
-Full access to users, conferences, CMS, participants and system settings.
+Full system access, including users, conferences, reviewer management and settings.
 
 ### admin
-Operational conference management: content, participants, registrations, payments, submissions, papers, presentations, certificates and publications.
+Operational management: conference content, participants, registrations, payments, submissions, reviewer assignment, papers, presentations, certificates and publications.
+
+### reviewer
+Academic reviewer. Reviewer receives credentials from the committee. First login requires profile completion: title/name, date of birth, university, affiliation, country, phone and photo. Reviewer can view assigned topics/abstracts, review blinded abstracts, score criteria and submit reviews.
 
 ### participant
-Profile, conference registration, payment proof, abstract, authors, full paper, presentation, certificate and publication tracking.
+Profile, registration, payment, abstract, authors, full paper, presentation, certificate and publication tracking.
 
-## Participant Flow
-Register → Login → Select Conference → Profile → Conference Registration → Payment → Payment Verification → Abstract Submission → Admin Checking → Accepted/Rejected/Revision Required → Full Paper → Presentation → Conference → Certificate → Publication.
+The reviewer profile requirements follow the supplied guideline. fileciteturn2file0L32-L35
 
-## Status
-Abstract:
+## Abstract Review Requirements
+- One abstract is reviewed by THREE reviewers.
+- Review is blinded.
+- Abstract is locked after three submitted reviews.
+- There are two review criteria.
+- Each criterion has five scoring levels: very weak to very strong.
+- Total score >= 5 => ORAL.
+- Total score < 5 => POSTER.
+- Author receives an abstract notification.
+
+These rules come from the supplied reviewer guideline. fileciteturn2file0L44-L52 fileciteturn2file0L103-L105
+
+## Abstract Status
+Use:
 - draft
 - submitted
+- admin_checking
+- reviewer_assignment
 - under_review
 - revision_required
 - resubmitted
 - accepted
 - rejected
+- locked
 
-`under_review` means internal admin checking, NOT peer review.
+`admin_checking` means committee/admin checking. `under_review` means academic reviewer review.
 
-Payment:
-- pending
-- waiting_verification
-- paid
-- rejected
-- expired
-
-Full paper:
+## Review Status
+- assigned
+- in_progress
 - submitted
-- revision_required
-- approved
+- cancelled
 
-## Deployment Constraint
-Primary target is shared hosting.
+Submitted reviews should be immutable unless an explicit admin correction workflow is introduced.
 
-Core features MUST work without:
-- Redis
-- Supervisor
-- Docker
-- persistent queue workers
-- Reverb/WebSockets
+## Review Rounds
+A submission can have multiple review rounds. Revision must create a new round and preserve historical reviews.
 
-Core transactions are synchronous.
+```text
+Submission
+ ├─ Round 1
+ │   ├─ Reviewer A
+ │   ├─ Reviewer B
+ │   └─ Reviewer C
+ └─ Round 2
+     ├─ Reviewer A
+     ├─ Reviewer B
+     └─ Reviewer C
+```
 
-Jobs are optional only for non-critical heavy tasks such as bulk email, bulk certificate generation, large reports and image processing.
+## Full Paper
+Reuse the review-round/assignment/review architecture for full papers, but DO NOT invent full-paper criteria until confirmed by the committee.
 
 ## Out of Scope
-- reviewer accounts
-- reviewer assignment
-- peer review
-- reviewer scoring
-- reviewer dashboard
-- queue-dependent core transactions
+- reviewer bidding
+- reviewer chat
+- reviewer-to-reviewer communication
+- automated reviewer matching
+- invented full-paper scoring criteria
+- queue-dependent core workflows
 
-## MVP
-1. Authentication and roles
-2. Conference management
-3. Dynamic conference landing page
-4. Conference CMS
-5. Participant registration
-6. Payment verification
-7. Abstract + authors
-8. Revision flow
-9. Full paper
-10. Presentation
-11. Certificate
-12. Publication
-13. Sponsor management
+## Acceptance Criteria
+Reviewer module is complete when:
+- authentication works
+- first-login profile completion is enforced
+- reviewer sees only assigned work
+- author identity is hidden in blinded review
+- duplicate assignment is prevented
+- abstract has three distinct reviewer assignments
+- two criteria with 1–5 scores are validated
+- total and ORAL/POSTER are calculated server-side
+- confirmation occurs before submission
+- review is locked after three submissions
+- historical reviews are preserved
+- notification can be triggered after the core transaction
+- conference isolation and authorization are tested

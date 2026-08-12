@@ -1,62 +1,69 @@
-# DATABASE RULES — ICHA
+# DATABASE RULES — ICHA (Reviewer Revised)
 
 ## Naming
-- Tables: plural snake_case
-- Columns: snake_case
-- Foreign keys: `{model}_id`
-- Models: singular StudlyCase
+Plural snake_case tables, snake_case columns, singular StudlyCase models, `{model}_id` foreign keys.
 
-Examples:
-`Conference`, `conference_id`, `registration_types`.
+## Review Tables
+Required:
+```text
+reviewer_profiles
+review_rounds
+review_assignments
+reviews
+```
+
+`reviewer_topics` is optional if topic expertise/selection needs persistence.
+
+## Constraints
+```text
+unique conferences.slug
+unique registration_number
+unique certificate_number
+unique (review_round_id, reviewer_id)
+```
+
+## Scores
+Use integer 1..5 for abstract criteria. Do not use floating point.
+
+## Recommendation
+Use:
+```text
+oral
+poster
+```
+Calculated by the backend.
+
+## Locking
+`review_rounds.locked_at` is nullable. When submitted reviews reach `required_reviewers`:
+- set locked_at
+- set round completed/locked
+- prevent further reviewer edits
+- preserve review records
+
+## Concurrency
+Review submission and 3/3 locking must run inside a DB transaction with concurrency protection. Never trust a frontend review count.
+
+## Blinding
+Do not store or expose copied author identity in reviewer records. Reviewer-facing queries/resources must select only safe submission fields.
 
 ## Foreign Keys
-Conference-specific tables should contain:
-`conference_id`
+```text
+review_rounds.submission_id → submissions.id
+review_assignments.review_round_id → review_rounds.id
+review_assignments.reviewer_id → users.id
+reviews.review_assignment_id → review_assignments.id
+reviewer_profiles.user_id → users.id
+```
 
-Use:
-`$table->foreignId('conference_id')->constrained()->cascadeOnUpdate();`
-
-Choose delete behavior carefully. Operational data should generally be protected from accidental cascading deletes.
-
-## Status
-Prefer PHP backed enums or constants for complex statuses once the project structure supports them. Keep database values aligned with the PRD.
-
-## Money
-Do not use floating point for money. Use decimal, for example:
-`decimal('price', 15, 2)`
-
-Store currency explicitly when multiple currencies may be supported.
-
-## Files
-Store paths, not file binaries, in database columns.
-Example:
-`proof_file`, `file_path`, `hero_image`.
-
-## Timestamps
-Use Laravel timestamps.
-
-## Soft Deletes
-Use SoftDeletes on records where recovery is valuable, especially CMS content and operational records, after considering foreign key behavior.
-
-## Data Integrity
-Business rules should be enforced at both:
-- application/service layer
-- database constraints where practical
-
-Examples:
-- unique conference slug
-- unique registration number
-- unique certificate number
-- foreign keys
-- required conference context
-
-## Indexing
+## Indexes
 Index:
 - conference_id
+- submission_id
+- reviewer_id
+- review_round_id
 - status
-- dates used for filtering
-- registration_number
-- certificate_number
-- slug
+- assigned_at
+- submitted_at
 
-Use composite indexes when query patterns justify them.
+## Files
+Store file paths, not binaries. Private paper files require authorized download.

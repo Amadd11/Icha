@@ -1,98 +1,72 @@
-# VIBE CODING RULES — ICHA
+# VIBE CODING RULES — ICHA (Reviewer Revised)
 
 ## General
-Build incrementally. Do not generate the entire application blindly in one pass.
+Build incrementally. Inspect existing files, migrations, models, routes and components before changing code.
 
-Before changing code:
-1. Inspect existing files.
-2. Inspect migrations/models/routes.
-3. Reuse existing components.
-4. Confirm the current architecture.
-5. Make the smallest coherent change.
+## Current Role Model
+The authoritative roles are:
+- super_admin
+- admin
+- reviewer
+- participant
+
+Do not revert to the old assumption that there is no reviewer role.
+
+## Reviewer Security
+Reviewer can access only:
+- own profile
+- assigned review rounds
+- assigned submissions
+- own reviews
+
+Reviewer cannot browse all submissions, access admin pages, see author identity in blinded review, review unassigned submissions or edit another reviewer's review.
+
+## First Login
+Incomplete reviewer profile must redirect to profile completion and block review actions until completed.
+
+## Abstract Review
+Use:
+```text
+review_rounds
+review_assignments
+reviews
+```
+
+Do not use `submissions.reviewer_id`.
+
+One abstract review round requires three distinct reviewers.
+
+## Review Submission
+Validate assignment ownership, profile completion, two criteria, scores 1–5, then calculate total and ORAL/POSTER on the server. Save review, update assignment and lock the round after 3 submissions inside one transaction.
+
+## Blinding
+Do not send author identity to reviewer Vue pages. Backend must enforce this.
+
+## Status
+Use `admin_checking` for admin checking and `under_review` for academic review.
+
+## Full Paper
+Reuse the generic review architecture, but do not invent criteria until confirmed.
 
 ## Laravel
-Use Laravel 13 conventions.
-Prefer:
-- Eloquent relationships
-- Form Requests
-- Policies
-- Services for business logic
-- route model binding
-- Blade components
-- Laravel Storage
-- DB transactions
+Prefer Form Requests, Policies, Services, Eloquent relationships, DB transactions and route model binding. Do not create repositories for every model.
 
-Avoid unnecessary repository abstractions unless they solve a real problem.
+## Vue/Inertia
+Separate:
+```text
+Pages/Participant
+Pages/Reviewer
+Pages/Admin
+```
+and:
+```text
+ParticipantLayout
+ReviewerLayout
+AdminLayout
+```
 
-## Controllers
-Controllers should:
-- receive validated input
-- call services
-- return views/redirects
-- avoid large business logic
+## Shared Hosting
+Core review submission must work synchronously. No Redis, worker or WebSocket dependency.
 
-## Models
-Models should contain:
-- relationships
-- casts
-- scopes where useful
-- guarded/fillable rules
-
-Do not put large workflows in models.
-
-## Services
-Use services for workflows such as:
-- conference activation
-- registration creation
-- payment verification
-- submission state transitions
-- certificate issuance
-
-## Authorization
-Use Policies and middleware.
-Never trust hidden form fields for authorization.
-
-## Multi-Conference
-Always preserve conference context.
-
-Before implementing a feature, answer:
-1. Does this belong to a conference?
-2. Where is `conference_id` stored?
-3. How is current conference resolved?
-4. Can a participant/admin access data from another conference?
-
-## UI
-Use existing design system.
-Do not introduce new colors without reason.
-Do not create year-specific Blade files.
-
-## Jobs
-Do not introduce a Job simply because it is available.
-Core operations must work synchronously on shared hosting.
-
-## File Uploads
-Validate:
-- MIME/type
-- file size
-- extension
-- authorization
-
-Use Storage instead of manually constructing filesystem paths.
-
-## Testing
-For each module add tests for:
-- happy path
-- validation failure
-- unauthorized access
-- wrong conference context
-- status transition rules
-
-## Completion Rule
-A feature is not complete until:
-- migration works
-- model relationships work
-- validation works
-- authorization works
-- UI works
-- conference isolation is verified
-- relevant tests exist
+## Tests
+Every reviewer feature needs tests for happy path, validation, authorization, wrong conference, wrong assignment, blinded data, duplicate review, score calculation, status transitions and 3-review locking.

@@ -22,6 +22,7 @@ use App\Http\Controllers\Participant\{
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\ConferenceController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Reviewer\DashboardController as ReviewerDashboardController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -96,6 +97,15 @@ Route::prefix('admin')
         // Full Paper Reviews
         Route::get('papers', [PaperController::class, 'index'])->name('papers.index');
         Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
+    });
+
+// Reviewer routes
+Route::prefix('reviewer')
+    ->middleware(['auth', 'role:reviewer'])
+    ->name('reviewer.')
+    ->group(function () {
+        Route::get('/dashboard', [ReviewerDashboardController::class, 'index'])
+            ->name('dashboard');
     });
 
 // Legacy profile routes

@@ -1,69 +1,79 @@
-# IMPLEMENTATION PLAN — ICHA
+# IMPLEMENTATION PLAN — ICHA (Reviewer Revised)
 
-## Phase 0 — Project Setup
-- Laravel 13
-- database
+## Phase 1 — Foundation
+- roles
 - authentication
-- Tailwind/Vite
-- base layout
-- role middleware/policies
+- reviewer profile
+- reviewer middleware/policies
+- reviewer layout
 
-## Phase 1 — Conference Foundation
-- conferences migration/model
-- conference CRUD
-- slug routing
-- active conference
-- conference portal
-- dynamic landing page
-- logo/hero upload
-
-## Phase 2 — CMS
-- categories/topics
-- speakers
-- committee
-- timeline
-- registration types
-- sponsors
-- FAQ
-- publication information
-
-## Phase 3 — Participant
-- participant profile
-- conference selection
-- registration
-- registration status
-- payment
-- proof upload
-- payment verification
-
-## Phase 4 — Submission
-- abstract
+## Phase 2 — Submission
+- submissions
 - authors
-- status transitions
-- revision flow
-- submission history
+- admin checking
+- submission statuses
 
-## Phase 5 — Paper & Presentation
-- full paper
-- paper versions
-- presentation file
-- schedule
-- presentation status
+## Phase 3 — Review Domain
+Create:
+- review_rounds
+- review_assignments
+- reviews
 
-## Phase 6 — Certificate & Publication
-- certificate management
-- certificate downloads
-- publication records
-- DOI/URL
+Create enums:
+- ReviewType
+- ReviewStatus
+- ReviewRoundStatus
+- RecommendationType
 
-## Phase 7 — Hardening
-- authorization review
-- conference isolation tests
-- upload security
-- validation
-- responsive UI
-- shared hosting deployment test
-- production configuration
+## Phase 4 — Reviewer Onboarding
+- login
+- first-login profile completion
+- profile validation/photo
+- block review until complete
 
-## Rule
-Do not proceed to the next phase while the current phase has broken migrations, broken relationships, or unresolved authorization/data-isolation problems.
+## Phase 5 — Assignment
+Admin:
+- reviewer list
+- assign three reviewers
+- prevent duplicate assignment
+- monitor 0/3 to 3/3
+
+Reviewer:
+- topics
+- assigned abstracts
+- pending/completed
+
+## Phase 6 — Abstract Review
+- blinded abstract
+- two criteria
+- 1–5 scores
+- total
+- ORAL/POSTER
+- confirmation
+- synchronous submit
+- summary
+
+## Phase 7 — Locking
+At 3/3:
+- lock round
+- prevent edits
+- persist result
+- notify participant
+
+Use a transaction and concurrency-safe locking.
+
+## Phase 8 — Revision
+Revision creates a new review round. Never overwrite historical reviews.
+
+## Phase 9 — Full Paper
+Reuse:
+```text
+review_round.type = full_paper
+```
+Do not implement detailed paper scoring until criteria are confirmed.
+
+## Phase 10 — Testing
+Test reviewer profile, assignment ownership, blinding, scoring, duplicate submission, locking, history and conference isolation.
+
+## Phase 11 — Shared Hosting
+Verify no mandatory worker/Redis/WebSocket is required and review submission works synchronously.

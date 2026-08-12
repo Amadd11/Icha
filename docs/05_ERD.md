@@ -1,100 +1,152 @@
-# ERD — ICHA
+# ERD — ICHA (Reviewer Revised)
 
-## Core Relationship
-
-Conference is the root of conference-specific data.
-
+## Core
 ```text
 Conference
-├── Speakers
-├── Categories
-├── Committee Members
-├── Timelines
-├── Registration Types
-├── Sponsors
-├── Registrations
-│   └── Payments
-└── Submissions
-    ├── Authors
-    ├── Paper Versions
-    ├── Presentations
-    ├── Certificates
-    └── Publications
+ ├─ Topics
+ ├─ Registrations
+ └─ Submissions
+      ├─ Authors
+      ├─ Review Rounds
+      │    └─ Review Assignments
+      │         └─ Reviews
+      ├─ Paper Versions
+      ├─ Presentations
+      ├─ Certificates
+      └─ Publications
 ```
 
-## Suggested Tables
+## users
+```text
+id
+name
+email
+password
+role
+must_complete_reviewer_profile
+timestamps
+```
 
-### conferences
-id, title, slug, year, tagline, description, theme, start_date, end_date, venue, city, country, email, phone, website, logo, hero_image, status, is_active, timestamps
+Roles: super_admin, admin, reviewer, participant.
 
-### users
-id, name, email, password, role, timestamps
+## reviewer_profiles
+```text
+id
+user_id
+title
+full_name
+date_of_birth
+university
+affiliation
+country
+phone
+photo
+completed_at
+timestamps
+```
 
-Roles:
-super_admin, admin, participant
+Fields follow the supplied reviewer guideline. fileciteturn2file0L32-L35
 
-### participants
-id, user_id, affiliation, phone, country, address, profile fields, timestamps
+## submissions
+```text
+id
+conference_id
+participant_id
+category_id
+registration_id
+title
+abstract
+keywords
+status
+submitted_at
+review_result
+presentation_type
+review_locked_at
+timestamps
+```
 
-### categories
-id, conference_id, name, description, sort_order, timestamps
+## review_rounds
+```text
+id
+submission_id
+type
+round_number
+required_reviewers
+status
+opened_at
+locked_at
+timestamps
+```
 
-### speakers
-id, conference_id, name, title, institution, country, biography, photo, sort_order, timestamps
+`type`: abstract, full_paper.
 
-### committee_members
-id, conference_id, name, role, institution, photo, sort_order, timestamps
+For abstract review, `required_reviewers = 3`.
 
-### timelines
-id, conference_id, title, description, date, sort_order, timestamps
+## review_assignments
+```text
+id
+review_round_id
+reviewer_id
+status
+assigned_at
+started_at
+submitted_at
+timestamps
+```
 
-### registration_types
-id, conference_id, name, description, price, currency, registration_deadline, timestamps
+Unique constraint:
+```text
+(review_round_id, reviewer_id)
+```
 
-### registrations
-id, conference_id, participant_id, registration_type_id, registration_number, status, registered_at, timestamps
+## reviews
+```text
+id
+review_assignment_id
+criteria_1_score
+criteria_2_score
+total_score
+recommendation
+comments
+submitted_at
+timestamps
+```
 
-A participant may have separate registrations for different conferences.
+For abstract:
+- each score 1–5
+- total = criterion 1 + criterion 2
+- total >= 5 → oral
+- total < 5 → poster
 
-### payments
-id, registration_id, amount, payment_method, proof_file, paid_at, verified_at, verified_by, status, notes, timestamps
+fileciteturn2file0L103-L105
 
-### submissions
-id, conference_id, participant_id, category_id, registration_id, title, abstract, keywords, status, submitted_at, timestamps
+## History
+Never overwrite old reviews. Revision creates a new review_round.
 
-### authors
-id, submission_id, name, email, institution, country, is_corresponding, is_presenter, author_order, timestamps
+## Relationships
+```text
+User
+ ├─ reviewerProfile
+ └─ reviewerAssignments
 
-### paper_versions
-id, submission_id, version, file_path, status, submitted_at, notes, timestamps
+Submission
+ ├─ authors
+ └─ reviewRounds
 
-### presentations
-id, submission_id, type, room, presentation_date, start_time, end_time, file_path, status, timestamps
+ReviewRound
+ ├─ submission
+ └─ reviewAssignments
 
-### certificates
-id, conference_id, participant_id, registration_id, submission_id nullable, type, certificate_number, file_path, issued_at, timestamps
+ReviewAssignment
+ ├─ reviewer
+ └─ review
+```
 
-### publications
-id, conference_id, submission_id nullable, type, name, volume, issue, doi, url, publication_date, status, timestamps
-
-### sponsors
-id, conference_id, name, logo, website, sponsorship_level, sort_order, timestamps
-
-### faqs
-id, conference_id nullable, question, answer, sort_order, timestamps
-
-## Foreign Key Rules
-Use foreign keys with appropriate `cascade`/`restrict` behavior.
-
-Conference deletion should normally be restricted once operational records exist. Prefer archiving over deleting a conference.
-
-## Unique Constraints
-Recommended:
-- conferences.slug unique
-- conferences.year may be indexed
-- registration_number unique
-- certificate_number unique
-- optionally `(conference_id, title)` only if business rules require it
-
-## Important Rule
-Never use a global child query where the page requires conference-specific data without applying `conference_id`.
+## Critical Constraints
+- one abstract review round requires three distinct reviewers
+- duplicate assignment prevented
+- reviewer sees only assigned work
+- blinded author data enforced by backend
+- round locks after 3 submitted reviews
+- historical reviews preserved
+- all data remains conference-isolated
