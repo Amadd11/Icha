@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\{
     PaymentController,
     PaperController,
     RegistrationController as AdminRegistrationController,
+    ReviewAssignmentController,
+    ReviewerManagementController,
     SpeakerController,
     SponsorController,
     TimelineController,
@@ -93,10 +95,13 @@ Route::prefix('admin')
         // Abstract Reviews
         Route::get('abstracts', [AbstractController::class, 'index'])->name('abstracts.index');
         Route::post('abstracts/{abstract}/review', [AbstractController::class, 'review'])->name('abstracts.review');
+        Route::post('abstracts/{abstract}/assign', [ReviewAssignmentController::class, 'store'])->name('abstracts.assign');
 
-        // Full Paper Reviews
-        Route::get('papers', [PaperController::class, 'index'])->name('papers.index');
+        Route::resource('papers', PaperController::class);
         Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
+
+        // Reviewer Management
+        Route::resource('reviewers', ReviewerManagementController::class)->except(['show']);
     });
 
 // Reviewer routes
@@ -106,6 +111,8 @@ Route::prefix('reviewer')
     ->group(function () {
         Route::get('/dashboard', [ReviewerDashboardController::class, 'index'])
             ->name('dashboard');
+        Route::post('/assignments/{assignment}/review', [\App\Http\Controllers\Reviewer\ReviewSubmissionController::class, 'store'])
+            ->name('assignments.review');
     });
 
 // Legacy profile routes

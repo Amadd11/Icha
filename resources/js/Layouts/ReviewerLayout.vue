@@ -5,9 +5,20 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 const isMobileOpen = ref(false);
 const page = usePage();
 
-const navigation = [
-    { name: 'Dashboard', routeName: 'reviewer.dashboard' },
-    // TODO: Add more routes like Pending Reviews, Completed Reviews
+const navigationGroups = [
+    {
+        name: 'PROFILE',
+        items: [
+            { name: 'My Profile', routeName: 'profile.edit', hash: '#profile-info', icon: 'person' },
+            { name: 'Change Password', routeName: 'profile.edit', hash: '#change-password', icon: 'key' },
+        ]
+    },
+    {
+        name: 'SUBMISSION',
+        items: [
+            { name: 'Review', routeName: 'reviewer.dashboard', icon: 'folder' },
+        ]
+    }
 ];
 
 function logout() {
@@ -32,16 +43,22 @@ function logout() {
                 </Link>
             </div>
 
-            <nav class="flex-1 space-y-2 px-4 py-6 overflow-y-auto">
-                <Link
-                    v-for="item in navigation"
-                    :key="item.name"
-                    :href="route(item.routeName)"
-                    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200"
-                    :class="route().current(item.routeName) ? 'bg-gold text-slate-950 font-bold shadow-md' : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'"
-                >
-                    <span>{{ item.name }}</span>
-                </Link>
+            <nav class="flex-1 space-y-6 px-4 py-6 overflow-y-auto">
+                <div v-for="group in navigationGroups" :key="group.name" class="space-y-3">
+                    <h3 class="px-2 text-[10px] font-black text-purple-200/50 uppercase tracking-widest">{{ group.name }}</h3>
+                    <div class="space-y-1">
+                        <Link
+                            v-for="item in group.items"
+                            :key="item.name"
+                            :href="route(item.routeName) + (item.hash || '')"
+                            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
+                            :class="route().current(item.routeName) && (!item.hash || $page.url.includes(item.hash)) ? 'bg-gold text-slate-950 font-bold shadow-md' : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'"
+                        >
+                            <span class="material-symbols-outlined text-[20px]">{{ item.icon }}</span>
+                            <span>{{ item.name }}</span>
+                        </Link>
+                    </div>
+                </div>
             </nav>
 
             <!-- User Footer -->
@@ -71,16 +88,22 @@ function logout() {
         <!-- Mobile Menu Overlay -->
         <div v-if="isMobileOpen" class="md:hidden fixed inset-0 z-30 bg-sidebar/95 backdrop-blur-sm flex flex-col pt-16">
             <nav class="flex-1 px-4 py-6 flex flex-col gap-2 overflow-y-auto">
-                <Link
-                    v-for="item in navigation"
-                    :key="item.name"
-                    :href="route(item.routeName)"
-                    @click="isMobileOpen = false"
-                    class="block rounded-xl px-4 py-3 font-semibold transition"
-                    :class="route().current(item.routeName) ? 'bg-gold text-slate-900 shadow-md' : 'text-purple-100 hover:bg-purple-800/50 hover:text-gold'"
-                >
-                    {{ item.name }}
-                </Link>
+                    <div v-for="group in navigationGroups" :key="group.name" class="space-y-3">
+                        <h3 class="px-2 text-[10px] font-black text-purple-200/50 uppercase tracking-widest">{{ group.name }}</h3>
+                        <div class="space-y-1">
+                            <Link
+                                v-for="item in group.items"
+                                :key="item.name"
+                                :href="route(item.routeName) + (item.hash || '')"
+                                @click="isMobileOpen = false"
+                                class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200"
+                                :class="route().current(item.routeName) && (!item.hash || $page.url.includes(item.hash)) ? 'bg-gold text-slate-950 font-bold shadow-md' : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'"
+                            >
+                                <span class="material-symbols-outlined text-[20px]">{{ item.icon }}</span>
+                                <span>{{ item.name }}</span>
+                            </Link>
+                        </div>
+                    </div>
                 <button @click="logout" class="block rounded-xl px-4 py-3 font-semibold text-left text-red-400 hover:bg-red-500/10">
                     Logout
                 </button>

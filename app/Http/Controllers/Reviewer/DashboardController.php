@@ -17,6 +17,7 @@ class DashboardController extends Controller
     {
         return Inertia::render('Reviewer/Dashboard', [
             'stats' => $this->dashboardService->getStats(),
+            'assignments' => \App\Http\Resources\Review\ReviewAssignmentResource::collection($this->dashboardService->getAssignments()),
         ]);
     }
 }

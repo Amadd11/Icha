@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->hasMany(Registration::class);
     }
 
+    public function categories(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
     // ─── Role Helpers ───────────────────────────────────────────────
 
     public function isSuperAdmin(): bool

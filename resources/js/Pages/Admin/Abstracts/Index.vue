@@ -5,16 +5,22 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 const props = defineProps({
     abstracts: Array,
+    reviewers: Array,
     filters: Object,
 });
 
 const selectedStatus = ref(props.filters?.status || 'all');
 const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
+const isAssignModalOpen = ref(false);
 
 const reviewForm = useForm({
     status: 'accepted',
     review_notes: '',
+});
+
+const assignForm = useForm({
+    reviewer_ids: [],
 });
 
 function applyFilter() {
@@ -41,6 +47,41 @@ function submitReview() {
         },
     });
 }
+
+function openAssignModal(item) {
+    activeAbstract.value = item;
+    
+    // Find a pending round if exists
+    const pendingRound = item.review_rounds?.find(r => r.status === 'pending') || item.reviewRounds?.find(r => r.status === 'pending');
+    
+    if (pendingRound && pendingRound.assignments) {
+        assignForm.reviewer_ids = pendingRound.assignments.map(a => a.reviewer_id);
+    } else {
+        assignForm.reviewer_ids = [];
+    }
+    
+    isAssignModalOpen.value = true;
+}
+
+function submitAssign() {
+    if (!activeAbstract.value) return;
+
+    assignForm.post(route('admin.abstracts.assign', activeAbstract.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isAssignModalOpen.value = false;
+            activeAbstract.value = null;
+        },
+    });
+}
+
+import { computed } from 'vue';
+
+const eligibleReviewers = computed(() => {
+    if (!activeAbstract.value || !props.reviewers) return [];
+    const catId = activeAbstract.value.category_id;
+    return props.reviewers.filter(r => r.categories.some(c => c.id === catId));
+});
 </script>
 
 <template>
@@ -128,12 +169,20 @@ function submitReview() {
                                     </span>
                                 </td>
                                 <td class="px-5 py-4 text-right">
-                                    <button
-                                        @click="openReviewModal(item)"
-                                        class="px-3 py-1.5 rounded-xl bg-purple-50 text-primary hover:bg-primary hover:text-white font-bold text-xs transition-colors cursor-pointer"
-                                    >
-                                        Review
-                                    </button>
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button
+                                            @click="openAssignModal(item)"
+                                            class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-bold text-xs transition-colors cursor-pointer"
+                                        >
+                                            Assign
+                                        </button>
+                                        <button
+                                            @click="openReviewModal(item)"
+                                            class="px-3 py-1.5 rounded-xl bg-purple-50 text-primary hover:bg-primary hover:text-white font-bold text-xs transition-colors cursor-pointer"
+                                        >
+                                            Decision
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -189,6 +238,61 @@ function submitReview() {
                                 class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition shadow-md disabled:opacity-50"
                             >
                                 {{ reviewForm.processing ? 'Saving...' : 'Save Decision' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Assign Reviewer Modal -->
+            <div v-if="isAssignModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+                <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-slate-900 text-sm">Assign Reviewers</h3>
+                        <button @click="isAssignModalOpen = false" class="text-slate-400 hover:text-slate-600">✕</button>
+                    </div>
+
+                    <div class="space-y-2 text-xs">
+                        <p class="font-bold text-slate-800">{{ activeAbstract?.title }}</p>
+                        <p class="text-slate-500">Track: <span class="font-bold text-primary">{{ activeAbstract?.category?.name || 'General' }}</span></p>
+                    </div>
+
+                    <form @submit.prevent="submitAssign" class="space-y-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Select Reviewers (Max 3)</label>
+                            
+                            <div v-if="eligibleReviewers.length === 0" class="p-4 bg-amber-50 rounded-xl text-amber-700 text-xs font-bold text-center border border-amber-200">
+                                No reviewers available for this track. Please add reviewers with the matching track expertise first.
+                            </div>
+                            
+                            <div v-else class="bg-slate-50 rounded-xl border border-slate-200 p-3 max-h-48 overflow-y-auto space-y-2">
+                                <label v-for="rev in eligibleReviewers" :key="rev.id" class="flex items-start gap-2 cursor-pointer p-1 hover:bg-slate-100 rounded">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="assignForm.reviewer_ids" 
+                                        :value="rev.id" 
+                                        :disabled="assignForm.reviewer_ids.length >= 3 && !assignForm.reviewer_ids.includes(rev.id)"
+                                        class="mt-0.5 rounded text-primary focus:ring-primary border-slate-300 disabled:opacity-50" 
+                                    />
+                                    <span class="text-xs text-slate-700 font-semibold" :class="{'opacity-50': assignForm.reviewer_ids.length >= 3 && !assignForm.reviewer_ids.includes(rev.id)}">
+                                        {{ rev.name }} 
+                                        <span class="text-slate-400 font-normal">({{ rev.email }})</span>
+                                    </span>
+                                </label>
+                            </div>
+                            
+                            <p class="text-[10px] text-slate-500 mt-1.5 flex justify-between">
+                                <span>Select up to 3 reviewers.</span>
+                                <span class="font-bold" :class="assignForm.reviewer_ids.length > 0 ? 'text-primary' : ''">{{ assignForm.reviewer_ids.length }}/3 Selected</span>
+                            </p>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                            <button type="button" @click="isAssignModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                                Cancel
+                            </button>
+                            <button type="submit" :disabled="assignForm.processing || assignForm.reviewer_ids.length === 0" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition shadow-md disabled:opacity-50">
+                                {{ assignForm.processing ? 'Assigning...' : 'Assign Selected' }}
                             </button>
                         </div>
                     </form>

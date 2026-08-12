@@ -58,7 +58,8 @@ const navigationGroups = [
             { name: "Timeline", routeName: "admin.timelines.index" },
             { name: "Sponsors", routeName: "admin.sponsors.index" },
             { name: "Categories", routeName: "admin.categories.index" },
-            { name: "Committee", routeName: "admin.committees.index" },
+            { name: "Committees", routeName: "admin.committees.index" },
+            { name: "Reviewers", routeName: "admin.reviewers.index" },
         ]
     },
     {

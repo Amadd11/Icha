@@ -13,7 +13,7 @@ class AbstractReviewService
      */
     public function getAbstracts(?string $status = null): Collection
     {
-        $query = AbstractSubmission::with(['user', 'category', 'conference', 'reviewer'])
+        $query = AbstractSubmission::with(['user', 'category', 'conference', 'reviewRounds.assignments.reviewer'])
             ->latest();
 
         if ($status && $status !== 'all') {

@@ -13,4 +13,14 @@ class Category extends Model
     {
         return $this->belongsTo(Conference::class);
     }
+
+    public function abstracts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AbstractSubmission::class);
+    }
+
+    public function reviewers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
 }

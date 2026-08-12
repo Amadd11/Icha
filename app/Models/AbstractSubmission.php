@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AbstractSubmission extends Model
 {
@@ -56,5 +57,10 @@ class AbstractSubmission extends Model
     public function fullPaper(): HasOne
     {
         return $this->hasOne(FullPaper::class, 'abstract_id');
+    }
+
+    public function reviewRounds(): HasMany
+    {
+        return $this->hasMany(ReviewRound::class, 'submission_id')->where('submission_type', 'abstract');
     }
 }

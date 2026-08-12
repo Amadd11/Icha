@@ -18,9 +18,12 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user()->load('profile');
+
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'profile' => $user->profile,
         ]);
     }
 
@@ -29,15 +32,36 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return Redirect::route('profile.edit');
+        // Update or Create related Profile record
+        $user->profile()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'phone' => $validated['phone'] ?? null,
+                'institution' => $validated['institution'] ?? null,
+                'country' => $validated['country'] ?? 'Indonesia',
+                'city' => $validated['city'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'participant_category' => $validated['participant_category'] ?? 'non_student',
+                'identity_number' => $validated['identity_number'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+            ]
+        );
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**

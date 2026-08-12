@@ -20,10 +20,14 @@ class AbstractController extends Controller
     {
         $status = $request->input('status', 'all');
         $abstracts = $this->abstractReviewService->getAbstracts($status);
+        $reviewers = \App\Models\User::where('role', 'reviewer')->with('categories')->orderBy('name')->get();
 
         return Inertia::render('Admin/Abstracts/Index', [
-            'abstracts' => $abstracts,
-            'filters' => ['status' => $status],
+            'abstracts' => \App\Http\Resources\Submission\AdminAbstractResource::collection($abstracts),
+            'reviewers' => \App\Http\Resources\ReviewerResource::collection($reviewers),
+            'filters' => [
+                'status' => $status,
+            ],
         ]);
     }
 
