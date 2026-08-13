@@ -8,6 +8,7 @@ const props = defineProps({
     categories: Array,
     abstracts: Array,
     papers: Array,
+    isPaid: Boolean,
     statusChecklist: Object,
     userSummary: Object,
 });
@@ -90,8 +91,29 @@ function submitPaper() {
                 </div>
             </div>
 
+            <!-- Locked State if Payment Not Verified -->
+            <div v-if="!props.isPaid" class="bg-white rounded-2xl p-8 border border-amber-200 shadow-2xs text-center space-y-4">
+                <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto text-xl font-bold">
+                    🔒
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Submission Portal Locked</h3>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                        Payment verification is required before you can submit abstracts or full papers. Please complete registration and upload your payment receipt for admin verification.
+                    </p>
+                </div>
+                <div>
+                    <Link
+                        :href="route('participant.payment.index')"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition"
+                    >
+                        Upload Payment Receipt &rarr;
+                    </Link>
+                </div>
+            </div>
+
             <!-- Main Content Area: Left Form + Guideline | Right User Summary -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div v-else class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
                 <!-- Main Form & Guideline Section (Col-span 3) -->
                 <div class="lg:col-span-3 space-y-6">
@@ -105,7 +127,44 @@ function submitPaper() {
                             </h2>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- STATE 1: ALREADY UPLOADED -->
+                        <div v-if="props.statusChecklist?.hasUploadedAbstract && props.abstracts.length > 0" class="space-y-6">
+                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-center">
+                                <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                                    <span class="material-symbols-outlined text-3xl">check_circle</span>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-bold text-emerald-900 mb-1">Abstract Submitted Successfully</h3>
+                                    <p class="text-sm text-emerald-700">You have already submitted your abstract for this conference. You can only submit one abstract per registration.</p>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 border-b border-slate-100 pb-2">Your Submitted Abstract</h4>
+                                <div class="space-y-4 text-sm">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block mb-0.5">Abstract Code</span>
+                                        <span class="font-mono font-bold text-primary bg-purple-50 px-2 py-0.5 rounded">{{ props.abstracts[0].abstract_code }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-slate-500 block mb-0.5">Title</span>
+                                        <span class="font-bold text-slate-900">{{ props.abstracts[0].title }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-slate-500 block mb-0.5">Track / Category</span>
+                                        <span class="font-semibold text-slate-700">{{ props.abstracts[0].category?.name }}</span>
+                                    </div>
+                                    <div class="pt-2">
+                                        <span class="inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border border-amber-200 bg-amber-50 text-amber-700">
+                                            Status: Under Review
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STATE 2: UPLOAD FORM -->
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Left: Form -->
                             <form @submit.prevent="submitAbstract" class="space-y-4">
                                 <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">Submit Your Abstract Here</h3>
@@ -140,7 +199,7 @@ function submitPaper() {
                                     <select v-model="abstractForm.category_id" class="admin-input" required>
                                         <option value="" disabled>Select a topic...</option>
                                         <option v-for="cat in props.categories" :key="cat.id" :value="cat.id">
-                                            {{ cat.badge ? `[${cat.badge}] ` : '' }}{{ cat.name }}
+                                            {{ cat.name }}
                                         </option>
                                     </select>
                                     <span v-if="abstractForm.errors.category_id" class="text-[10px] text-rose-500 font-bold mt-1 block">{{ abstractForm.errors.category_id }}</span>

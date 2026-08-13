@@ -13,7 +13,10 @@ class AbstractReviewService
      */
     public function getAbstracts(?string $status = null): Collection
     {
+        $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
+
         $query = AbstractSubmission::with(['user', 'category', 'conference', 'reviewRounds.assignments.reviewer'])
+            ->when($confId, fn($q) => $q->where('conference_id', $confId))
             ->latest();
 
         if ($status && $status !== 'all') {

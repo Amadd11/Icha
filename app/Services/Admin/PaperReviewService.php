@@ -13,7 +13,10 @@ class PaperReviewService
      */
     public function getPapers(?string $status = null): Collection
     {
-        $query = FullPaper::with(['user', 'abstract', 'conference', 'reviewer'])
+        $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
+
+        $query = FullPaper::with(['user', 'abstract.category', 'conference', 'reviewer'])
+            ->when($confId, fn($q) => $q->where('conference_id', $confId))
             ->latest();
 
         if ($status && $status !== 'all') {

@@ -37,8 +37,7 @@ const navigationGroups = [
     {
         name: "Registrations",
         items: [
-            { name: "Participants", routeName: null },
-            { name: "Registrations", routeName: "admin.registrations.index" },
+            { name: "Participants", routeName: "admin.registrations.index" },
             { name: "Payments", routeName: "admin.payments.index" },
         ]
     },
@@ -47,8 +46,6 @@ const navigationGroups = [
         items: [
             { name: "Abstracts", routeName: "admin.abstracts.index" },
             { name: "Full Papers", routeName: "admin.papers.index" },
-            { name: "Presentations", routeName: null },
-            { name: "Publications", routeName: null },
         ]
     },
     {
@@ -61,23 +58,15 @@ const navigationGroups = [
             { name: "Committees", routeName: "admin.committees.index" },
             { name: "Reviewers", routeName: "admin.reviewers.index" },
         ]
-    },
-    {
-        name: "System",
-        items: [
-            { name: "Certificates", routeName: null },
-            { name: "FAQ", routeName: null },
-            { name: "Settings", routeName: null },
-        ]
     }
 ];
 
 function switchConference(e) {
     const confId = e.target.value;
     router.get(
-        route("admin.dashboard"),
+        window.location.pathname,
         { conference_id: confId },
-        { preserveState: true },
+        { preserveState: false },
     );
 }
 

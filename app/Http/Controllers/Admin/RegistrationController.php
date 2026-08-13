@@ -13,8 +13,10 @@ class RegistrationController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->query('status');
+        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
 
         $registrations = Registration::with(['user.profile', 'registrationType', 'payment'])
+            ->when($confId, fn($q) => $q->where('conference_id', $confId))
             ->when($status, fn($q) => $q->where('status', $status))
             ->latest()
             ->paginate(15)

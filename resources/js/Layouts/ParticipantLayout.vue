@@ -6,11 +6,10 @@ const isMobileOpen = ref(false);
 
 const navigation = [
     { name: 'Dashboard', routeName: 'dashboard' },
-    { name: 'Profile', routeName: 'participant.profile.edit' },
-    { name: 'Registration', routeName: 'participant.registration.create' },
-    { name: 'Payment', routeName: 'participant.payment.index' },
+    { name: 'Registration & Payment', routeName: 'participant.registration.create' },
     { name: 'Submission', routeName: 'participant.submission.index' },
     { name: 'Certificate', routeName: 'participant.certificate.index' },
+    { name: 'Profile', routeName: 'participant.profile.edit' },
 ];
 
 function logout() {

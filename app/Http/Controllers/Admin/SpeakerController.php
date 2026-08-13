@@ -13,11 +13,13 @@ use Inertia\Response;
 
 class SpeakerController extends Controller
 {
-    public function index(): Response
+    public function index(\Illuminate\Http\Request $request): Response
     {
-        $conferences = Conference::active()->get(['id', 'title']);
+        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
+
+        $conferences = Conference::select(['id', 'title'])->get();
         $speakers = Speaker::with('conference:id,title')
-            ->orderBy('conference_id')
+            ->when($confId, fn($q) => $q->where('conference_id', $confId))
             ->orderBy('order')
             ->get();
 

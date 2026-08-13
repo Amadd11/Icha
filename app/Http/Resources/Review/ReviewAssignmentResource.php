@@ -14,8 +14,8 @@ class ReviewAssignmentResource extends JsonResource
             'review_round_id' => $this->review_round_id,
             'reviewer_id' => $this->reviewer_id,
             'status' => $this->status,
-            'round' => new ReviewRoundResource($this->whenLoaded('round')),
-            'review' => new ReviewResource($this->whenLoaded('review')),
+            'round' => ReviewRoundResource::make($this->whenLoaded('round')),
+            'review' => ReviewResource::make($this->whenLoaded('review')),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

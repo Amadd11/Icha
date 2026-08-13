@@ -20,13 +20,7 @@ const props = defineProps({
     availableConferences: Array,
 });
 
-const { countdown } = useCountdown("2026-11-10T08:00:00+07:00");
-
-const aboutStats = [
-    { value: "4", label: "Scientific Tracks" },
-    { value: "2", label: "Conference Days" },
-    { value: "3", label: "Host Universities" },
-];
+const { countdown } = useCountdown(props.activeConference?.event_date || "2026-11-10T08:00:00+07:00");
 
 const countdownUnits = [
     { label: "Days", key: "days" },
@@ -35,89 +29,16 @@ const countdownUnits = [
     { label: "Seconds", key: "seconds" },
 ];
 
-const defaultTracks = [
-    {
-        badge: "Track 01",
-        icon: "🎓",
-        title: "Healthcare Administration Education",
-        description: "Curriculum, learning innovation, and academic development in healthcare administration.",
-        cardClass: "group overflow-hidden bg-gradient-to-br from-sidebar to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-    },
-    {
-        badge: "Track 02",
-        icon: "🏥",
-        title: "Hospital Leadership & Management",
-        description: "Leadership, governance, strategy, and operational excellence in healthcare organizations.",
-        cardClass: "group overflow-hidden bg-gradient-to-br from-primary-dark to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-    },
-    {
-        badge: "Track 03",
-        icon: "🤖",
-        title: "Quality, Innovation & Digital Health",
-        description: "Quality improvement, patient safety, technology, and digital transformation in health services.",
-        cardClass: "group overflow-hidden bg-gradient-to-br from-sidebar to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-    },
-    {
-        badge: "Track 04",
-        icon: "🌍",
-        title: "Health Policy, Research & Sustainability",
-        description: "Health policy, health economics, research methods, and sustainable health systems development.",
-        cardClass: "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-    },
-];
-
 const tracks = computed(() => {
     if (props.activeConference?.categories?.length) {
-        const bgClasses = [
-            "group overflow-hidden bg-gradient-to-br from-sidebar to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-            "group overflow-hidden bg-gradient-to-br from-primary-dark to-primary text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-            "group overflow-hidden bg-gradient-to-br from-sidebar to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-            "group overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white transition-all hover:-translate-y-2 hover:shadow-2xl",
-        ];
-        return props.activeConference.categories.map((c, i) => ({
-            badge: c.badge || `Track 0${i + 1}`,
-            icon: c.icon || "🎓",
+        return props.activeConference.categories.map((c, idx) => ({
+            badge: c.badge || `Track 0${idx + 1}`,
             title: c.name,
             description: c.description,
-            cardClass: bgClasses[i % bgClasses.length],
         }));
     }
-    return defaultTracks;
+    return [];
 });
-
-const defaultTimelineItems = [
-    {
-        period: "July - August 2026",
-        title: "Preparation & Launch",
-        points: [
-            "24–25 Jul – PIPMARSI Meeting",
-            "5 Aug – TOR & Branding Finalization",
-            "8 Aug – Committee Formation",
-            "11 Aug – 1st Announcement & Call for Abstract",
-        ],
-        borderClass: "border-primary-dark",
-    },
-    {
-        period: "September 2026",
-        title: "Speaker Confirmation",
-        points: [
-            "7 Sep – Keynote invitations sent",
-            "21 Sep – 70% keynote confirmed",
-            "22 Sep – 2nd Announcement & Registration Opens",
-        ],
-        borderClass: "border-primary",
-    },
-    {
-        period: "October 2026",
-        title: "Abstract Selection",
-        points: [
-            "3 Oct – Abstract submission closed",
-            "4–10 Oct – Abstract review",
-            "12 Oct – Acceptance notification",
-        ],
-        borderClass: "border-primary",
-    },
-];
 
 const timelineItems = computed(() => {
     if (props.activeConference?.timelines?.length) {
@@ -128,7 +49,7 @@ const timelineItems = computed(() => {
             borderClass: 'border-primary',
         }));
     }
-    return defaultTimelineItems;
+    return [];
 });
 
 onMounted(() => {
@@ -163,20 +84,19 @@ onMounted(() => {
         <Hero :conference="props.activeConference" :countdown="countdown" :countdown-units="countdownUnits" />
 
         <About
+            :conference="props.activeConference"
             eyebrow="About the Conference"
-            :title="props.activeConference?.theme || 'Healthcare Administration for a Sustainable Future'"
-            :description="props.activeConference?.description || 'ICHA 2026 brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices for the future of health systems.'"
-            :stats="aboutStats"
         />
 
         <Topics
             eyebrow="Scientific Programme"
             title="Scientific Tracks"
-            description="Four focused tracks covering the full spectrum of healthcare administration research and practice."
+            description="Focused tracks covering the full spectrum of healthcare administration research and practice."
             :items="tracks"
         />
 
         <Timeline
+            v-if="timelineItems.length"
             eyebrow="Preparation Schedule"
             title="Conference Timeline"
             description="Key milestones from preparation through to the conference event."
@@ -184,6 +104,7 @@ onMounted(() => {
         />
 
         <Speakers
+            v-if="props.activeConference?.speakers?.length"
             eyebrow="Distinguished Guests"
             title="Keynote & Invited Speakers"
             description="Keynote and plenary speakers representing leading institutions."
@@ -195,6 +116,7 @@ onMounted(() => {
         <Venue />
 
         <Sponsors
+            v-if="props.activeConference?.sponsors?.length"
             eyebrow="Partnership Opportunities"
             title="Sponsorship & Exhibition"
             description="Join us as a sponsor and connect with the healthcare administration community."

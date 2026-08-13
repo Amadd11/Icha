@@ -59,6 +59,13 @@ function groupedSpeakers() {
             items: groups[t],
         }));
 }
+function formatStorageUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/storage/')) return path;
+    if (path.startsWith('storage/')) return '/' + path;
+    return '/storage/' + path;
+}
 </script>
 
 <template>
@@ -91,17 +98,17 @@ function groupedSpeakers() {
                         >
                             <!-- Circular Photo with Ring -->
                             <div class="relative mb-5">
-                                <div class="h-44 w-44 rounded-full border-[3px] border-sky-300 bg-white p-1.5 shadow-sm">
-                                    <div class="h-full w-full overflow-hidden rounded-full bg-slate-100">
+                                <div class="h-44 w-44 rounded-full border-[3px] border-amber-300/80 bg-white p-1.5 shadow-sm">
+                                    <div class="h-full w-full overflow-hidden rounded-full bg-slate-100 flex items-center justify-center">
                                         <img
                                             v-if="speaker.photo"
-                                            :src="'/storage/' + speaker.photo"
+                                            :src="formatStorageUrl(speaker.photo)"
                                             :alt="speaker.name"
                                             class="h-full w-full object-cover"
                                         />
                                         <div
                                             v-else
-                                            class="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200"
+                                            class="flex h-full w-full items-center justify-center bg-linear-to-br from-slate-100 to-slate-200"
                                         >
                                             <svg class="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />

@@ -19,8 +19,12 @@ class PaymentController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->query('status', 'pending');
+        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
 
         $payments = Payment::with(['registration.user.profile', 'registration.registrationType', 'verifier'])
+            ->when($confId, function ($q) use ($confId) {
+                $q->whereHas('registration', fn($rq) => $rq->where('conference_id', $confId));
+            })
             ->when($status, fn($q) => $q->where('status', $status))
             ->latest()
             ->paginate(15)

@@ -6,6 +6,7 @@ use App\Models\AbstractSubmission;
 use App\Models\Category;
 use App\Models\Conference;
 use App\Models\FullPaper;
+use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -17,38 +18,47 @@ class SubmissionService
      */
     public function getSubmissionData(User $user): array
     {
-        $activeConference = Conference::where('is_active', true)->first();
+        $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
 
         $categories = $activeConference 
-            ? Category::where('conference_id', $activeConference->id)->get(['id', 'name', 'badge'])
+            ? Category::where('conference_id', $activeConference->id)->orWhereNull('conference_id')->get(['id', 'name', 'badge'])
             : Category::all(['id', 'name', 'badge']);
 
         $abstracts = AbstractSubmission::with('category')
             ->where('user_id', $user->id)
+            ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
             ->latest()
             ->get();
 
         $papers = FullPaper::with('abstract')
             ->where('user_id', $user->id)
+            ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
             ->latest()
             ->get();
 
-        $latestRegistration = Registration::where('user_id', $user->id)->latest()->first();
-        $hasPaid = $latestRegistration && $latestRegistration->status === 'paid';
+        // Check if user has a verified payment for this active conference
+        $isPaid = Payment::whereHas('registration', function ($q) use ($user, $activeConference) {
+            $q->where('user_id', $user->id);
+            if ($activeConference) {
+                $q->where('conference_id', $activeConference->id);
+            }
+        })->where('status', 'verified')->exists();
+
         $hasUploadedAbstract = $abstracts->count() > 0;
         $userCode = 'ICHA-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
 
         return [
             'activeConference' => $activeConference,
-            'categories' => $categories,
-            'abstracts' => $abstracts,
-            'papers' => $papers,
-            'statusChecklist' => [
+            'categories'       => $categories,
+            'abstracts'        => $abstracts,
+            'papers'           => $papers,
+            'isPaid'           => $isPaid,
+            'statusChecklist'  => [
                 'hasUploadedAbstract' => $hasUploadedAbstract,
-                'hasPaid' => $hasPaid,
-                'zoomLink' => 'Coming Soon.',
+                'hasPaid'             => $isPaid,
+                'zoomLink'            => 'Coming Soon.',
             ],
-            'userSummary' => [
+            'userSummary'      => [
                 'name' => $user->name,
                 'role' => ucfirst($user->role),
                 'code' => $userCode,
@@ -59,43 +69,79 @@ class SubmissionService
     /**
      * Handle Abstract Submission logic & file storage.
      */
-    public function submitAbstract(User $user, array $data, UploadedFile $file): AbstractSubmission
+    public function submitAbstract(User $user, array $data, ?UploadedFile $file = null): AbstractSubmission
     {
-        $activeConference = Conference::where('is_active', true)->first();
-        $path = $file->store('abstracts', 'public');
-        $code = 'ABS-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(3)));
+        $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
+
+        // Ensure user is paid before storing
+        $isPaid = Payment::whereHas('registration', function ($q) use ($user, $activeConference) {
+            $q->where('user_id', $user->id);
+            if ($activeConference) {
+                $q->where('conference_id', $activeConference->id);
+            }
+        })->where('status', 'verified')->exists();
+
+        if (!$isPaid) {
+            abort(403, 'Payment verification is required before submitting an abstract.');
+        }
+
+        $filePath = null;
+        if ($file) {
+            $filePath = $file->store('abstracts', 'public');
+        }
+
+        $abstractCount = AbstractSubmission::count() + 1;
+        $abstractCode = 'ABS-' . date('Y') . '-' . str_pad($abstractCount, 4, '0', STR_PAD_LEFT);
 
         return AbstractSubmission::create([
-            'abstract_code' => $code,
-            'user_id' => $user->id,
-            'conference_id' => $activeConference?->id ?? 1,
-            'category_id' => $data['category_id'],
-            'title' => $data['title'],
-            'abstract_text' => $data['abstract_text'] ?? null,
-            'keywords' => $data['keywords'] ?? null,
+            'user_id'           => $user->id,
+            'conference_id'     => $activeConference?->id,
+            'category_id'       => $data['category_id'],
+            'abstract_code'     => $abstractCode,
+            'title'             => $data['title'],
+            'abstract_text'     => $data['abstract_text'] ?? null,
+            'keywords'          => $data['keywords'] ?? null,
             'presentation_type' => $data['presentation_type'] ?? 'oral',
-            'file_path' => $path,
-            'status' => 'pending',
+            'file_path'         => $filePath,
+            'status'            => 'pending',
         ]);
     }
 
     /**
      * Handle Full Paper Submission logic & file storage.
      */
-    public function submitPaper(User $user, array $data, UploadedFile $file): FullPaper
+    public function submitPaper(User $user, array $data, ?UploadedFile $file = null): FullPaper
     {
-        $activeConference = Conference::where('is_active', true)->first();
-        $path = $file->store('full_papers', 'public');
-        $code = 'PAPER-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(3)));
+        $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
+
+        // Ensure user is paid before storing paper
+        $isPaid = Payment::whereHas('registration', function ($q) use ($user, $activeConference) {
+            $q->where('user_id', $user->id);
+            if ($activeConference) {
+                $q->where('conference_id', $activeConference->id);
+            }
+        })->where('status', 'verified')->exists();
+
+        if (!$isPaid) {
+            abort(403, 'Payment verification is required before submitting a full paper.');
+        }
+
+        $filePath = null;
+        if ($file) {
+            $filePath = $file->store('papers', 'public');
+        }
+
+        $paperCount = FullPaper::count() + 1;
+        $paperCode = 'FP-' . date('Y') . '-' . str_pad($paperCount, 4, '0', STR_PAD_LEFT);
 
         return FullPaper::create([
-            'paper_code' => $code,
-            'user_id' => $user->id,
-            'conference_id' => $activeConference?->id ?? 1,
-            'abstract_id' => $data['abstract_id'] ?? null,
-            'title' => $data['title'],
-            'file_path' => $path,
-            'status' => 'pending',
+            'user_id'       => $user->id,
+            'conference_id' => $activeConference?->id,
+            'abstract_id'   => $data['abstract_id'],
+            'paper_code'    => $paperCode,
+            'title'         => $data['title'],
+            'file_path'     => $filePath,
+            'status'        => 'pending',
         ]);
     }
 }

@@ -13,9 +13,7 @@ class Profile extends Model
         'institution',
         'country',
         'city',
-        'address',
         'participant_category',
-        'identity_number',
         'gender',
     ];
 

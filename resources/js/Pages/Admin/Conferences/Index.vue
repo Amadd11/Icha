@@ -7,89 +7,149 @@ const props = defineProps({
 });
 
 const statusColor = (status) => ({
-    draft:    'bg-slate-100 text-slate-600',
-    active:   'bg-green-100 text-green-700',
-    archived: 'bg-amber-100 text-amber-700',
-}[status] ?? 'bg-slate-100 text-slate-600');
+    draft:    'bg-slate-100 text-slate-600 border-slate-200',
+    active:   'bg-emerald-50 text-emerald-700 border-emerald-200',
+    archived: 'bg-amber-50 text-amber-700 border-amber-200',
+}[status] ?? 'bg-slate-100 text-slate-600 border-slate-200');
 
 function destroy(id) {
-    if (confirm('Delete this conference?')) {
+    if (confirm('Are you sure you want to delete this conference? This action cannot be undone.')) {
         router.delete(route('admin.conferences.destroy', id));
     }
+}
+
+function formatStorageUrl(path) {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/storage/')) return path;
+    if (path.startsWith('storage/')) return '/' + path;
+    return '/storage/' + path;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
 }
 </script>
 
 <template>
-    <Head title="Conferences - Admin" />
+    <Head title="Conferences Management - Admin" />
     <AdminLayout>
-        <div class="mb-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-xl font-bold text-slate-900">Conferences</h1>
-                <p class="text-xs text-slate-500">{{ conferences.length }} conference(s) found</p>
-            </div>
-            <Link
-                :href="route('admin.conferences.create')"
-                class="inline-flex items-center gap-2 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition px-4 py-2"
-            >
-                + New Conference
-            </Link>
-        </div>
+        <div class="space-y-6">
+            <!-- Header Row -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">Conference Editions</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Manage annual conference editions, themes, venue settings, and active portals.</p>
+                </div>
 
-        <!-- Table -->
-        <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100 bg-slate-50">
-                    <tr>
-                        <th class="px-5 py-3 text-left font-semibold text-slate-500">Title</th>
-                        <th class="px-5 py-3 text-left font-semibold text-slate-500">Date</th>
-                        <th class="px-5 py-3 text-left font-semibold text-slate-500">Status</th>
-                        <th class="px-5 py-3 text-left font-semibold text-slate-500">Active</th>
-                        <th class="px-5 py-3 text-right font-semibold text-slate-500">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="conferences.length === 0">
-                        <td colspan="5" class="px-5 py-10 text-center text-slate-400">No conferences yet.</td>
-                    </tr>
-                    <tr
-                        v-for="c in conferences"
-                        :key="c.id"
-                        class="border-b border-slate-50 transition hover:bg-slate-50/50 last:border-0"
+                <div>
+                    <Link
+                        :href="route('admin.conferences.create')"
+                        class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition shadow-xs cursor-pointer"
                     >
-                        <td class="px-5 py-4">
-                            <p class="font-semibold text-slate-800">{{ c.title }}</p>
-                            <p class="text-xs text-slate-400">{{ c.city }}, {{ c.country }}</p>
-                        </td>
-                        <td class="px-5 py-4 text-slate-600">
-                            {{ c.start_date ?? '—' }}
-                        </td>
-                        <td class="px-5 py-4">
-                            <span :class="['rounded-full px-2.5 py-1 text-xs font-bold capitalize', statusColor(c.status)]">
-                                {{ c.status }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-4">
-                            <span :class="c.is_active ? 'text-green-600' : 'text-slate-400'" class="text-xs font-semibold">
-                                {{ c.is_active ? 'Yes' : 'No' }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-4 text-right">
-                            <Link
-                                :href="route('admin.conferences.show', c.id)"
-                                class="mr-2 text-xs font-semibold text-primary hover:underline"
-                            >View</Link>
-                            <Link
-                                :href="route('admin.conferences.edit', c.id)"
-                                class="mr-2 text-xs font-semibold text-slate-600 hover:underline"
-                            >Edit</Link>
-                            <button
-                                @click="destroy(c.id)"
-                                class="text-xs font-semibold text-red-500 hover:underline"
-                            >Delete</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        + Add New Conference
+                    </Link>
+                </div>
+            </div>
+
+            <!-- Minimalist Table Card Container -->
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Annual Conferences List</h3>
+                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.conferences ? props.conferences.length : 0 }}</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="bg-slate-50 border-b border-slate-100 uppercase text-[11px] font-bold text-slate-500">
+                            <tr>
+                                <th scope="col" class="px-5 py-3">Conference Details</th>
+                                <th scope="col" class="px-5 py-3">Schedule & Location</th>
+                                <th scope="col" class="px-5 py-3">Status</th>
+                                <th scope="col" class="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-if="!props.conferences || props.conferences.length === 0">
+                                <td colspan="4" class="px-5 py-8 text-center text-xs text-slate-400">
+                                    No conferences found. Click "+ Add New Conference" to create one.
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="c in props.conferences"
+                                :key="c.id"
+                                class="hover:bg-slate-50/50 transition"
+                            >
+                                <!-- Title & Banner -->
+                                <td class="px-5 py-3.5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-10 w-14 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center p-0.5">
+                                            <img 
+                                                v-if="c.hero_image || c.logo" 
+                                                :src="formatStorageUrl(c.hero_image || c.logo)" 
+                                                alt="Banner" 
+                                                class="h-full w-full object-cover rounded" 
+                                            />
+                                            <span v-else class="text-[10px] font-bold text-slate-400">ICHA</span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <p class="font-bold text-slate-900 text-xs truncate max-w-sm">{{ c.title }}</p>
+                                                <span v-if="c.is_active" class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                                    Active Portal
+                                                </span>
+                                            </div>
+                                            <p v-if="c.theme" class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">
+                                                “{{ c.theme }}”
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Schedule & Location -->
+                                <td class="px-5 py-3.5">
+                                    <p class="font-bold text-slate-800 text-xs">
+                                        {{ formatDate(c.start_date) }} - {{ formatDate(c.end_date) }}
+                                    </p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">
+                                        {{ c.venue || 'Venue TBD' }}, {{ c.city || 'Surabaya' }}
+                                    </p>
+                                </td>
+
+                                <!-- Status Pill -->
+                                <td class="px-5 py-3.5">
+                                    <span :class="['inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase', statusColor(c.status)]">
+                                        {{ c.status }}
+                                    </span>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="px-5 py-3.5 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <Link
+                                            :href="route('admin.conferences.edit', c.id)"
+                                            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-50 transition"
+                                        >
+                                            Edit
+                                        </Link>
+                                        <button
+                                            @click="destroy(c.id)"
+                                            class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs transition cursor-pointer"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </AdminLayout>
 </template>

@@ -10,6 +10,9 @@ const props = defineProps({
     activeRegistration: Object,
     payment: Object,
     paymentStatus: String,
+    abstract: Object,
+    fullPaper: Object,
+    hasCertificate: Boolean,
     stages: Array,
     nextAction: Object,
     nearestDeadline: Object,
@@ -17,15 +20,15 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head title="Participant Dashboard" />
+    <Head title="Participant Workspace & Progress" />
 
     <ParticipantLayout>
         <div class="space-y-6">
             <!-- Welcome Header Banner -->
-            <div class="rounded-2xl bg-gradient-to-r from-sidebar via-purple-900 to-purple-950 p-6 md:p-8 text-white shadow-md flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-purple-800/40">
+            <div class="rounded-2xl bg-gradient-to-r from-sidebar via-purple-900 to-purple-950 p-6 md:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-purple-800/40">
                 <div>
-                    <span class="inline-block rounded-full bg-gold/20 px-3 py-1 text-xs font-bold text-gold border border-gold/30 mb-2 uppercase tracking-wider">
-                        {{ props.activeConference?.title || 'ICHA 2026' }} Participant
+                    <span class="inline-block rounded-md bg-gold/20 px-2.5 py-0.5 text-[11px] font-bold text-gold border border-gold/30 mb-2 uppercase tracking-wider">
+                        {{ props.activeConference?.title || 'ICHA 2026' }} Participant Portal
                     </span>
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
                         Welcome back, {{ props.user?.name || 'Participant' }}!
@@ -43,13 +46,13 @@ const props = defineProps({
             </div>
 
             <!-- Next Action Required Banner -->
-            <div v-if="props.nextAction" class="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div v-if="props.nextAction" class="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-start gap-3">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar text-gold font-black text-sm shadow-xs">
-                        !
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar text-gold font-black text-sm shadow-2xs">
+                        ➜
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-purple-950">Next Step: {{ props.nextAction.title }}</h3>
+                        <h3 class="text-sm font-bold text-purple-950">Next Action: {{ props.nextAction.title }}</h3>
                         <p class="text-xs text-purple-800 mt-0.5">{{ props.nextAction.description }}</p>
                     </div>
                 </div>
@@ -57,9 +60,9 @@ const props = defineProps({
                 <Link
                     v-if="props.nextAction.url"
                     :href="props.nextAction.url"
-                    class="inline-flex shrink-0 items-center justify-center rounded-xl bg-gold px-5 py-2.5 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-gold-dark"
+                    class="inline-flex shrink-0 items-center justify-center rounded-xl bg-gold hover:bg-amber-400 px-5 py-2.5 text-xs font-bold text-slate-950 transition cursor-pointer"
                 >
-                    {{ props.nextAction.button_label }} &rarr;
+                    {{ props.nextAction.button_label }} →
                 </Link>
             </div>
 
@@ -68,18 +71,20 @@ const props = defineProps({
 
             <!-- Detailed Status Grid -->
             <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Detailed Status Overview</h3>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Detailed Submission & Registration Status</h3>
+                </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <StatusCard
-                        title="Registration"
+                        title="Registration Category"
                         :status="props.activeRegistration ? 'Registered' : 'Not Registered'"
-                        :description="props.activeRegistration ? ('Category: ' + (props.activeRegistration.registration_type?.name || 'Standard')) : 'Please complete registration.'"
+                        :description="props.activeRegistration ? ('Category: ' + (props.activeRegistration.registration_type?.name || 'Standard')) : 'Please complete conference registration.'"
                         :variant="props.activeRegistration ? 'success' : 'default'"
                     />
                     <StatusCard
-                        title="Payment Status"
+                        title="Payment Receipt"
                         :status="props.paymentStatus || 'unpaid'"
-                        :description="props.paymentStatus === 'verified' ? 'Payment confirmed by Admin' : (props.paymentStatus === 'pending' ? 'Verification in progress' : 'Upload payment receipt to verify')"
+                        :description="props.paymentStatus === 'verified' ? 'Payment verified & confirmed by Admin' : (props.paymentStatus === 'pending' ? 'Verification in progress by Admin' : 'Upload payment receipt to verify')"
                         :variant="props.paymentStatus === 'verified' ? 'success' : (props.paymentStatus === 'pending' ? 'warning' : 'default')"
                     />
                     <StatusCard
@@ -95,13 +100,13 @@ const props = defineProps({
                         :variant="props.fullPaper?.status === 'accepted' ? 'success' : (props.fullPaper ? 'warning' : 'default')"
                     />
                     <StatusCard
-                        title="Presentation"
+                        title="Presentation Status"
                         :status="props.abstract?.status === 'accepted' ? 'eligible' : 'pending'"
-                        :description="props.abstract?.status === 'accepted' ? 'Author Presentation Eligible' : 'Schedule to be announced post acceptance'"
+                        :description="props.abstract?.status === 'accepted' ? 'Author Presentation Eligible' : 'Schedule to be announced post abstract acceptance'"
                         :variant="props.abstract?.status === 'accepted' ? 'success' : 'default'"
                     />
                     <StatusCard
-                        title="Certificate"
+                        title="E-Certificate"
                         :status="props.hasCertificate ? 'issued' : 'locked'"
                         :description="props.hasCertificate ? 'Verified E-Certificate Ready to Download' : 'Available post-payment or presentation'"
                         :variant="props.hasCertificate ? 'success' : 'default'"

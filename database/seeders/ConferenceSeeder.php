@@ -25,7 +25,6 @@ class ConferenceSeeder extends Seeder
                 'country'     => 'Indonesia',
                 'theme'       => 'Healthcare Administration for a Sustainable Future',
                 'email'       => 'info@icha2026.id',
-                'website'     => 'https://icha2026.id',
                 'status'      => 'active',
                 'is_active'   => true,
             ]

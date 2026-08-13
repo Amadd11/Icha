@@ -46,22 +46,20 @@ class ProfileController extends Controller
 
         $user->save();
 
-        // Update or Create related Profile record
+        // Update or Create related Profile record according to updated migration
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             [
                 'phone' => $validated['phone'] ?? null,
                 'institution' => $validated['institution'] ?? null,
-                'country' => $validated['country'] ?? 'Indonesia',
+                'country' => $validated['country'],
                 'city' => $validated['city'] ?? null,
-                'address' => $validated['address'] ?? null,
                 'participant_category' => $validated['participant_category'] ?? 'non_student',
-                'identity_number' => $validated['identity_number'] ?? null,
                 'gender' => $validated['gender'] ?? null,
             ]
         );
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit');
     }
 
     /**

@@ -12,10 +12,14 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function index(): Response
+    public function index(\Illuminate\Http\Request $request): Response
     {
+        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
+
         $categories = Category::with('conference:id,title')
-            ->orderBy('conference_id')
+            ->when($confId, function ($q) use ($confId) {
+                $q->where('conference_id', $confId)->orWhereNull('conference_id');
+            })
             ->orderBy('order')
             ->get();
 

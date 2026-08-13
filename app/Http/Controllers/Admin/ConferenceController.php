@@ -66,18 +66,32 @@ class ConferenceController extends Controller
     {
         $data = $request->validated();
 
-        if ($request->hasFile('logo')) {
+        if ($request->boolean('remove_logo')) {
+            if ($conference->logo) {
+                Storage::disk('public')->delete($conference->logo);
+            }
+            $data['logo'] = null;
+        } elseif ($request->hasFile('logo')) {
             if ($conference->logo) {
                 Storage::disk('public')->delete($conference->logo);
             }
             $data['logo'] = $request->file('logo')->store('conferences/logos', 'public');
+        } else {
+            unset($data['logo']);
         }
 
-        if ($request->hasFile('hero_image')) {
+        if ($request->boolean('remove_hero_image')) {
+            if ($conference->hero_image) {
+                Storage::disk('public')->delete($conference->hero_image);
+            }
+            $data['hero_image'] = null;
+        } elseif ($request->hasFile('hero_image')) {
             if ($conference->hero_image) {
                 Storage::disk('public')->delete($conference->hero_image);
             }
             $data['hero_image'] = $request->file('hero_image')->store('conferences/heroes', 'public');
+        } else {
+            unset($data['hero_image']);
         }
 
         $conference->update($data);

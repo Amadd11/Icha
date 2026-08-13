@@ -63,60 +63,79 @@ function submit() {
 
     <AdminLayout>
         <div class="space-y-6">
-            <!-- Header -->
+            <!-- Header Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Reviewer Management</h1>
-                    <p class="text-xs text-slate-500">Manage reviewer accounts and their assigned tracks/expertise.</p>
+                    <h1 class="text-xl font-bold text-slate-900">Reviewers & Track Expertise</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Manage reviewer accounts and their assigned scientific tracks/expertise.</p>
                 </div>
                 <button
                     @click="openCreateModal"
-                    class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white bg-primary rounded-xl hover:bg-primary-dark transition shadow-md w-full sm:w-auto"
+                    class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition shadow-xs cursor-pointer"
                 >
-                    <span class="material-symbols-outlined text-[18px]">add</span>
-                    Add Reviewer
+                    + Add New Reviewer
                 </button>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] overflow-hidden">
+            <!-- Minimalist Reviewers Table Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Peer-Reviewers Directory</h3>
+                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.reviewers ? props.reviewers.length : 0 }}</span>
+                </div>
+
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50/50 border-b border-gray-100">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="bg-slate-50 border-b border-slate-100 uppercase text-[11px] font-bold text-slate-500">
                             <tr>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs">Name / Email</th>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs">Tracks (Expertise)</th>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs text-right">Actions</th>
+                                <th scope="col" class="px-5 py-3">Reviewer Name & Email</th>
+                                <th scope="col" class="px-5 py-3">Track Expertise</th>
+                                <th scope="col" class="px-5 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-slate-100">
                             <tr v-if="!props.reviewers || props.reviewers.length === 0">
-                                <td colspan="3" class="px-5 py-10 text-center text-xs text-gray-400">No reviewers found.</td>
-                            </tr>
-                            <tr v-for="reviewer in props.reviewers" :key="reviewer.id" class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-5 py-4">
-                                    <p class="font-bold text-gray-800 text-sm">{{ reviewer.name }}</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">{{ reviewer.email }}</p>
+                                <td colspan="3" class="px-5 py-8 text-center text-xs text-slate-400">
+                                    No reviewers registered yet. Click "+ Add New Reviewer" to add one.
                                 </td>
-                                <td class="px-5 py-4">
-                                    <div class="flex flex-wrap gap-1">
-                                        <span v-if="reviewer.categories.length === 0" class="text-xs text-slate-400 italic">No tracks assigned</span>
-                                        <span
-                                            v-for="cat in reviewer.categories"
-                                            :key="cat.id"
-                                            class="inline-flex items-center px-2 py-0.5 rounded border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-bold"
-                                        >
-                                            {{ cat.name }}
-                                        </span>
+                            </tr>
+                            <tr v-for="reviewer in props.reviewers" :key="reviewer.id" class="hover:bg-slate-50/50 transition">
+                                <!-- Name & Email -->
+                                <td class="px-5 py-3.5">
+                                    <p class="font-bold text-slate-900 text-xs">{{ reviewer.name }}</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">{{ reviewer.email }}</p>
+                                </td>
+
+                                <!-- Tracks -->
+                                <td class="px-5 py-3.5">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <template v-if="reviewer.categories && reviewer.categories.length > 0">
+                                            <span
+                                                v-for="cat in reviewer.categories"
+                                                :key="cat.id"
+                                                class="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-bold bg-purple-50 text-purple-800 border border-purple-200"
+                                            >
+                                                {{ cat.name }}
+                                            </span>
+                                        </template>
+                                        <span v-else class="text-xs text-slate-400 italic">No tracks assigned</span>
                                     </div>
                                 </td>
-                                <td class="px-5 py-4 text-right">
+
+                                <!-- Actions -->
+                                <td class="px-5 py-3.5 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <button @click="openEditModal(reviewer)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
-                                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                                        <button
+                                            @click="openEditModal(reviewer)"
+                                            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-50 transition cursor-pointer"
+                                        >
+                                            Edit
                                         </button>
-                                        <button @click="deleteReviewer(reviewer)" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete">
-                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        <button
+                                            @click="deleteReviewer(reviewer)"
+                                            class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs transition cursor-pointer"
+                                        >
+                                            Delete
                                         </button>
                                     </div>
                                 </td>
@@ -126,44 +145,38 @@ function submit() {
                 </div>
             </div>
 
-            <!-- Modal -->
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-                <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <h3 class="font-bold text-slate-900 text-sm">{{ editingReviewer ? 'Edit Reviewer' : 'Add New Reviewer' }}</h3>
-                        <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600">✕</button>
+            <!-- Reviewer Modal -->
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+                <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg border border-slate-200 text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <h3 class="text-sm font-bold text-slate-900">{{ editingReviewer ? 'Edit Reviewer' : 'Add New Reviewer' }}</h3>
+                        <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                     </div>
 
-                    <form @submit.prevent="submit" class="space-y-4 pt-2">
+                    <form @submit.prevent="submit" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
-                            <input v-model="form.name" type="text" class="admin-input" required placeholder="e.g. Dr. John Doe" />
-                            <div v-if="form.errors.name" class="text-rose-500 text-[10px] mt-1">{{ form.errors.name }}</div>
+                            <label class="mb-1 block font-bold text-slate-700">Full Name <span class="text-red-500">*</span></label>
+                            <input v-model="form.name" type="text" class="admin-input" placeholder="e.g. Dr. Jane Smith" required />
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
-                            <input v-model="form.email" type="email" class="admin-input" required placeholder="john@example.com" />
-                            <div v-if="form.errors.email" class="text-rose-500 text-[10px] mt-1">{{ form.errors.email }}</div>
-                            <p v-if="!editingReviewer" class="text-[10px] text-slate-500 mt-1">Default password for new reviewer is: <strong>password</strong></p>
+                            <label class="mb-1 block font-bold text-slate-700">Email Address <span class="text-red-500">*</span></label>
+                            <input v-model="form.email" type="email" class="admin-input" placeholder="reviewer@university.ac.id" required />
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-2">Expertise Tracks (Categories)</label>
-                            <div class="bg-slate-50 rounded-xl border border-slate-200 p-3 max-h-48 overflow-y-auto space-y-2">
-                                <label v-for="cat in categories" :key="cat.id" class="flex items-start gap-2 cursor-pointer p-1 hover:bg-slate-100 rounded">
-                                    <input type="checkbox" v-model="form.category_ids" :value="cat.id" class="mt-0.5 rounded text-primary focus:ring-primary border-slate-300" />
-                                    <span class="text-xs text-slate-700 font-semibold">{{ cat.name }}</span>
+                            <label class="mb-1.5 block font-bold text-slate-700">Assigned Scientific Tracks (Expertise)</label>
+                            <div class="space-y-1.5 max-h-40 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50/50">
+                                <label v-for="cat in props.categories" :key="cat.id" class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input type="checkbox" :value="cat.id" v-model="form.category_ids" class="rounded border-slate-300 text-purple-700 focus:ring-purple-700" />
+                                    <span>{{ cat.name }}</span>
                                 </label>
                             </div>
-                            <div v-if="form.errors.category_ids" class="text-rose-500 text-[10px] mt-1">{{ form.errors.category_ids }}</div>
                         </div>
 
-                        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                            <button type="button" @click="isModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                                Cancel
-                            </button>
-                            <button type="submit" :disabled="form.processing" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition shadow-md disabled:opacity-50">
+                        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button type="button" @click="isModalOpen = false" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                            <button type="submit" :disabled="form.processing" class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 px-5 py-2 font-bold cursor-pointer transition">
                                 {{ form.processing ? 'Saving...' : 'Save Reviewer' }}
                             </button>
                         </div>

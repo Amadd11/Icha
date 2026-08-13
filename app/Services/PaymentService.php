@@ -48,7 +48,7 @@ class PaymentService
      */
     public function verifyPayment(Payment $payment, User $admin, string $action, ?string $rejectionReason = null): bool
     {
-        return DB::transaction(function () use ($payment, $admin, $action, $rejectionReason) {
+        $result = DB::transaction(function () use ($payment, $admin, $action, $rejectionReason) {
             $registration = $payment->registration;
 
             if ($action === 'approve') {
@@ -77,5 +77,23 @@ class PaymentService
 
             return true;
         });
+
+        // Automatically send email notification to participant
+        try {
+            $payment->loadMissing(['registration.user', 'registration.conference', 'registration.registrationType']);
+            $userEmail = $payment->registration->user->email ?? null;
+
+            if ($userEmail) {
+                if ($action === 'approve') {
+                    \Illuminate\Support\Facades\Mail::to($userEmail)->send(new \App\Mail\PaymentApprovedMail($payment));
+                } else {
+                    \Illuminate\Support\Facades\Mail::to($userEmail)->send(new \App\Mail\PaymentRejectedMail($payment));
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $result;
     }
 }

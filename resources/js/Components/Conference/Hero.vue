@@ -17,12 +17,17 @@ const props = defineProps({
 });
 
 const carouselImages = computed(() => {
-    const images = [];
     if (props.conference?.hero_image) {
-        images.push('/storage/' + props.conference.hero_image);
+        const path = props.conference.hero_image;
+        const formatted = (path.startsWith('http://') || path.startsWith('https://'))
+            ? path
+            : (path.startsWith('/storage/') ? path : (path.startsWith('storage/') ? '/' + path : '/storage/' + path));
+        return [formatted];
     }
-    images.push('/assets/images/umsura.png');
-    return images;
+    return [
+        '/assets/images/umsura.png',
+        '/assets/images/umsura1.png',
+    ];
 });
 
 const currentIndex = ref(0);
@@ -42,46 +47,39 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <section id="hero" class="relative flex min-h-screen flex-col lg:flex-row bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 overflow-hidden pt-8">
+    <section id="hero" class="relative flex min-h-screen flex-col lg:flex-row bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 overflow-hidden pt-12 lg:pt-16 pb-8">
         
         <!-- Subtle Grid Pattern for Texture -->
         <div class="absolute inset-0 z-0 pointer-events-none opacity-10" :style="{ backgroundImage: 'url(\'data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm1 1h38v38H1V1z\' fill=\'%23ffffff\' fill-opacity=\'0.1\' fill-rule=\'evenodd\'/%3E%3C/svg%3E\')' }"></div>
 
         <!-- Left Column (Content) -->
-        <div class="relative z-10 flex w-full lg:w-1/2 flex-col justify-center px-6 py-12 md:px-12 lg:px-20 xl:px-28">
+        <div class="relative z-10 flex w-full lg:w-1/2 flex-col justify-center px-6 py-6 md:px-12 lg:px-16 xl:px-24">
             
             <!-- Badge & Subtitle -->
             <div class="mb-4 flex flex-col items-start gap-2">
-                <div class="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-900/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-purple-200 shadow-sm backdrop-blur-sm">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
-                    </span>
-                    <span>10th International Conference</span>
-                </div>
-                <p class="text-sm md:text-base font-bold uppercase tracking-[0.2em] text-gold">
+                <p class="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-gold">
                     {{ conference?.title ? '' : 'International Conference on Healthcare Administration' }}
                 </p>
             </div>
 
             <!-- Main Title -->
-            <h1 class="mb-5 font-sans text-5xl font-extrabold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-md">
+            <h1 class="mb-4 font-sans text-5xl font-extrabold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-md">
                 <span class="text-gold">
                     {{ conference?.title || 'ICHA 2026' }}
                 </span>
             </h1>
 
             <!-- Description -->
-            <p class="mb-8 text-base md:text-lg leading-relaxed text-purple-200 max-w-xl">
+            <p class="mb-6 text-base md:text-lg leading-relaxed text-purple-200 max-w-xl">
                 <strong class="font-bold text-white">{{ conference?.tagline || 'Musyawarah Nasional PIPMARSI' }}</strong><br />
                 <em class="not-italic opacity-90">{{ conference?.theme || 'Leading the Future of Healthcare Administration' }}</em>
             </p>
 
             <!-- Call To Actions -->
-            <div class="mb-10 flex flex-wrap items-center gap-4">
+            <div class="mb-8 flex flex-wrap items-center gap-4">
                 <a
                     href="#abstract"
-                    class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-gold to-yellow-500 px-8 py-4 text-sm font-bold text-slate-900 shadow-[0_0_20px_rgba(250,206,104,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(250,206,104,0.5)]"
+                    class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-gold to-yellow-500 px-7 py-3.5 text-sm font-bold text-slate-900 shadow-[0_0_20px_rgba(250,206,104,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(250,206,104,0.5)]"
                 >
                     <span class="relative z-10">Submit Your Abstract</span>
                     <svg class="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -91,16 +89,16 @@ onUnmounted(() => {
                 </a>
                 <a
                     href="#about"
-                    class="inline-flex items-center justify-center rounded-xl border border-purple-400/50 bg-white/5 backdrop-blur-sm px-8 py-4 text-sm font-bold text-white transition-all hover:border-white hover:bg-white/10"
+                    class="inline-flex items-center justify-center rounded-xl border border-purple-400/50 bg-white/5 backdrop-blur-sm px-7 py-3.5 text-sm font-bold text-white transition-all hover:border-white hover:bg-white/10"
                 >
                     Learn More
                 </a>
             </div>
 
             <!-- Info & Countdown Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-y border-purple-800/50 py-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-y border-purple-800/50 py-5 mb-6">
                 <!-- Quick Info -->
-                <div class="flex flex-col gap-5">
+                <div class="flex flex-col gap-4">
                     <div class="flex items-center gap-3">
                         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-800/40 text-purple-200 border border-purple-500/30 shrink-0">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,7 +126,7 @@ onUnmounted(() => {
 
                 <!-- Countdown -->
                 <div class="flex flex-col justify-center sm:border-l border-t sm:border-t-0 border-purple-800/50 pt-4 sm:pt-0 sm:pl-6">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-2">Time Remaining</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1.5">Time Remaining</span>
                     <div class="flex gap-4">
                         <div v-for="unit in countdownUnits" :key="unit.key" class="flex flex-col items-center">
                             <span class="text-2xl font-black tabular-nums tracking-tight text-white drop-shadow-md">{{ countdown[unit.key] }}</span>
@@ -139,22 +137,22 @@ onUnmounted(() => {
             </div>
 
             <!-- Hosted By -->
-            <div class="flex items-center gap-4">
-                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-400/70 hidden sm:block">Hosted by</span>
-                <div class="flex flex-wrap items-center gap-4">
-                    <img src="/assets/logo/logo-pipmarsi.png" alt="PIPMARSI" class="h-6 md:h-7 w-auto object-contain transition-transform hover:scale-105" />
-                    <img src="/assets/logo/logo-umsura.png" alt="UMSURA" class="h-6 md:h-7 w-auto object-contain transition-transform hover:scale-105" />
-                    <img src="/assets/logo/logo-ub.png" alt="Universitas Brawijaya" class="h-6 md:h-7 w-auto object-contain transition-transform hover:scale-105" />
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mt-2">
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-purple-300/80">Hosted by</span>
+                <div class="flex flex-wrap items-center gap-5 sm:gap-6">
+                    <img src="/assets/logo/logo-pipmarsi.png" alt="PIPMARSI" class="h-10 md:h-12 lg:h-14 w-auto object-contain drop-shadow-md transition-transform hover:scale-105" />
+                    <img src="/assets/logo/logo-umsura.png" alt="UMSURA" class="h-10 md:h-12 lg:h-14 w-auto object-contain drop-shadow-md transition-transform hover:scale-105" />
+                    <img src="/assets/logo/logo-ub.png" alt="Universitas Brawijaya" class="h-10 md:h-12 lg:h-14 w-auto object-contain drop-shadow-md transition-transform hover:scale-105" />
                 </div>
             </div>
 
         </div>
 
         <!-- Right Column (Image Carousel) -->
-        <div class="relative w-full lg:w-1/2 min-h-[50vh] lg:min-h-screen p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div class="relative w-full lg:w-1/2 p-6 md:p-8 lg:p-10 flex items-center justify-center">
             
-            <!-- Modern Rounded Carousel Container -->
-            <div class="relative w-full h-full overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl bg-slate-900">
+            <!-- Modern Large Rounded Carousel Container -->
+            <div class="relative w-full max-w-xl lg:max-w-2xl xl:max-w-3xl h-[380px] sm:h-[460px] md:h-[540px] lg:h-[600px] xl:h-[650px] overflow-hidden rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border border-purple-500/30 bg-slate-900">
                 
                 <!-- Images Loop -->
                 <transition-group name="carousel-fade" tag="div" class="absolute inset-0">
@@ -170,7 +168,7 @@ onUnmounted(() => {
                 </transition-group>
 
                 <!-- Carousel Indicators -->
-                <div v-if="carouselImages.length > 1" class="absolute top-8 right-8 z-20 flex gap-2">
+                <div v-if="carouselImages.length > 1" class="absolute top-6 right-6 z-20 flex gap-2">
                     <button 
                         v-for="(_, idx) in carouselImages" 
                         :key="idx" 

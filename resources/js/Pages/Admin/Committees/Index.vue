@@ -22,78 +22,91 @@ function deleteCommittee(id) {
     <AdminLayout>
         <div class="space-y-6">
             
-            <!-- Header -->
+            <!-- Header Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Conference Committee Management</h1>
-                    <p class="text-xs text-slate-500">Manage steering, organizing, and scientific committee members.</p>
+                    <h1 class="text-xl font-bold text-slate-900">Conference Committee</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Manage steering, organizing, and scientific committee members.</p>
                 </div>
 
                 <div>
                     <Link
                         :href="route('admin.committees.create')"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition cursor-pointer"
+                        class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition shadow-xs cursor-pointer"
                     >
-                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                        Add Committee Member
+                        + Add Committee Member
                     </Link>
                 </div>
             </div>
 
-            <!-- Committees Table (Sipanda Style) -->
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] overflow-hidden">
-                <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-blue-600 text-[18px]" style="font-variation-settings: 'FILL' 1">groups</span>
-                        </div>
-                        <h3 class="font-bold text-gray-800 text-sm tracking-wide">Committee Members</h3>
-                    </div>
-                    <span class="text-xs font-bold text-slate-400">Total: {{ props.committees.length }}</span>
+            <!-- Minimalist Committees Table Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Committee Members List</h3>
+                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.committees ? props.committees.length : 0 }}</span>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50/50 border-b border-gray-100">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="bg-slate-50 border-b border-slate-100 uppercase text-[11px] font-bold text-slate-500">
                             <tr>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs">Name</th>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs">Role</th>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs">Group</th>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs">Institution</th>
-                                <th class="px-5 py-3.5 font-semibold text-gray-500 text-xs text-right">Actions</th>
+                                <th scope="col" class="px-5 py-3">Member Name</th>
+                                <th scope="col" class="px-5 py-3">Committee Role</th>
+                                <th scope="col" class="px-5 py-3">Group</th>
+                                <th scope="col" class="px-5 py-3">Institution</th>
+                                <th scope="col" class="px-5 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-slate-100">
                             <tr v-if="!props.committees || props.committees.length === 0">
-                                <td colspan="5" class="px-5 py-10 text-center text-xs text-gray-400">No committee members found. Click "Add Committee Member" to create one.</td>
+                                <td colspan="5" class="px-5 py-8 text-center text-xs text-slate-400">
+                                    No committee members found. Click "+ Add Committee Member" to create one.
+                                </td>
                             </tr>
-                            <tr v-for="c in props.committees" :key="c.id" class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-5 py-4 font-bold text-xs text-slate-900">{{ c.name }}</td>
-                                <td class="px-5 py-4 text-xs text-slate-700">{{ c.role }}</td>
-                                <td class="px-5 py-4">
+                            <tr v-for="c in props.committees" :key="c.id" class="hover:bg-slate-50/50 transition">
+                                <!-- Name -->
+                                <td class="px-5 py-3.5 font-bold text-xs text-slate-900">
+                                    {{ c.name }}
+                                </td>
+
+                                <!-- Role -->
+                                <td class="px-5 py-3.5 text-xs text-slate-700">
+                                    {{ c.role }}
+                                </td>
+
+                                <!-- Group -->
+                                <td class="px-5 py-3.5">
                                     <span :class="[
-                                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
-                                        c.group === 'steering' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
-                                        c.group === 'scientific' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
-                                        'bg-blue-50 text-blue-700 border border-blue-200'
+                                        'inline-block rounded-md px-2.5 py-0.5 text-[11px] font-bold uppercase border',
+                                        c.group === 'steering' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                        c.group === 'scientific' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                        'bg-blue-50 text-blue-700 border-blue-200'
                                     ]">
                                         {{ c.group }}
                                     </span>
                                 </td>
-                                <td class="px-5 py-4 text-xs text-slate-500">{{ c.institution || '-' }}</td>
-                                <td class="px-5 py-4 text-right space-x-2">
-                                    <Link
-                                        :href="route('admin.committees.edit', c.id)"
-                                        class="px-3 py-1.5 rounded-xl bg-purple-50 text-primary hover:bg-primary hover:text-white font-bold text-xs transition-colors"
-                                    >
-                                        Edit
-                                    </Link>
-                                    <button
-                                        @click="deleteCommittee(c.id)"
-                                        class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white font-bold text-xs transition-colors cursor-pointer"
-                                    >
-                                        Delete
-                                    </button>
+
+                                <!-- Institution -->
+                                <td class="px-5 py-3.5 text-xs text-slate-500">
+                                    {{ c.institution || '-' }}
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="px-5 py-3.5 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <Link
+                                            :href="route('admin.committees.edit', c.id)"
+                                            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-50 transition"
+                                        >
+                                            Edit
+                                        </Link>
+                                        <button
+                                            @click="deleteCommittee(c.id)"
+                                            class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs transition cursor-pointer"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

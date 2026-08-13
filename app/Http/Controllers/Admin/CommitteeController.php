@@ -12,10 +12,12 @@ use Inertia\Response;
 
 class CommitteeController extends Controller
 {
-    public function index(): Response
+    public function index(\Illuminate\Http\Request $request): Response
     {
+        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
+
         $committees = Committee::with('conference:id,title')
-            ->orderBy('conference_id')
+            ->when($confId, fn($q) => $q->where('conference_id', $confId))
             ->orderBy('group')
             ->orderBy('order')
             ->get();

@@ -1,9 +1,5 @@
 <script setup>
 defineProps({
-    eyebrow: {
-        type: String,
-        default: "",
-    },
     title: {
         type: String,
         required: true,
@@ -21,12 +17,6 @@ defineProps({
 
 <template>
     <div :class="[center ? 'text-center' : '', 'max-w-3xl mx-auto']">
-        <span
-            v-if="eyebrow"
-            class="mb-2 block text-xs font-bold uppercase tracking-[0.3em] text-primary"
-        >
-            {{ eyebrow }}
-        </span>
         <h2 class="mb-4 text-3xl font-extrabold text-slate-900 md:text-4xl">
             {{ title }}
         </h2>

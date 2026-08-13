@@ -14,9 +14,7 @@ class ReviewRoundResource extends JsonResource
             'submission_type' => $this->submission_type,
             'submission_id' => $this->submission_id,
             'status' => $this->status,
-            'submission' => $this->whenLoaded('abstractSubmission', function () {
-                return new BlindedAbstractResource($this->abstractSubmission);
-            }),
+            'submission' => BlindedAbstractResource::make($this->whenLoaded('abstractSubmission')),
             'assignments' => ReviewAssignmentResource::collection($this->whenLoaded('assignments')),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

@@ -33,10 +33,9 @@ class RegistrationService
                 $amount = $isEarlyBird ? $regType->early_bird_price_idr : $regType->regular_price_idr;
             }
 
-            // Generate Invoice Number (INV-YYYYMM-XXXX)
-            $prefix = 'INV-' . now()->format('Ym') . '-';
-            $latestNum = Registration::where('invoice_number', 'like', $prefix . '%')->count() + 1;
-            $invoiceNumber = $prefix . str_pad($latestNum, 4, '0', STR_PAD_LEFT);
+            // Generate Short Invoice Number (INV-001, INV-002, ...)
+            $nextInvNum = Registration::where('conference_id', $conference->id)->count() + 1;
+            $invoiceNumber = 'INV-' . str_pad($nextInvNum, 3, '0', STR_PAD_LEFT);
 
             // Create Registration Record
             return Registration::create([

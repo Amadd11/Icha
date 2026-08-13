@@ -20,7 +20,6 @@ class Conference extends Model
         'city',
         'country',
         'theme',
-        'website',
         'email',
         'logo',
         'hero_image',
@@ -32,15 +31,13 @@ class Conference extends Model
     {
         parent::boot();
 
-        static::creating(function ($conference) {
+        static::saving(function ($conference) {
             if (empty($conference->slug)) {
                 $conference->slug = Str::slug($conference->title);
             }
-        });
-        
-        static::updating(function ($conference) {
-            if (empty($conference->slug)) {
-                $conference->slug = Str::slug($conference->title);
+
+            if ($conference->is_active) {
+                static::where('id', '!=', $conference->id)->update(['is_active' => false]);
             }
         });
     }

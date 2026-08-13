@@ -28,12 +28,10 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'phone' => ['nullable', 'string', 'max:50'],
             'institution' => ['nullable', 'string', 'max:255'],
-            'country' => ['nullable', 'string', 'max:100'],
+            'country' => ['required', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
-            'address' => ['nullable', 'string'],
             'participant_category' => ['nullable', 'string', Rule::in(['student', 'non_student'])],
-            'identity_number' => ['nullable', 'string', 'max:100'],
-            'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
+            'gender' => ['nullable', 'string', Rule::in(['male', 'female'])],
         ];
     }
 }

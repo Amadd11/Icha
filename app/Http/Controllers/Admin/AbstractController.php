@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ReviewerResource;
+use App\Http\Resources\Submission\AdminAbstractResource;
 use App\Models\AbstractSubmission;
+use App\Models\User;
 use App\Services\Admin\AbstractReviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,11 +23,11 @@ class AbstractController extends Controller
     {
         $status = $request->input('status', 'all');
         $abstracts = $this->abstractReviewService->getAbstracts($status);
-        $reviewers = \App\Models\User::where('role', 'reviewer')->with('categories')->orderBy('name')->get();
+        $reviewers = User::where('role', 'reviewer')->with('categories')->orderBy('name')->get();
 
         return Inertia::render('Admin/Abstracts/Index', [
-            'abstracts' => \App\Http\Resources\Submission\AdminAbstractResource::collection($abstracts),
-            'reviewers' => \App\Http\Resources\ReviewerResource::collection($reviewers),
+            'abstracts' => AdminAbstractResource::collection($abstracts)->resolve(),
+            'reviewers' => ReviewerResource::collection($reviewers)->resolve(),
             'filters' => [
                 'status' => $status,
             ],

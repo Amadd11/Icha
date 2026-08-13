@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\AbstractSubmission;
+use App\Models\Category;
 use App\Models\Conference;
 use App\Models\FullPaper;
 use App\Models\Payment;
@@ -12,7 +13,7 @@ use App\Models\Timeline;
 class DashboardService
 {
     /**
-     * Get aggregated dashboard statistics and data for the selected conference.
+     * Get aggregated dashboard statistics and financial recap summary.
      */
     public function getDashboardData(?int $conferenceId = null): array
     {
@@ -29,9 +30,9 @@ class DashboardService
 
         // Base queries scoped by conference_id
         $registrationQuery = Registration::query();
-        $paymentQuery = Payment::query();
-        $abstractQuery = AbstractSubmission::query();
-        $paperQuery = FullPaper::query();
+        $paymentQuery      = Payment::query();
+        $abstractQuery     = AbstractSubmission::query();
+        $paperQuery        = FullPaper::query();
 
         if ($activeConferenceId) {
             $registrationQuery->where('conference_id', $activeConferenceId);
@@ -42,54 +43,108 @@ class DashboardService
             $paperQuery->where('conference_id', $activeConferenceId);
         }
 
-        // Aggregate statistics using real DB counts
+        // Executive Aggregate Statistics
+        $totalParticipants   = (clone $registrationQuery)->distinct('user_id')->count('user_id');
+        $totalRegistrations  = (clone $registrationQuery)->count();
+        $verifiedPayments    = (clone $paymentQuery)->where('status', 'verified')->count();
+        $pendingPayments     = (clone $paymentQuery)->where('status', 'pending')->count();
+
+        // 💵 Total Invoiced Revenue (Daftar Tagihan dari Seluruh Peserta Mendaftar)
+        $totalInvoicedIdr    = (clone $registrationQuery)->where('currency', 'IDR')->sum('amount');
+        $totalInvoicedUsd    = (clone $registrationQuery)->where('currency', 'USD')->sum('amount');
+
+        // 💰 Verified Received Revenue (Total Uang Masuk yang Sudah Lunas & Terverifikasi)
+        $verifiedRevenueIdr  = (clone $paymentQuery)->where('status', 'verified')->where('currency', 'IDR')->sum('amount');
+        $verifiedRevenueUsd  = (clone $paymentQuery)->where('status', 'verified')->where('currency', 'USD')->sum('amount');
+
+        // ⏳ Unpaid / Pending Revenue (Sisa Uang Tagihan Peserta yang Belum Lunas)
+        $unpaidRevenueIdr    = max(0, $totalInvoicedIdr - $verifiedRevenueIdr);
+        $unpaidRevenueUsd    = max(0, $totalInvoicedUsd - $verifiedRevenueUsd);
+
+        // Abstract Breakdown
+        $totalAbstracts      = (clone $abstractQuery)->count();
+        $acceptedAbstracts   = (clone $abstractQuery)->where('status', 'accepted')->count();
+        $revisionAbstracts   = (clone $abstractQuery)->where('status', 'revision_required')->count();
+        $pendingAbstracts    = (clone $abstractQuery)->whereIn('status', ['pending', 'under_review'])->count();
+
+        // Full Paper Breakdown
+        $totalPapers         = (clone $paperQuery)->count();
+        $acceptedPapers      = (clone $paperQuery)->where('status', 'accepted')->count();
+        $revisionPapers      = (clone $paperQuery)->where('status', 'revision_required')->count();
+        $pendingPapers       = (clone $paperQuery)->whereIn('status', ['pending', 'under_review'])->count();
+
         $stats = [
-            'total_participants' => (clone $registrationQuery)->distinct('user_id')->count('user_id'),
-            'total_registrations' => (clone $registrationQuery)->count(),
-            'paid_registrations' => (clone $paymentQuery)->where('status', 'verified')->count(),
-            'verified_payments' => (clone $paymentQuery)->where('status', 'verified')->count(),
-            'pending_payments' => (clone $paymentQuery)->where('status', 'pending')->count(),
-            'total_abstracts' => (clone $abstractQuery)->count(),
-            'total_full_papers' => (clone $paperQuery)->count(),
-            'total_presentations' => 0,
+            'total_participants'   => $totalParticipants,
+            'total_registrations'  => $totalRegistrations,
+            'verified_payments'    => $verifiedPayments,
+            'pending_payments'     => $pendingPayments,
+
+            // Financial Breakdown
+            'total_invoiced_idr'   => $totalInvoicedIdr,
+            'total_invoiced_usd'   => $totalInvoicedUsd,
+            'verified_revenue_idr' => $verifiedRevenueIdr,
+            'verified_revenue_usd' => $verifiedRevenueUsd,
+            'unpaid_revenue_idr'   => $unpaidRevenueIdr,
+            'unpaid_revenue_usd'   => $unpaidRevenueUsd,
+
+            'total_abstracts'      => $totalAbstracts,
+            'accepted_abstracts'   => $acceptedAbstracts,
+            'revision_abstracts'   => $revisionAbstracts,
+            'pending_abstracts'    => $pendingAbstracts,
+            'total_full_papers'    => $totalPapers,
+            'accepted_papers'      => $acceptedPapers,
+            'revision_papers'      => $revisionPapers,
+            'pending_papers'       => $pendingPapers,
         ];
 
-        // Fetch recent registrations
+        // Track Category Recap Breakdown
+        $trackCategories = Category::where(function ($q) use ($activeConferenceId) {
+            if ($activeConferenceId) {
+                $q->where('conference_id', $activeConferenceId)->orWhereNull('conference_id');
+            }
+        })->withCount([
+            'abstracts' => function ($q) use ($activeConferenceId) {
+                if ($activeConferenceId) $q->where('conference_id', $activeConferenceId);
+            }
+        ])->get()->map(function ($cat) {
+            return [
+                'id'              => $cat->id,
+                'name'            => $cat->name,
+                'badge'           => $cat->badge,
+                'abstracts_count' => $cat->abstracts_count,
+            ];
+        });
+
+        // Recent Registrations
         $recentRegistrations = (clone $registrationQuery)
-            ->with(['user:id,name,email', 'registrationType:id,name', 'payment:id,registration_id,status,amount'])
+            ->with(['user:id,name,email', 'registrationType:id,name', 'payment:id,registration_id,status,amount,currency'])
             ->latest()
-            ->take(5)
+            ->take(6)
             ->get();
 
-        // Get list of available conferences for the dropdown
+        // Available Conferences list
         $availableConferences = Conference::select('id', 'title', 'year', 'slug', 'is_active', 'status')
             ->orderByDesc('year')
             ->get();
 
-        // Dynamic Deadlines from Timeline model
+        // Timeline Schedule
         $timelineRecords = $activeConferenceId 
             ? Timeline::where('conference_id', $activeConferenceId)->orderBy('order')->get()
             : Timeline::orderBy('order')->get();
 
-        $deadlines = $timelineRecords->count() > 0 
-            ? $timelineRecords->map(fn($t) => [
-                'label' => $t->title,
-                'date' => $t->period,
-                'status' => 'Active',
-              ])->toArray()
-            : [
-                ['label' => 'Abstract Submission', 'date' => '03 Oct 2026', 'status' => 'Upcoming'],
-                ['label' => 'Abstract Review', 'date' => '10 Oct 2026', 'status' => 'Upcoming'],
-                ['label' => 'Full Paper Submission', 'date' => '30 Oct 2026', 'status' => 'Upcoming'],
-                ['label' => 'Conference Event', 'date' => '10–11 Nov 2026', 'status' => 'Upcoming'],
-            ];
+        $deadlines = $timelineRecords->map(fn($t) => [
+            'label'  => $t->title,
+            'date'   => $t->period || $t->date,
+            'status' => $t->is_completed ? 'Completed' : 'Active',
+        ]);
 
         return [
-            'selectedConference' => $selectedConference,
+            'selectedConference'   => $selectedConference,
             'availableConferences' => $availableConferences,
-            'stats' => $stats,
+            'stats'                => $stats,
+            'trackCategories'      => $trackCategories,
             'recentRegistrations' => $recentRegistrations,
-            'deadlines' => $deadlines,
+            'deadlines'            => $deadlines,
         ];
     }
 }

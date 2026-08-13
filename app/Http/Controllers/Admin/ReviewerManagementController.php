@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreReviewerRequest;
 use App\Http\Requests\Admin\UpdateReviewerRequest;
+use App\Http\Resources\ReviewerResource;
 use App\Models\User;
 use App\Services\Admin\ReviewerManagementService;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class ReviewerManagementController extends Controller
 {
@@ -20,7 +21,7 @@ class ReviewerManagementController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Reviewers/Index', [
-            'reviewers' => \App\Http\Resources\ReviewerResource::collection($this->service->getReviewers()),
+            'reviewers' => ReviewerResource::collection($this->service->getReviewers())->resolve(),
             'categories' => $this->service->getCategories(),
         ]);
     }

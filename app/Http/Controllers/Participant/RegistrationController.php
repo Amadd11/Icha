@@ -24,19 +24,21 @@ class RegistrationController extends Controller
     public function create(Request $request): Response
     {
         $user = $request->user()->load('profile');
-        $activeConference = Conference::active()->firstOrFail();
+        $activeConference = Conference::active()->first() ?? Conference::latest()->first();
+
         $existingRegistration = Registration::where('user_id', $user->id)
-            ->where('conference_id', $activeConference->id)
+            ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
             ->with(['registrationType', 'payment'])
             ->first();
 
-        $registrationTypes = RegistrationType::where('conference_id', $activeConference->id)
-            ->where('is_active', true)
-            ->get();
+        $registrationTypes = $activeConference
+            ? RegistrationType::where('conference_id', $activeConference->id)->where('is_active', true)->get()
+            : RegistrationType::where('is_active', true)->get();
 
         return Inertia::render('Participant/Registration/Form', [
             'activeConference'     => $activeConference,
             'existingRegistration' => $existingRegistration,
+            'payment'              => $existingRegistration?->payment,
             'registrationTypes'    => $registrationTypes,
             'userProfile'          => $user->profile,
         ]);
@@ -47,23 +49,13 @@ class RegistrationController extends Controller
         $user = $request->user();
         $this->registrationService->createRegistration($user, $request->validated());
 
-        return redirect()->route('participant.payment.index')
-            ->with('success', 'Registration submitted. Please proceed to payment.');
+        return redirect()->route('participant.registration.create')
+            ->with('success', 'Registration submitted. Please proceed to payment proof upload below.');
     }
 
     public function paymentIndex(Request $request): Response
     {
-        $user = $request->user();
-        $activeConference = Conference::active()->first();
-        $registration = Registration::where('user_id', $user->id)
-            ->where('conference_id', $activeConference?->id)
-            ->with(['registrationType', 'payment'])
-            ->firstOrFail();
-
-        return Inertia::render('Participant/Payment/Index', [
-            'registration' => $registration,
-            'payment'      => $registration->payment,
-        ]);
+        return redirect()->route('participant.registration.create');
     }
 
     public function submitPayment(PaymentProofRequest $request)
@@ -79,7 +71,7 @@ class RegistrationController extends Controller
             $request->file('proof_file')
         );
 
-        return redirect()->back()
+        return redirect()->route('participant.registration.create')
             ->with('success', 'Payment proof uploaded successfully. Awaiting admin verification.');
     }
 }

@@ -9,7 +9,16 @@ const props = defineProps({
 });
 
 const isEdit = !!props.speaker;
-const photoPreview = ref(props.speaker?.photo ? '/storage/' + props.speaker.photo : null);
+
+function formatStorageUrl(path) {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/storage/')) return path;
+    if (path.startsWith('storage/')) return '/' + path;
+    return '/storage/' + path;
+}
+
+const photoPreview = ref(formatStorageUrl(props.speaker?.photo));
 
 const form = useForm({
     conference_id: props.speaker?.conference_id ?? '',
@@ -98,22 +107,17 @@ const countries = [
     { code: 'MV', name: 'Maldives' },
     { code: 'MT', name: 'Malta' },
     { code: 'MX', name: 'Mexico' },
-    { code: 'MD', name: 'Moldova' },
     { code: 'MN', name: 'Mongolia' },
     { code: 'MA', name: 'Morocco' },
-    { code: 'MZ', name: 'Mozambique' },
-    { code: 'MM', name: 'Myanmar' },
     { code: 'NP', name: 'Nepal' },
     { code: 'NL', name: 'Netherlands' },
     { code: 'NZ', name: 'New Zealand' },
     { code: 'NG', name: 'Nigeria' },
-    { code: 'KP', name: 'North Korea' },
     { code: 'NO', name: 'Norway' },
     { code: 'OM', name: 'Oman' },
     { code: 'PK', name: 'Pakistan' },
     { code: 'PS', name: 'Palestine' },
     { code: 'PA', name: 'Panama' },
-    { code: 'PY', name: 'Paraguay' },
     { code: 'PE', name: 'Peru' },
     { code: 'PH', name: 'Philippines' },
     { code: 'PL', name: 'Poland' },
@@ -121,66 +125,42 @@ const countries = [
     { code: 'QA', name: 'Qatar' },
     { code: 'RO', name: 'Romania' },
     { code: 'RU', name: 'Russia' },
-    { code: 'RW', name: 'Rwanda' },
     { code: 'SA', name: 'Saudi Arabia' },
-    { code: 'SN', name: 'Senegal' },
-    { code: 'RS', name: 'Serbia' },
     { code: 'SG', name: 'Singapore' },
-    { code: 'SK', name: 'Slovakia' },
-    { code: 'SI', name: 'Slovenia' },
     { code: 'ZA', name: 'South Africa' },
     { code: 'KR', name: 'South Korea' },
     { code: 'ES', name: 'Spain' },
     { code: 'LK', name: 'Sri Lanka' },
-    { code: 'SD', name: 'Sudan' },
     { code: 'SE', name: 'Sweden' },
     { code: 'CH', name: 'Switzerland' },
-    { code: 'SY', name: 'Syria' },
     { code: 'TW', name: 'Taiwan' },
-    { code: 'TJ', name: 'Tajikistan' },
-    { code: 'TZ', name: 'Tanzania' },
     { code: 'TH', name: 'Thailand' },
-    { code: 'TN', name: 'Tunisia' },
     { code: 'TR', name: 'Turkey' },
-    { code: 'TM', name: 'Turkmenistan' },
-    { code: 'UG', name: 'Uganda' },
     { code: 'UA', name: 'Ukraine' },
     { code: 'AE', name: 'United Arab Emirates' },
     { code: 'GB', name: 'United Kingdom' },
     { code: 'US', name: 'United States' },
-    { code: 'UY', name: 'Uruguay' },
-    { code: 'UZ', name: 'Uzbekistan' },
-    { code: 'VE', name: 'Venezuela' },
     { code: 'VN', name: 'Vietnam' },
-    { code: 'YE', name: 'Yemen' },
-    { code: 'ZM', name: 'Zambia' },
-    { code: 'ZW', name: 'Zimbabwe' },
 ];
 
-/* ── Country search & selection ── */
 const countrySearch = ref('');
-const showCountryDropdown = ref(false);
+const isCountryFocused = ref(false);
 
 const filteredCountries = computed(() => {
-    const q = countrySearch.value.toLowerCase().trim();
-    if (!q) return countries;
-    return countries.filter(c =>
-        c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
-    );
+    if (!countrySearch.value) return countries;
+    const q = countrySearch.value.toLowerCase();
+    return countries.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
 });
 
-const selectedCountryDisplay = computed(() => {
-    if (form.country_code && form.country) {
-        return form.country;
-    }
-    return '';
+const showCountryDropdown = computed(() => {
+    return isCountryFocused.value && !form.country_code;
 });
 
-function selectCountry(country) {
-    form.country = country.name;
-    form.country_code = country.code;
+function selectCountry(c) {
+    form.country = c.name;
+    form.country_code = c.code;
     countrySearch.value = '';
-    showCountryDropdown.value = false;
+    isCountryFocused.value = false;
 }
 
 function clearCountry() {
@@ -190,13 +170,12 @@ function clearCountry() {
 }
 
 function onCountryFocus() {
-    showCountryDropdown.value = true;
+    isCountryFocused.value = true;
 }
 
 function onCountryBlur() {
-    // Small delay so click on dropdown option registers first
     setTimeout(() => {
-        showCountryDropdown.value = false;
+        isCountryFocused.value = false;
     }, 200);
 }
 
@@ -210,11 +189,9 @@ function onPhotoChange(e) {
 
 function submit() {
     if (isEdit) {
-        form.transform((data) => ({
-            ...data,
-            _method: 'put',
-        })).post(route('admin.speakers.update', props.speaker.id), {
+        form.post(route('admin.speakers.update', props.speaker.id), {
             forceFormData: true,
+            _method: 'put',
         });
     } else {
         form.post(route('admin.speakers.store'), { forceFormData: true });
@@ -223,166 +200,172 @@ function submit() {
 </script>
 
 <template>
-    <Head :title="isEdit ? 'Edit Speaker' : 'New Speaker'" />
+    <Head :title="isEdit ? 'Edit Speaker' : 'Add Speaker'" />
     <AdminLayout>
-        <div class="mb-6 flex items-center gap-2">
-            <Link :href="route('admin.speakers.index')" class="text-sm font-semibold text-slate-500 hover:text-indigo-600">Speakers</Link>
-            <span class="text-slate-300">/</span>
-            <h1 class="text-lg font-bold text-slate-800">{{ isEdit ? 'Edit' : 'New' }} Speaker</h1>
-        </div>
+        <div class="space-y-6">
+            <!-- Header Row -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
+                        <Link :href="route('admin.speakers.index')" class="hover:text-purple-700">Speakers</Link>
+                        <span>/</span>
+                        <span class="text-slate-800 font-bold">{{ isEdit ? 'Edit Speaker' : 'New Speaker' }}</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-slate-900">{{ isEdit ? 'Edit Speaker Details' : 'Add New Speaker' }}</h1>
+                </div>
+            </div>
 
-        <div class="max-w-2xl">
-            <form @submit.prevent="submit" class="space-y-6">
-                <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <div class="grid gap-4 sm:grid-cols-2">
-
-                        <!-- Photo -->
-                        <div class="sm:col-span-2 flex items-center gap-5">
-                            <div class="h-20 w-20 shrink-0 overflow-hidden rounded-full bg-slate-100">
+            <!-- Form Card -->
+            <div class="max-w-3xl">
+                <form @submit.prevent="submit" class="space-y-6">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
+                        
+                        <!-- Photo Upload Preview -->
+                        <div class="flex items-center gap-5 pb-4 border-b border-slate-100">
+                            <div class="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
                                 <img v-if="photoPreview" :src="photoPreview" class="h-full w-full object-cover" />
-                                <div v-else class="flex h-full w-full items-center justify-center text-2xl text-slate-300">📷</div>
+                                <span v-else class="text-xs font-bold text-slate-400">Photo</span>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Photo</label>
-                                <input type="file" accept="image/*" @change="onPhotoChange" class="text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20" />
-                                <p class="mt-1 text-xs text-slate-400">Max 2MB (JPEG, PNG, WebP)</p>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Speaker Photo</label>
+                                <input type="file" accept="image/*" @change="onPhotoChange" class="text-xs text-slate-600 file:mr-3 file:rounded-lg file:border file:border-slate-200 file:bg-slate-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-100 cursor-pointer" />
+                                <p class="mt-1 text-[11px] text-slate-400">Max 2MB (JPEG, PNG, WebP)</p>
                                 <p v-if="form.errors.photo" class="mt-1 text-xs text-red-500">{{ form.errors.photo }}</p>
                             </div>
                         </div>
 
-                        <!-- Conference -->
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Conference <span class="text-red-400">*</span></label>
-                            <select v-model="form.conference_id" class="admin-input" required>
-                                <option value="">Select conference</option>
-                                <option v-for="c in conferences" :key="c.id" :value="c.id">{{ c.title }}</option>
-                            </select>
-                            <p v-if="form.errors.conference_id" class="mt-1 text-xs text-red-500">{{ form.errors.conference_id }}</p>
-                        </div>
-
-                        <!-- Name -->
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Full Name <span class="text-red-400">*</span></label>
-                            <input v-model="form.name" type="text" class="admin-input" placeholder="Prof. Dr. John Doe" required />
-                            <p v-if="form.errors.name" class="mt-1 text-xs text-red-500">{{ form.errors.name }}</p>
-                        </div>
-
-                        <!-- Title -->
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Academic Title</label>
-                            <input v-model="form.title" type="text" class="admin-input" placeholder="Prof. Dr." />
-                        </div>
-
-                        <!-- Type -->
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Speaker Type <span class="text-red-400">*</span></label>
-                            <select v-model="form.type" class="admin-input" required>
-                                <option value="keynote">Keynote</option>
-                                <option value="plenary">Plenary</option>
-                                <option value="invited">Invited</option>
-                            </select>
-                        </div>
-
-                        <!-- Institution -->
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Institution</label>
-                            <input v-model="form.institution" type="text" class="admin-input" placeholder="University of..." />
-                        </div>
-
-                        <!-- Country (Searchable Dropdown) -->
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
-
-                            <!-- Selected country display -->
-                            <div v-if="form.country_code" class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-                                <img
-                                    :src="`https://flagcdn.com/w40/${form.country_code.toLowerCase()}.png`"
-                                    :alt="form.country"
-                                    class="h-5 w-5 rounded-full object-cover shadow-sm"
-                                />
-                                <span class="flex-1 text-sm font-medium text-slate-700">{{ form.country }}</span>
-                                <span class="text-xs text-slate-400">{{ form.country_code }}</span>
-                                <button
-                                    type="button"
-                                    @click="clearCountry"
-                                    class="ml-1 rounded-md p-0.5 text-slate-400 transition hover:bg-slate-200 hover:text-slate-600"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
+                        <div class="grid gap-4 sm:grid-cols-2 text-xs">
+                            <!-- Conference -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Conference <span class="text-red-500">*</span></label>
+                                <select v-model="form.conference_id" class="admin-input font-semibold" required>
+                                    <option value="">Select conference</option>
+                                    <option v-for="c in conferences" :key="c.id" :value="c.id">{{ c.title }}</option>
+                                </select>
+                                <p v-if="form.errors.conference_id" class="mt-1 text-xs text-red-500">{{ form.errors.conference_id }}</p>
                             </div>
 
-                            <!-- Search input -->
-                            <div v-else class="relative">
-                                <input
-                                    v-model="countrySearch"
-                                    type="text"
-                                    class="admin-input"
-                                    placeholder="Search country..."
-                                    @focus="onCountryFocus"
-                                    @blur="onCountryBlur"
-                                />
+                            <!-- Full Name -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Full Name & Degree <span class="text-red-500">*</span></label>
+                                <input v-model="form.name" type="text" class="admin-input" placeholder="e.g. Prof. Dr. John Doe, M.Sc." required />
+                                <p v-if="form.errors.name" class="mt-1 text-xs text-red-500">{{ form.errors.name }}</p>
+                            </div>
 
-                                <!-- Dropdown list -->
-                                <div
-                                    v-if="showCountryDropdown"
-                                    class="absolute z-20 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg"
-                                >
+                            <!-- Title -->
+                            <div>
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Academic Title</label>
+                                <input v-model="form.title" type="text" class="admin-input" placeholder="e.g. Professor / Keynote Lecturer" />
+                            </div>
+
+                            <!-- Type -->
+                            <div>
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Speaker Category <span class="text-red-500">*</span></label>
+                                <select v-model="form.type" class="admin-input font-semibold" required>
+                                    <option value="keynote">Keynote Speaker</option>
+                                    <option value="plenary">Plenary Speaker</option>
+                                    <option value="invited">Invited Speaker</option>
+                                </select>
+                            </div>
+
+                            <!-- Institution -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Institution / University</label>
+                                <input v-model="form.institution" type="text" class="admin-input" placeholder="e.g. Universitas Muhammadiyah Surakarta" />
+                            </div>
+
+                            <!-- Country (Searchable Dropdown) -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Country</label>
+
+                                <!-- Selected country display -->
+                                <div v-if="form.country_code" class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
+                                    <img
+                                        :src="`https://flagcdn.com/w40/${form.country_code.toLowerCase()}.png`"
+                                        :alt="form.country"
+                                        class="h-4 w-5 rounded-xs object-cover"
+                                    />
+                                    <span class="flex-1 font-bold text-slate-800">{{ form.country }}</span>
+                                    <span class="text-xs text-slate-400 font-semibold">{{ form.country_code }}</span>
                                     <button
-                                        v-for="country in filteredCountries"
-                                        :key="country.code"
                                         type="button"
-                                        class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-primary/5"
-                                        @mousedown.prevent="selectCountry(country)"
+                                        @click="clearCountry"
+                                        class="ml-1 rounded-md p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                                     >
-                                        <img
-                                            :src="`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`"
-                                            :alt="country.name"
-                                            class="h-4 w-6 rounded-sm object-cover shadow-sm"
-                                        />
-                                        <span class="flex-1 text-slate-700">{{ country.name }}</span>
-                                        <span class="text-xs text-slate-400">{{ country.code }}</span>
+                                        ✕
                                     </button>
-                                    <div v-if="filteredCountries.length === 0" class="px-4 py-3 text-sm text-slate-400 text-center">
-                                        No countries found
+                                </div>
+
+                                <!-- Search input -->
+                                <div v-else class="relative">
+                                    <input
+                                        v-model="countrySearch"
+                                        type="text"
+                                        class="admin-input"
+                                        placeholder="Search country..."
+                                        @focus="onCountryFocus"
+                                        @blur="onCountryBlur"
+                                    />
+
+                                    <!-- Dropdown list -->
+                                    <div
+                                        v-if="showCountryDropdown"
+                                        class="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-md"
+                                    >
+                                        <button
+                                            v-for="country in filteredCountries"
+                                            :key="country.code"
+                                            type="button"
+                                            class="flex w-full items-center gap-3 px-4 py-2 text-left text-xs font-semibold hover:bg-slate-50"
+                                            @mousedown.prevent="selectCountry(country)"
+                                        >
+                                            <img
+                                                :src="`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`"
+                                                :alt="country.name"
+                                                class="h-3.5 w-5 rounded-xs object-cover"
+                                            />
+                                            <span class="flex-1 text-slate-700">{{ country.name }}</span>
+                                            <span class="text-[11px] text-slate-400">{{ country.code }}</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <p v-if="form.errors.country" class="mt-1 text-xs text-red-500">{{ form.errors.country }}</p>
-                            <p v-if="form.errors.country_code" class="mt-1 text-xs text-red-500">{{ form.errors.country_code }}</p>
-                        </div>
+                            <!-- Display Order -->
+                            <div>
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Display Order Sequence</label>
+                                <input v-model.number="form.order" type="number" min="0" class="admin-input font-bold" />
+                            </div>
 
-                        <!-- Order -->
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Display Order</label>
-                            <input v-model.number="form.order" type="number" min="0" class="admin-input" />
-                        </div>
+                            <!-- Email -->
+                            <div>
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Email Address</label>
+                                <input v-model="form.email" type="email" class="admin-input" placeholder="speaker@email.com" />
+                            </div>
 
-                        <!-- Email -->
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Email</label>
-                            <input v-model="form.email" type="email" class="admin-input" placeholder="speaker@email.com" />
-                        </div>
-
-                        <!-- Bio -->
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Biography</label>
-                            <textarea v-model="form.bio" rows="4" class="admin-input" placeholder="Short bio..."></textarea>
+                            <!-- Bio -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block font-bold uppercase tracking-wider text-slate-700">Short Biography</label>
+                                <textarea v-model="form.bio" rows="3" class="admin-input" placeholder="Brief academic profile or key research focus..."></textarea>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex items-center justify-end gap-3">
-                    <Link :href="route('admin.speakers.index')" class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
-                        Cancel
-                    </Link>
-                    <button type="submit" :disabled="form.processing" class="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-dark disabled:opacity-50">
-                        {{ form.processing ? 'Saving...' : (isEdit ? 'Update Speaker' : 'Add Speaker') }}
-                    </button>
-                </div>
-            </form>
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-end gap-3">
+                        <Link :href="route('admin.speakers.index')" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+                            Cancel
+                        </Link>
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 text-xs transition disabled:opacity-50 cursor-pointer shadow-xs"
+                        >
+                            {{ form.processing ? 'Saving...' : (isEdit ? 'Update Speaker' : 'Save Speaker') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </AdminLayout>
 </template>

@@ -28,18 +28,16 @@ class ProfileController extends Controller
         // Update user name
         $user->update(['name' => $validated['name']]);
 
-        // Update or create profile
+        // Update or create profile according to updated migration
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'phone'                => $validated['phone'],
-                'institution'          => $validated['institution'],
+                'phone'                => $validated['phone'] ?? null,
+                'institution'          => $validated['institution'] ?? null,
                 'country'              => $validated['country'],
-                'city'                 => $validated['city'],
-                'address'              => $validated['address'] ?? null,
-                'participant_category' => $validated['participant_category'],
-                'identity_number'      => $validated['identity_number'],
-                'gender'               => $validated['gender'],
+                'city'                 => $validated['city'] ?? null,
+                'participant_category' => $validated['participant_category'] ?? 'non_student',
+                'gender'               => $validated['gender'] ?? null,
             ]
         );
 
