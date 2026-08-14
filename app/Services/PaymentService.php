@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\Storage;
 class PaymentService
 {
     /**
+     * Submit payment proof by Registration ID.
+     */
+    public function submitProof(int $registrationId, string $paymentMethod, UploadedFile $proofFile, ?User $user = null): Payment
+    {
+        $registration = Registration::findOrFail($registrationId);
+        return $this->submitPaymentProof($registration, $paymentMethod, $proofFile);
+    }
+
+    /**
      * Submit payment proof synchronously.
      */
     public function submitPaymentProof(Registration $registration, string $paymentMethod, UploadedFile $proofFile): Payment
@@ -80,7 +89,7 @@ class PaymentService
 
         // Automatically send email notification to participant
         try {
-            $payment->loadMissing(['registration.user', 'registration.conference', 'registration.registrationType']);
+            $payment->loadMissing(['registration.user', 'registration.conference', 'registration.registrationFee']);
             $userEmail = $payment->registration->user->email ?? null;
 
             if ($userEmail) {

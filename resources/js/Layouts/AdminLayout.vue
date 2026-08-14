@@ -51,6 +51,7 @@ const navigationGroups = [
     {
         name: "Master Data",
         items: [
+            { name: "Registration Fees", routeName: "admin.registration-fees.index" },
             { name: "Speakers", routeName: "admin.speakers.index" },
             { name: "Timeline", routeName: "admin.timelines.index" },
             { name: "Sponsors", routeName: "admin.sponsors.index" },

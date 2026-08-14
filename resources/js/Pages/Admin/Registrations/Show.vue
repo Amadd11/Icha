@@ -63,8 +63,8 @@ function isPdf(path) {
                         <p class="text-slate-500">Institution: {{ registration.user?.profile?.institution ?? '—' }}</p>
                     </div>
                     <div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Registration Type</h3>
-                        <p class="font-bold text-slate-800">{{ registration.registration_type?.name }}</p>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Registration Fee Package</h3>
+                        <p class="font-bold text-slate-800">{{ registration.registration_fee?.name || registration.registration_type?.name }}</p>
                         <p class="text-slate-500">Rate: {{ registration.is_early_bird ? 'Early Bird' : 'Regular' }}</p>
                         <p class="mt-2 text-lg font-extrabold text-primary">{{ registration.currency }} {{ Number(registration.amount).toLocaleString() }}</p>
                     </div>

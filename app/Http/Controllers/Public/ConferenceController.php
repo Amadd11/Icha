@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conference;
-use App\Models\RegistrationType;
+use App\Models\RegistrationFee;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -57,18 +57,22 @@ class ConferenceController extends Controller
      */
     public function registration(): Response
     {
-        $activeConference = Conference::active()->first();
-        $registrationTypes = $activeConference
-            ? RegistrationType::where('conference_id', $activeConference->id)
-                ->where('is_active', true)
-                ->get()
-            : [];
+        $activeConference = Conference::active()->first() ?? Conference::first();
+        $registrationFees = $activeConference
+            ? RegistrationFee::where('conference_id', $activeConference->id)->get()
+            : RegistrationFee::all();
+
+        $availableConferences = Conference::where('status', '!=', 'draft')
+            ->select('id', 'title', 'slug', 'year')
+            ->orderByDesc('year')
+            ->get();
 
         return Inertia::render('Public/Conference/Registration', [
-            'canLogin' => Route::has('login'),
-            'canRegister' => Route::has('register'),
-            'activeConference' => $activeConference,
-            'registrationTypes' => $registrationTypes,
+            'canLogin'             => Route::has('login'),
+            'canRegister'          => Route::has('register'),
+            'activeConference'     => $activeConference,
+            'registrationFees'     => $registrationFees,
+            'availableConferences' => $availableConferences,
         ]);
     }
 }

@@ -41,7 +41,7 @@
                     </tr>
                     <tr>
                         <td style="color: #64748b;">Registration Category</td>
-                        <td style="font-weight: 700; text-align: right;">{{ $registration->registrationType->name ?? ($registration->registration_type->name ?? 'Participant') }}</td>
+                        <td style="font-weight: 700; text-align: right;">{{ $registration->registrationFee->name ?? ($registration->registrationType->name ?? 'Participant') }}</td>
                     </tr>
                     <tr>
                         <td style="color: #64748b;">Rate Type</td>

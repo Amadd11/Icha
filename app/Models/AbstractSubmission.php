@@ -63,4 +63,21 @@ class AbstractSubmission extends Model
     {
         return $this->hasMany(ReviewRound::class, 'submission_id')->where('submission_type', 'abstract');
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (AbstractSubmission $abstract) {
+            $abstract->reviewRounds()->each(function ($round) {
+                // Manually delete assignments to ensure review constraints handle it if any, 
+                // but since ReviewRound deletes its assignments, we can just delete the round.
+                // Assuming ReviewRound has its own deleting event or foreign keys for assignments.
+                $round->assignments()->delete();
+                $round->delete();
+            });
+            
+            if ($abstract->fullPaper) {
+                $abstract->fullPaper->delete();
+            }
+        });
+    }
 }

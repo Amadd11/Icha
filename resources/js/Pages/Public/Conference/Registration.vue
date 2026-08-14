@@ -7,20 +7,22 @@ const props = defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
     activeConference: Object,
-    registrationTypes: Array,
+    availableConferences: Array,
+    registrationFees: Array,
 });
 </script>
 
 <template>
-    <Head :title="'Registration - ' + (props.activeConference?.title || 'ICHA')" />
+    <Head :title="'Registration Fees - ' + (props.activeConference?.title || 'ICHA')" />
 
     <PublicLayout
         :conference="props.activeConference"
+        :available-conferences="props.availableConferences"
         :can-login="props.canLogin"
         :can-register="props.canRegister"
     >
         <div class="py-12">
-            <RegistrationSection :registration-types="props.registrationTypes" />
+            <RegistrationSection :registration-fees="props.registrationFees" />
         </div>
     </PublicLayout>
 </template>

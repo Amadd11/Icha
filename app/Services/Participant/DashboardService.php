@@ -18,7 +18,7 @@ class DashboardService
         $user->load([
             'profile',
             'registrations' => function ($q) {
-                $q->with(['conference', 'registrationType', 'payment']);
+                $q->with(['conference', 'registrationFee', 'payment']);
             },
         ]);
 

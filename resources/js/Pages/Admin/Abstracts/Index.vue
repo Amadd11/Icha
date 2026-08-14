@@ -12,10 +12,16 @@ const props = defineProps({
 const selectedStatus = ref(props.filters?.status || 'all');
 const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
+const isAssignModalOpen = ref(false);
 
 const reviewForm = useForm({
     status: 'accepted',
+    presentation_type: 'oral',
     review_notes: '',
+});
+
+const assignForm = useForm({
+    reviewer_ids: [],
 });
 
 function applyFilter() {
@@ -27,8 +33,37 @@ function applyFilter() {
 function openReviewModal(item) {
     activeAbstract.value = item;
     reviewForm.status = item.status === 'pending' || item.status === 'under_review' ? 'accepted' : item.status;
+    reviewForm.presentation_type = item.presentation_type || 'oral';
     reviewForm.review_notes = item.review_notes || '';
     isReviewModalOpen.value = true;
+}
+
+function openAssignModal(item) {
+    activeAbstract.value = item;
+    
+    // Find currently assigned reviewer IDs
+    const assignedIds = [];
+    if (item.review_rounds) {
+        item.review_rounds.forEach(round => {
+            if (round.assignments) {
+                round.assignments.forEach(a => {
+                    if (a.reviewer_id) assignedIds.push(a.reviewer_id);
+                });
+            }
+        });
+    }
+
+    // Default to track reviewers if none assigned yet
+    if (assignedIds.length === 0 && props.reviewers) {
+        props.reviewers.forEach(r => {
+            if (r.categories?.some(c => c.id === item.category_id)) {
+                assignedIds.push(r.id);
+            }
+        });
+    }
+
+    assignForm.reviewer_ids = assignedIds;
+    isAssignModalOpen.value = true;
 }
 
 function submitReview() {
@@ -43,30 +78,45 @@ function submitReview() {
     });
 }
 
-function getReviewStats(item) {
-    const catId = item.category_id;
-    const trackReviewers = props.reviewers ? props.reviewers.filter(r => r.categories?.some(c => c.id === catId)) : [];
-    const totalCount = trackReviewers.length > 0 ? trackReviewers.length : 3;
+function submitAssign() {
+    if (!activeAbstract.value) return;
 
-    let completedAssignments = [];
-    if (item.review_rounds && item.review_rounds.length > 0) {
-        item.review_rounds.forEach(round => {
-            if (round.assignments) {
-                round.assignments.forEach(a => {
-                    if (a.recommendation || a.comments) {
-                        completedAssignments.push(a);
-                    }
-                });
-            }
+    assignForm.post(route('admin.abstracts.assign', activeAbstract.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isAssignModalOpen.value = false;
+            activeAbstract.value = null;
+        },
+    });
+}
+
+function deleteAbstract(id) {
+    if (confirm('Are you sure you want to delete this abstract? This action cannot be undone and will delete all associated reviews.')) {
+        router.delete(route('admin.abstracts.destroy', id), {
+            preserveScroll: true,
         });
     }
+}
 
-    const completedCount = completedAssignments.length;
+function getReviewStats(item) {
+    let completedAssignments = [];
+
+    if (item.review_rounds && item.review_rounds.length > 0) {
+        // Look at the latest round
+        const latestRound = item.review_rounds[item.review_rounds.length - 1];
+        if (latestRound && latestRound.assignments) {
+            latestRound.assignments.forEach(a => {
+                if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
+                    completedAssignments.push(a);
+                }
+            });
+        }
+    }
+
     return {
-        completedCount,
-        totalCount,
-        assignments: completedAssignments,
-        trackReviewers,
+        completedCount: completedAssignments.length,
+        totalCount: 3, // Exactly 3 reviewers required per abstract workflow
+        reviews: completedAssignments,
     };
 }
 
@@ -85,67 +135,59 @@ function formatStorageUrl(path) {
     <AdminLayout>
         <div class="space-y-6">
             
-            <!-- Minimalist Header & Filter Row -->
+            <!-- Header Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-xl font-bold text-slate-900">Abstract Submissions</h1>
-                    <p class="text-xs text-slate-500 mt-0.5">Review track feedback and record final editorial decisions.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Manage scientific track papers, assign peer reviewers, and record final decisions.</p>
                 </div>
 
-                <!-- Status Filter Select -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-semibold text-slate-500">Status:</label>
-                    <select
-                        v-model="selectedStatus"
-                        @change="applyFilter"
-                        class="rounded-xl border-slate-200 py-1.5 px-3 text-xs font-bold text-slate-800 bg-white focus:border-slate-400 focus:ring-0 outline-none"
+                <!-- Status Filter Pills -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <button
+                        v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
+                        :key="s"
+                        @click="selectedStatus = s; applyFilter()"
+                        :class="[
+                            'rounded-xl px-3 py-1.5 text-xs font-bold capitalize transition shadow-xs cursor-pointer',
+                            selectedStatus === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        ]"
                     >
-                        <option value="all">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="under_review">Under Review</option>
-                        <option value="revision_required">Revision Required</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                        {{ s.replace('_', ' ') }}
+                    </button>
                 </div>
             </div>
 
-            <!-- Minimalist Table Container -->
-            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Submissions</h3>
-                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.abstracts ? props.abstracts.length : 0 }}</span>
-                </div>
-
+            <!-- Abstracts Table Card -->
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-slate-600">
-                        <thead class="bg-slate-50 border-b border-slate-100 uppercase text-[11px] font-bold text-slate-500">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="border-b border-slate-100 bg-slate-50 uppercase text-[11px] font-bold text-slate-500">
                             <tr>
-                                <th scope="col" class="px-5 py-3">Code</th>
-                                <th scope="col" class="px-5 py-3">Author</th>
+                                <th scope="col" class="px-5 py-3">Code / Author</th>
                                 <th scope="col" class="px-5 py-3">Title</th>
-                                <th scope="col" class="px-5 py-3">Track / Category</th>
+                                <th scope="col" class="px-5 py-3">Track</th>
                                 <th scope="col" class="px-5 py-3">Review Progress</th>
                                 <th scope="col" class="px-5 py-3">Status</th>
-                                <th scope="col" class="px-5 py-3 text-right">Action</th>
+                                <th scope="col" class="px-5 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="!props.abstracts || props.abstracts.length === 0">
-                                <td colspan="7" class="px-5 py-8 text-center text-xs text-slate-400">
-                                    No abstract submissions found.
+                                <td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">
+                                    No abstracts found in this filter view.
                                 </td>
                             </tr>
-                            <tr v-for="item in props.abstracts" :key="item.id" class="hover:bg-slate-50/50 transition">
-                                <!-- Code -->
+                            <tr
+                                v-for="item in props.abstracts"
+                                :key="item.id"
+                                class="transition hover:bg-slate-50/50"
+                            >
+                                <!-- Code / Author -->
                                 <td class="px-5 py-3.5">
-                                    <p class="font-bold text-purple-900 text-xs">{{ item.abstract_code }}</p>
-                                </td>
-
-                                <!-- Author -->
-                                <td class="px-5 py-3.5">
-                                    <p class="font-bold text-slate-800 text-xs">{{ item.user?.name }}</p>
-                                    <p class="text-[11px] text-slate-400">{{ item.user?.email }}</p>
+                                    <span class="font-mono font-bold text-purple-900 text-xs">{{ item.abstract_code }}</span>
+                                    <p class="font-bold text-slate-800 text-xs mt-0.5">{{ item.user?.name || item.author_name }}</p>
+                                    <p class="text-[10px] text-slate-400">{{ item.user?.profile?.institution || item.user?.email }}</p>
                                 </td>
 
                                 <!-- Title -->
@@ -164,14 +206,14 @@ function formatStorageUrl(path) {
                                 <td class="px-5 py-3.5">
                                     <div class="space-y-1">
                                         <span :class="[
-                                            'inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold border',
-                                            getReviewStats(item).completedCount >= getReviewStats(item).totalCount ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                            'inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold border',
+                                            getReviewStats(item).completedCount >= getReviewStats(item).totalCount && getReviewStats(item).completedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                             getReviewStats(item).completedCount > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'
                                         ]">
                                             {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).totalCount }} Reviewed
                                         </span>
                                         <p class="text-[10px] text-slate-400">
-                                            Track Reviewers: {{ getReviewStats(item).totalCount }}
+                                            Assigned Reviewers: {{ getReviewStats(item).totalCount }}
                                         </p>
                                     </div>
                                 </td>
@@ -183,6 +225,7 @@ function formatStorageUrl(path) {
                                         item.status === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                         item.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
                                         item.status === 'revision_required' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                        item.status === 'under_review' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                         'bg-slate-100 text-slate-600 border-slate-200'
                                     ]">
                                         {{ item.status.replace('_', ' ') }}
@@ -191,20 +234,34 @@ function formatStorageUrl(path) {
 
                                 <!-- Actions -->
                                 <td class="px-5 py-3.5 text-right">
-                                    <div class="flex items-center justify-end gap-2">
+                                    <div class="flex items-center justify-end gap-1.5">
                                         <a
                                             v-if="item.file_path"
                                             :href="formatStorageUrl(item.file_path)"
                                             target="_blank"
                                             class="inline-flex items-center px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-50 transition"
                                         >
-                                            View File
+                                            File
                                         </a>
+                                        <button
+                                            @click="openAssignModal(item)"
+                                            class="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-xs transition cursor-pointer"
+                                            title="Assign Reviewers"
+                                        >
+                                            Assign
+                                        </button>
                                         <button
                                             @click="openReviewModal(item)"
                                             class="px-3 py-1 rounded-lg bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer"
                                         >
                                             Decision
+                                        </button>
+                                        <button
+                                            @click="deleteAbstract(item.id)"
+                                            class="px-2 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs transition cursor-pointer"
+                                            title="Delete Abstract"
+                                        >
+                                            <span class="material-symbols-outlined text-[14px] block">delete</span>
                                         </button>
                                     </div>
                                 </td>
@@ -214,64 +271,121 @@ function formatStorageUrl(path) {
                 </div>
             </div>
 
-            <!-- Minimalist Decision Modal -->
+            <!-- 👥 Assign Reviewers Modal -->
+            <div v-if="isAssignModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
+                <div class="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-200 my-8">
+                    <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm">Assign Peer Reviewers</h3>
+                            <p class="text-xs text-slate-500 font-mono mt-0.5">{{ activeAbstract.abstract_code }} — {{ activeAbstract.title }}</p>
+                        </div>
+                        <button @click="isAssignModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
+                    </div>
+
+                    <form @submit.prevent="submitAssign" class="p-6 space-y-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-700 block mb-2">Select Reviewers for Track: <strong>{{ activeAbstract.category?.name || 'General' }}</strong></span>
+                            
+                            <div class="space-y-2 max-h-60 overflow-y-auto border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
+                                <label
+                                    v-for="rev in props.reviewers"
+                                    :key="rev.id"
+                                    class="flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer"
+                                    :class="assignForm.reviewer_ids.includes(rev.id) ? 'bg-purple-50 border-purple-300 ring-1 ring-purple-400' : 'bg-white border-slate-200 hover:bg-slate-50'"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            :value="rev.id"
+                                            v-model="assignForm.reviewer_ids"
+                                            class="rounded text-purple-700 focus:ring-purple-700"
+                                        />
+                                        <div>
+                                            <span class="text-xs font-bold text-slate-900 block">{{ rev.name }}</span>
+                                            <span class="text-[10px] text-slate-400">{{ rev.email }}</span>
+                                        </div>
+                                    </div>
+                                    <span
+                                        v-if="rev.categories?.some(c => c.id === activeAbstract.category_id)"
+                                        class="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5"
+                                    >
+                                        Matched Track
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                            <button type="button" @click="isAssignModalOpen = false" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="assignForm.processing"
+                                class="rounded-xl bg-purple-900 hover:bg-purple-950 text-gold font-bold text-xs px-5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                            >
+                                {{ assignForm.processing ? 'Saving...' : 'Save Assignments' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ⚖️ Minimalist Decision Modal -->
             <div v-if="isReviewModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
                 <div class="relative w-full max-w-2xl rounded-2xl bg-white shadow-lg overflow-hidden border border-slate-200 my-8">
                     <!-- Modal Header -->
-                    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3.5">
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-bold text-slate-900">Editorial Decision</h3>
-                            <span class="rounded bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-800">
-                                {{ activeAbstract.abstract_code }}
-                            </span>
+                    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-6 py-4">
+                        <div>
+                            <span class="font-mono text-xs font-bold text-purple-900">{{ activeAbstract.abstract_code }}</span>
+                            <h3 class="text-sm font-bold text-slate-900 line-clamp-1" :title="activeAbstract.title">{{ activeAbstract.title }}</h3>
                         </div>
                         <button
                             @click="isReviewModalOpen = false"
-                            class="rounded-lg p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer text-sm"
+                            class="rounded-xl bg-slate-200/60 p-2 text-slate-600 hover:bg-slate-200 transition cursor-pointer font-bold text-sm"
                         >
                             ✕
                         </button>
                     </div>
 
                     <!-- Modal Body -->
-                    <div class="p-5 space-y-5 max-h-[70vh] overflow-y-auto text-xs">
-                        <!-- Abstract Info -->
-                        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5">
-                            <p class="font-bold text-slate-900 text-xs mb-1">{{ activeAbstract.title }}</p>
-                            <p class="text-slate-500">Author: {{ activeAbstract.user?.name }} | Track: {{ activeAbstract.category?.name || 'General' }}</p>
-                        </div>
-
-                        <!-- Reviewer Feedback -->
-                        <div class="space-y-2">
-                            <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[11px] border-b border-slate-100 pb-1.5 flex justify-between">
-                                <span>Track Reviewers Feedback</span>
-                                <span class="text-slate-500">
-                                    {{ getReviewStats(activeAbstract).completedCount }} / {{ getReviewStats(activeAbstract).totalCount }} Completed
-                                </span>
-                            </h4>
-
-                            <div class="space-y-2">
-                                <template v-if="getReviewStats(activeAbstract).assignments.length === 0">
-                                    <p class="text-slate-400 italic py-2">No reviewer feedback submitted yet.</p>
-                                </template>
-
+                    <div class="p-6 space-y-4 text-xs">
+                        
+                        <!-- Reviewers Feedback Recap -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-2">Reviewer Recommendations & Scores</h4>
+                            <div v-if="getReviewStats(activeAbstract).reviews.length === 0" class="rounded-xl bg-slate-50 border border-slate-100 p-4 text-center text-slate-400">
+                                No peer reviews submitted yet for this abstract.
+                            </div>
+                            <div v-else class="space-y-2.5">
                                 <div
-                                    v-for="(rev, idx) in getReviewStats(activeAbstract).assignments"
+                                    v-for="(rev, idx) in getReviewStats(activeAbstract).reviews"
                                     :key="idx"
-                                    class="rounded-xl border border-slate-200 p-3 bg-white space-y-1"
+                                    class="rounded-2xl border border-slate-200 p-3.5 bg-white space-y-2 shadow-xs"
                                 >
                                     <div class="flex items-center justify-between">
-                                        <span class="font-bold text-slate-800">{{ rev.reviewer_name }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-900">{{ rev.reviewer_name }}</span>
+                                            <span v-if="rev.total_score !== null && rev.total_score !== undefined" class="rounded-md bg-purple-100 text-purple-900 px-2 py-0.5 text-[10px] font-bold">
+                                                Total Score: {{ rev.total_score }} / 10
+                                            </span>
+                                        </div>
                                         <span :class="[
-                                            'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-                                            rev.recommendation === 'accept' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                            rev.recommendation === 'reject' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                            'rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border',
+                                            rev.recommendation === 'ORAL' || rev.recommendation === 'POSTER' || rev.recommendation === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                            rev.recommendation === 'REJECT' || rev.recommendation === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                                         ]">
                                             {{ rev.recommendation ? rev.recommendation.replace('_', ' ') : 'Reviewed' }}
                                         </span>
                                     </div>
-                                    <p class="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 text-[11px]">
-                                        {{ rev.comments || 'No comment provided.' }}
+                                    
+                                    <div v-if="rev.score_criteria_1 !== null" class="flex gap-4 text-[10px] text-slate-500 font-medium">
+                                        <span>Originality: <strong>{{ rev.score_criteria_1 }}/5</strong></span>
+                                        <span>Methodology: <strong>{{ rev.score_criteria_2 }}/5</strong></span>
+                                    </div>
+
+                                    <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] leading-relaxed">
+                                        {{ rev.comments || 'No written comment provided.' }}
                                     </p>
                                 </div>
                             </div>
@@ -281,20 +395,35 @@ function formatStorageUrl(path) {
                         <form @submit.prevent="submitReview" class="space-y-3 border-t border-slate-100 pt-3">
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Decision Outcome <span class="text-red-500">*</span></label>
-                                <select v-model="reviewForm.status" class="admin-input font-bold" required>
+                                <select v-model="reviewForm.status" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white font-bold" required>
                                     <option value="accepted">Accepted</option>
                                     <option value="revision_required">Revision Required</option>
                                     <option value="rejected">Rejected</option>
                                 </select>
                             </div>
 
+                            <!-- Presentation Type (When Accepted) -->
+                            <div v-if="reviewForm.status === 'accepted'" class="rounded-2xl bg-purple-50/70 border border-purple-200 p-3.5 space-y-2">
+                                <label class="block text-xs font-bold text-purple-950">Presentation Type Allocation <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'oral' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
+                                        <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" />
+                                        <span class="text-xs">🎤 Oral Presentation</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'poster' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
+                                        <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" />
+                                        <span class="text-xs">🖼️ Poster Presentation</span>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Decision Notes for Author</label>
-                                <textarea v-model="reviewForm.review_notes" rows="3" class="admin-input" placeholder="Feedback notes for the author..."></textarea>
+                                <textarea v-model="reviewForm.review_notes" rows="3" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white" placeholder="Feedback notes for the author..."></textarea>
                             </div>
 
                             <div class="flex items-center justify-end gap-2 pt-2">
-                                <button type="button" @click="isReviewModalOpen = false" class="rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50">
+                                <button type="button" @click="isReviewModalOpen = false" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
                                     Cancel
                                 </button>
                                 <button

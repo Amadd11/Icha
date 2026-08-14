@@ -13,10 +13,10 @@ return new class extends Migration
             $table->string('invoice_number')->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('conference_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('registration_type_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('registration_fee_id')->constrained('registration_fees')->cascadeOnDelete();
             $table->boolean('is_early_bird')->default(false);
             $table->enum('currency', ['IDR', 'USD'])->default('IDR');
-            $table->decimal('amount', 12, 2);
+            $table->decimal('amount', 15, 2);
             $table->enum('status', ['pending', 'waiting_verification', 'paid', 'rejected', 'expired'])->default('pending');
             $table->text('notes')->nullable();
             $table->timestamps();

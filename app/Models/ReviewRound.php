@@ -9,6 +9,7 @@ class ReviewRound extends Model
     protected $fillable = [
         'submission_type',
         'submission_id',
+        'round_number',
         'status',
     ];
 

@@ -40,7 +40,7 @@
             </p>
 
             <div style="text-align: center;">
-                <a href="{{ url('/participant/payment') }}" class="btn">Re-upload Payment Proof →</a>
+                <a href="{{ route('participant.registration.create') }}" class="btn">Re-upload Payment Proof →</a>
             </div>
         </div>
         <div class="footer">

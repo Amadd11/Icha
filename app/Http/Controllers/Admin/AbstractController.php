@@ -37,8 +37,9 @@ class AbstractController extends Controller
     public function review(Request $request, AbstractSubmission $abstract): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:pending,under_review,revision_required,accepted,rejected'],
-            'review_notes' => ['nullable', 'string'],
+            'status'            => ['required', 'in:pending,under_review,revision_required,accepted,rejected'],
+            'presentation_type' => ['nullable', 'required_if:status,accepted', 'in:oral,poster'],
+            'review_notes'      => ['nullable', 'string', 'max:5000'],
         ]);
 
         $this->abstractReviewService->reviewAbstract(
@@ -47,6 +48,17 @@ class AbstractController extends Controller
             $data
         );
 
-        return redirect()->back()->with('success', 'Abstract review status updated!');
+        return redirect()->back()->with('success', 'Abstract decision updated successfully.');
+    }
+
+    public function destroy(AbstractSubmission $abstract): RedirectResponse
+    {
+        if ($abstract->file_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($abstract->file_path);
+        }
+
+        $abstract->delete();
+
+        return redirect()->back()->with('success', 'Abstract deleted successfully.');
     }
 }

@@ -72,7 +72,7 @@ function filterStatus(status) {
                             <p class="text-xs text-slate-400">{{ r.user?.email }} · {{ r.user?.profile?.phone }}</p>
                         </td>
                         <td class="px-5 py-4 text-xs font-medium text-slate-700">
-                            {{ r.registration_type?.name }}
+                            {{ r.registration_fee?.name }}
                         </td>
                         <td class="px-5 py-4 font-bold text-slate-800">
                             {{ r.currency }} {{ Number(r.amount).toLocaleString() }}

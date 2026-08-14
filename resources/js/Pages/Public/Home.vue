@@ -104,11 +104,10 @@ onMounted(() => {
         />
 
         <Speakers
-            v-if="props.activeConference?.speakers?.length"
             eyebrow="Distinguished Guests"
             title="Keynote & Invited Speakers"
             description="Keynote and plenary speakers representing leading institutions."
-            :speakers="props.activeConference?.speakers"
+            :speakers="props.activeConference?.speakers || []"
         />
 
         <Abstract />

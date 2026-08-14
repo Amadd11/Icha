@@ -41,10 +41,25 @@ function handleFileChange(e, type) {
     }
 }
 
+const isRevising = ref(false);
+
+function startRevision() {
+    if (props.abstracts && props.abstracts.length > 0) {
+        abstractForm.title = props.abstracts[0].title || '';
+        abstractForm.category_id = props.abstracts[0].category_id || props.categories?.[0]?.id || '';
+        abstractForm.keywords = props.abstracts[0].keywords || '';
+        abstractForm.abstract_text = props.abstracts[0].abstract_text || '';
+    }
+    isRevising.value = true;
+}
+
 function submitAbstract() {
     abstractForm.post(route('participant.submission.abstract.store'), {
         preserveScroll: true,
-        onSuccess: () => abstractForm.reset(),
+        onSuccess: () => {
+            abstractForm.reset();
+            isRevising.value = false;
+        },
     });
 }
 
@@ -128,7 +143,7 @@ function submitPaper() {
                         </div>
 
                         <!-- STATE 1: ALREADY UPLOADED -->
-                        <div v-if="props.statusChecklist?.hasUploadedAbstract && props.abstracts.length > 0" class="space-y-6">
+                        <div v-if="props.statusChecklist?.hasUploadedAbstract && props.abstracts.length > 0 && !isRevising" class="space-y-6">
                             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-center">
                                 <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                                     <span class="material-symbols-outlined text-3xl">check_circle</span>
@@ -137,6 +152,23 @@ function submitPaper() {
                                     <h3 class="text-lg font-bold text-emerald-900 mb-1">Abstract Submitted Successfully</h3>
                                     <p class="text-sm text-emerald-700">You have already submitted your abstract for this conference. You can only submit one abstract per registration.</p>
                                 </div>
+                            </div>
+
+                            <!-- Revision Notice Box -->
+                            <div v-if="props.abstracts[0].status === 'revision_required'" class="rounded-2xl border border-amber-300 bg-amber-50/80 p-5 space-y-3">
+                                <div class="flex items-center gap-2 text-amber-950 font-extrabold text-sm">
+                                    <span class="material-symbols-outlined text-amber-700 text-lg">warning</span>
+                                    Abstract Revision Required
+                                </div>
+                                <p v-if="props.abstracts[0].review_notes" class="text-xs text-amber-900 bg-white p-3 rounded-xl border border-amber-200 leading-relaxed font-medium">
+                                    <strong>Committee / Reviewer Notes:</strong> {{ props.abstracts[0].review_notes }}
+                                </p>
+                                <button
+                                    @click="startRevision"
+                                    class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
+                                >
+                                    Upload Revised Abstract &rarr;
+                                </button>
                             </div>
 
                             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -154,9 +186,18 @@ function submitPaper() {
                                         <span class="text-xs text-slate-500 block mb-0.5">Track / Category</span>
                                         <span class="font-semibold text-slate-700">{{ props.abstracts[0].category?.name }}</span>
                                     </div>
-                                    <div class="pt-2">
-                                        <span class="inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border border-amber-200 bg-amber-50 text-amber-700">
-                                            Status: Under Review
+                                    <div class="pt-2 flex items-center gap-2">
+                                        <span :class="[
+                                            'inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border',
+                                            props.abstracts[0].status === 'accepted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' :
+                                            props.abstracts[0].status === 'rejected' ? 'border-rose-200 bg-rose-50 text-rose-700' :
+                                            props.abstracts[0].status === 'revision_required' ? 'border-amber-200 bg-amber-50 text-amber-700' :
+                                            'border-purple-200 bg-purple-50 text-purple-700'
+                                        ]">
+                                            Status: {{ props.abstracts[0].status ? props.abstracts[0].status.replace('_', ' ') : 'Under Review' }}
+                                        </span>
+                                        <span v-if="props.abstracts[0].status === 'accepted' && props.abstracts[0].presentation_type" class="inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border border-purple-200 bg-purple-50 text-purple-900">
+                                            {{ props.abstracts[0].presentation_type === 'poster' ? '🖼️ Poster' : '🎤 Oral' }}
                                         </span>
                                     </div>
                                 </div>
@@ -167,7 +208,14 @@ function submitPaper() {
                         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Left: Form -->
                             <form @submit.prevent="submitAbstract" class="space-y-4">
-                                <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">Submit Your Abstract Here</h3>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider">
+                                        {{ isRevising ? 'Submit Revised Abstract' : 'Submit Your Abstract Here' }}
+                                    </h3>
+                                    <button v-if="isRevising" type="button" @click="isRevising = false" class="text-xs font-bold text-slate-400 hover:text-slate-700">
+                                        ✕ Cancel Revision
+                                    </button>
+                                </div>
 
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Abstract Title</label>
@@ -263,7 +311,24 @@ function submitPaper() {
                             </h2>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- 🔒 LOCKED IF NO ACCEPTED ABSTRACT -->
+                        <div v-if="!props.abstracts?.some(a => a.status === 'accepted')" class="bg-slate-50 rounded-2xl p-8 border border-slate-200 text-center space-y-3 max-w-lg mx-auto my-4">
+                            <div class="w-14 h-14 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center mx-auto text-2xl font-bold">
+                                🔒
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Full Paper Submission Locked</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Full Paper submission will be unlocked automatically after your submitted Abstract is reviewed and officially <strong>Accepted</strong> by the scientific committee.
+                            </p>
+                            <div v-if="props.abstracts?.length > 0" class="pt-2">
+                                <span class="inline-flex px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    Current Abstract Status: {{ props.abstracts[0].status.replace('_', ' ') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 📄 UNLOCKED IF ABSTRACT IS ACCEPTED -->
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <!-- Left: Form -->
                             <form @submit.prevent="submitPaper" class="space-y-4">
                                 <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">Submit Your Full Paper Here</h3>
@@ -280,12 +345,12 @@ function submitPaper() {
                                     <span v-if="paperForm.errors.title" class="text-[10px] text-rose-500 font-bold mt-1 block">{{ paperForm.errors.title }}</span>
                                 </div>
 
-                                <div v-if="props.abstracts.length > 0">
+                                <div v-if="props.abstracts?.filter(a => a.status === 'accepted').length > 0">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Link to Approved Abstract</label>
-                                    <select v-model="paperForm.abstract_id" class="admin-input">
-                                        <option value="">Select linked abstract (Optional)...</option>
-                                        <option v-for="abs in props.abstracts" :key="abs.id" :value="abs.id">
-                                            [{{ abs.abstract_code }}] {{ abs.title }}
+                                    <select v-model="paperForm.abstract_id" class="admin-input" required>
+                                        <option value="" disabled>Select approved abstract...</option>
+                                        <option v-for="abs in props.abstracts.filter(a => a.status === 'accepted')" :key="abs.id" :value="abs.id">
+                                            [{{ abs.abstract_code }}] {{ abs.title }} ({{ abs.presentation_type === 'poster' ? 'Poster' : 'Oral' }})
                                         </option>
                                     </select>
                                 </div>

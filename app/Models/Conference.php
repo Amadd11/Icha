@@ -78,6 +78,11 @@ class Conference extends Model
         return $this->hasMany(Sponsor::class)->orderBy('order');
     }
 
+    public function registrationFees(): HasMany
+    {
+        return $this->hasMany(RegistrationFee::class);
+    }
+
     // ─── Scopes ─────────────────────────────────────────────────────
 
     public function scopeActive($query)

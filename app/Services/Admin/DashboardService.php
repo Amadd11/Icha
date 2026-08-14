@@ -117,7 +117,7 @@ class DashboardService
 
         // Recent Registrations
         $recentRegistrations = (clone $registrationQuery)
-            ->with(['user:id,name,email', 'registrationType:id,name', 'payment:id,registration_id,status,amount,currency'])
+            ->with(['user:id,name,email', 'registrationFee:id,name', 'payment:id,registration_id,status,amount,currency'])
             ->latest()
             ->take(6)
             ->get();

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\{
     PaymentController,
     PaperController,
     RegistrationController as AdminRegistrationController,
+    RegistrationFeeController,
     ReviewAssignmentController,
     ReviewerManagementController,
     SpeakerController,
@@ -87,6 +88,7 @@ Route::prefix('admin')
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('committees', CommitteeController::class)->except(['show']);
         Route::resource('timelines', TimelineController::class)->except(['show']);
+        Route::resource('registration-fees', RegistrationFeeController::class)->except(['show']);
 
         Route::resource('registrations', AdminRegistrationController::class)->only(['index', 'show']);
         Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -96,6 +98,7 @@ Route::prefix('admin')
         Route::get('abstracts', [AbstractController::class, 'index'])->name('abstracts.index');
         Route::post('abstracts/{abstract}/review', [AbstractController::class, 'review'])->name('abstracts.review');
         Route::post('abstracts/{abstract}/assign', [ReviewAssignmentController::class, 'store'])->name('abstracts.assign');
+        Route::delete('abstracts/{abstract}', [AbstractController::class, 'destroy'])->name('abstracts.destroy');
 
         Route::resource('papers', PaperController::class);
         Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');

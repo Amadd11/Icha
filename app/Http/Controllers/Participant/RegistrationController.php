@@ -7,7 +7,7 @@ use App\Http\Requests\Participant\ConferenceRegistrationRequest;
 use App\Http\Requests\Participant\PaymentProofRequest;
 use App\Models\Conference;
 use App\Models\Registration;
-use App\Models\RegistrationType;
+use App\Models\RegistrationFee;
 use App\Services\PaymentService;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
@@ -28,18 +28,18 @@ class RegistrationController extends Controller
 
         $existingRegistration = Registration::where('user_id', $user->id)
             ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
-            ->with(['registrationType', 'payment'])
+            ->with(['registrationFee', 'payment'])
             ->first();
 
-        $registrationTypes = $activeConference
-            ? RegistrationType::where('conference_id', $activeConference->id)->where('is_active', true)->get()
-            : RegistrationType::where('is_active', true)->get();
+        $registrationFees = $activeConference
+            ? RegistrationFee::where('conference_id', $activeConference->id)->get()
+            : RegistrationFee::all();
 
         return Inertia::render('Participant/Registration/Form', [
             'activeConference'     => $activeConference,
             'existingRegistration' => $existingRegistration,
             'payment'              => $existingRegistration?->payment,
-            'registrationTypes'    => $registrationTypes,
+            'registrationFees'     => $registrationFees,
             'userProfile'          => $user->profile,
         ]);
     }
@@ -61,17 +61,14 @@ class RegistrationController extends Controller
     public function submitPayment(PaymentProofRequest $request)
     {
         $user = $request->user();
-        $registration = Registration::where('id', $request->validated('registration_id'))
-            ->where('user_id', $user->id)
-            ->firstOrFail();
-
-        $this->paymentService->submitPaymentProof(
-            $registration,
-            $request->validated('payment_method'),
-            $request->file('proof_file')
+        $this->paymentService->submitProof(
+            registrationId: (int) $request->validated('registration_id'),
+            paymentMethod:  $request->validated('payment_method'),
+            proofFile:      $request->file('proof_file'),
+            user:           $user
         );
 
         return redirect()->route('participant.registration.create')
-            ->with('success', 'Payment proof uploaded successfully. Awaiting admin verification.');
+            ->with('success', 'Payment proof submitted successfully. Our team will verify your payment within 1-2 business days.');
     }
 }

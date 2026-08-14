@@ -16,6 +16,8 @@ class ConferenceSeeder extends Seeder
         $conference = Conference::updateOrCreate(
             ['title' => 'ICHA 2026'],
             [
+                'slug'        => 'icha-2026',
+                'year'        => 2026,
                 'tagline'     => '11th International Conference on Healthcare Administration',
                 'description' => 'ICHA 2026 brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices for the future of health systems.',
                 'start_date'  => '2026-11-10',

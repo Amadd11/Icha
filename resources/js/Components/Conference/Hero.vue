@@ -26,7 +26,6 @@ const carouselImages = computed(() => {
     }
     return [
         '/assets/images/umsura.png',
-        '/assets/images/umsura1.png',
     ];
 });
 

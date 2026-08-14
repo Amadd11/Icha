@@ -25,10 +25,13 @@ class AdminAbstractResource extends JsonResource
             'category_id'       => $this->category_id,
             'user'              => $this->whenLoaded('user', function () {
                 return [
-                    'id'    => $this->user->id,
-                    'name'  => $this->user->name,
-                    'email' => $this->user->email,
-                    'role'  => $this->user->role,
+                    'id'      => $this->user->id,
+                    'name'    => $this->user->name,
+                    'email'   => $this->user->email,
+                    'role'    => $this->user->role,
+                    'profile' => $this->user->profile ? [
+                        'institution' => $this->user->profile->institution,
+                    ] : null,
                 ];
             }),
             'category'          => $this->whenLoaded('category', function () {
@@ -41,16 +44,21 @@ class AdminAbstractResource extends JsonResource
                 return $this->reviewRounds->map(function ($round) {
                     return [
                         'id'           => $round->id,
-                        'round_number' => $round->round_number,
+                        'round_number' => $round->round_number ?? 1,
                         'status'       => $round->status,
                         'assignments'  => $round->assignments ? $round->assignments->map(function ($a) {
+                            $review = $a->review;
                             return [
-                                'id'             => $a->id,
-                                'reviewer_id'    => $a->reviewer_id,
-                                'reviewer_name'  => $a->reviewer->name ?? 'Reviewer',
-                                'recommendation' => $a->recommendation,
-                                'comments'       => $a->comments,
-                                'reviewed_at'    => $a->reviewed_at?->toIso8601String(),
+                                'id'               => $a->id,
+                                'reviewer_id'      => $a->reviewer_id,
+                                'reviewer_name'    => $a->reviewer->name ?? 'Reviewer',
+                                'status'           => $a->status,
+                                'recommendation'   => $review?->recommendation,
+                                'comments'         => $review?->summary,
+                                'score_criteria_1' => $review?->score_criteria_1,
+                                'score_criteria_2' => $review?->score_criteria_2,
+                                'total_score'      => $review?->total_score,
+                                'reviewed_at'      => $review?->created_at?->toIso8601String(),
                             ];
                         }) : [],
                     ];

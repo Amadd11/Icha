@@ -21,7 +21,7 @@ class PaymentController extends Controller
         $status = $request->query('status', 'pending');
         $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
 
-        $payments = Payment::with(['registration.user.profile', 'registration.registrationType', 'verifier'])
+        $payments = Payment::with(['registration.user.profile', 'registration.registrationFee', 'verifier'])
             ->when($confId, function ($q) use ($confId) {
                 $q->whereHas('registration', fn($rq) => $rq->where('conference_id', $confId));
             })

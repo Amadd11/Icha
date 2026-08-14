@@ -12,7 +12,7 @@ class Registration extends Model
         'invoice_number',
         'user_id',
         'conference_id',
-        'registration_type_id',
+        'registration_fee_id',
         'is_early_bird',
         'currency',
         'amount',
@@ -38,9 +38,17 @@ class Registration extends Model
         return $this->belongsTo(Conference::class);
     }
 
+    public function registrationFee(): BelongsTo
+    {
+        return $this->belongsTo(RegistrationFee::class, 'registration_fee_id');
+    }
+
+    /**
+     * Alias for backward compatibility.
+     */
     public function registrationType(): BelongsTo
     {
-        return $this->belongsTo(RegistrationType::class);
+        return $this->registrationFee();
     }
 
     public function payment(): HasOne

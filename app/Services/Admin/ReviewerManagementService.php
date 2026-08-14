@@ -2,11 +2,13 @@
 
 namespace App\Services\Admin;
 
-use App\Models\User;
+use App\Models\AbstractSubmission;
 use App\Models\Category;
+use App\Models\ReviewAssignment;
+use App\Models\ReviewRound;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class ReviewerManagementService
 {
@@ -26,15 +28,38 @@ class ReviewerManagementService
     public function createReviewer(array $data): User
     {
         $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            // Default password for testing
+            'name'     => $data['name'],
+            'email'    => $data['email'],
             'password' => Hash::make('password'),
-            'role' => 'reviewer',
+            'role'     => 'reviewer',
         ]);
 
         if (!empty($data['category_ids'])) {
             $user->categories()->sync($data['category_ids']);
+
+            // Auto-assign existing abstracts in these categories
+            $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])->get();
+            foreach ($abstracts as $abstract) {
+                $round = ReviewRound::firstOrCreate(
+                    [
+                        'submission_type' => 'abstract',
+                        'submission_id'   => $abstract->id,
+                    ],
+                    [
+                        'status' => 'pending',
+                    ]
+                );
+
+                ReviewAssignment::firstOrCreate(
+                    [
+                        'review_round_id' => $round->id,
+                        'reviewer_id'     => $user->id,
+                    ],
+                    [
+                        'status' => 'assigned',
+                    ]
+                );
+            }
         }
 
         return $user;
@@ -47,12 +72,36 @@ class ReviewerManagementService
         }
 
         $reviewer->update([
-            'name' => $data['name'],
+            'name'  => $data['name'],
             'email' => $data['email'],
         ]);
 
         if (isset($data['category_ids'])) {
             $reviewer->categories()->sync($data['category_ids']);
+
+            // Auto-assign existing abstracts in these categories
+            $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])->get();
+            foreach ($abstracts as $abstract) {
+                $round = ReviewRound::firstOrCreate(
+                    [
+                        'submission_type' => 'abstract',
+                        'submission_id'   => $abstract->id,
+                    ],
+                    [
+                        'status' => 'pending',
+                    ]
+                );
+
+                ReviewAssignment::firstOrCreate(
+                    [
+                        'review_round_id' => $round->id,
+                        'reviewer_id'     => $reviewer->id,
+                    ],
+                    [
+                        'status' => 'assigned',
+                    ]
+                );
+            }
         } else {
             $reviewer->categories()->detach();
         }
@@ -66,6 +115,7 @@ class ReviewerManagementService
             throw new \InvalidArgumentException('User is not a reviewer.');
         }
 
+        $reviewer->categories()->detach();
         $reviewer->delete();
     }
 }

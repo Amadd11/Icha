@@ -122,7 +122,7 @@ function isPdf(path) {
                             <td class="px-5 py-3.5">
                                 <p class="font-bold text-purple-900 text-xs">{{ p.registration?.invoice_number }}</p>
                                 <p class="font-bold text-slate-800 text-xs mt-0.5">{{ p.registration?.user?.name }}</p>
-                                <p class="text-[11px] text-slate-400">{{ p.registration?.registration_type?.name }}</p>
+                                <p class="text-[11px] text-slate-400">{{ p.registration?.registration_fee?.name || p.registration?.registration_type?.name }}</p>
                             </td>
 
                             <!-- Amount -->
@@ -221,8 +221,8 @@ function isPdf(path) {
 
                             <div class="space-y-2">
                                 <div>
-                                    <span class="text-slate-400 font-medium block">Registration Type</span>
-                                    <span class="font-bold text-slate-800">{{ selectedPayment.registration?.registration_type?.name }}</span>
+                                    <span class="text-slate-400 font-medium block">Registration Package</span>
+                                    <span class="font-bold text-slate-800">{{ selectedPayment.registration?.registration_fee?.name || selectedPayment.registration?.registration_type?.name }}</span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 font-medium block">Payment Method</span>

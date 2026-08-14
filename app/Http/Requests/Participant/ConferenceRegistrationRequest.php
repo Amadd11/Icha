@@ -14,19 +14,19 @@ class ConferenceRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'registration_type_id' => ['required', 'exists:registration_types,id'],
-            'currency'             => ['required', 'in:IDR,USD'],
-            'notes'                => ['nullable', 'string', 'max:500'],
+            'registration_fee_id' => ['required', 'exists:registration_fees,id'],
+            'currency'            => ['required', 'in:IDR,USD'],
+            'notes'               => ['nullable', 'string', 'max:500'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'registration_type_id.required' => 'Kategori pendaftaran wajib dipilih.',
-            'registration_type_id.exists'   => 'Kategori pendaftaran tidak valid.',
-            'currency.required'             => 'Mata uang wajib dipilih (IDR/USD).',
-            'currency.in'                   => 'Pilihan mata uang harus IDR atau USD.',
+            'registration_fee_id.required' => 'Paket pendaftaran wajib dipilih.',
+            'registration_fee_id.exists'   => 'Paket pendaftaran tidak valid.',
+            'currency.required'            => 'Mata uang wajib dipilih (IDR/USD).',
+            'currency.in'                  => 'Pilihan mata uang harus IDR atau USD.',
         ];
     }
 }

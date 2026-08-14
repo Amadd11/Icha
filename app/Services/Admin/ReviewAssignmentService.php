@@ -11,13 +11,16 @@ class ReviewAssignmentService
 {
     public function assignReviewers(AbstractSubmission $abstract, array $reviewerIds): void
     {
+        // Enforce max 3 reviewers per round specification
+        $reviewerIds = array_values(array_unique(array_slice($reviewerIds, 0, 3)));
+
         DB::transaction(function () use ($abstract, $reviewerIds) {
             // Find or create the latest review round for this abstract
             $round = ReviewRound::firstOrCreate(
                 [
                     'submission_type' => 'abstract',
-                    'submission_id' => $abstract->id,
-                    'status' => 'pending',
+                    'submission_id'   => $abstract->id,
+                    'status'          => 'pending',
                 ]
             );
 
