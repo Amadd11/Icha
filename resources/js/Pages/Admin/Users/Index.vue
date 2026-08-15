@@ -3,6 +3,8 @@ import { ref } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
+import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { getRoleBadgeClass as roleColor } from '@/Utils/badges';
 
 const props = defineProps({
@@ -13,6 +15,17 @@ const props = defineProps({
 
 const isModalOpen = ref(false);
 const editingUser = ref(null);
+
+const {
+    isModalOpen: isDeleteModalOpen,
+    itemToDelete: userToDelete,
+    deleteTitle,
+    deleteMessage,
+    isDeleting,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useDeleteConfirm();
 
 const form = useForm({
     name: '',
@@ -64,11 +77,12 @@ function submit() {
 }
 
 function destroy(user) {
-    if (confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) {
-        router.delete(route('admin.users.destroy', user.id), {
-            preserveScroll: true,
-        });
-    }
+    openDeleteModal({
+        item: user,
+        title: 'Delete User Account',
+        message: `Are you sure you want to delete user "${user.name}"? Their account will be moved to trash and cannot log in.`,
+        url: route('admin.users.destroy', user.id),
+    });
 }
 
 function formatDate(dateStr) {
@@ -302,6 +316,17 @@ function formatDate(dateStr) {
 
                 </div>
             </div>
+
+            <!-- Reusable Delete Confirmation Modal -->
+            <DeleteConfirmModal
+                :show="isDeleteModalOpen"
+                :title="deleteTitle"
+                :message="deleteMessage"
+                :item-name="userToDelete ? `${userToDelete.name} (${userToDelete.email})` : ''"
+                :loading="isDeleting"
+                @close="closeDeleteModal"
+                @confirm="confirmDelete"
+            />
 
         </div>
     </AdminLayout>

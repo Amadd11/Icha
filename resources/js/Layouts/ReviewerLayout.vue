@@ -95,7 +95,7 @@ function logout() {
         </div>
 
         <!-- Mobile Menu Overlay -->
-        <div v-if="isMobileOpen" class="md:hidden fixed inset-0 z-30 bg-sidebar/95 backdrop-blur-sm flex flex-col pt-16">
+        <div v-if="isMobileOpen" class="md:hidden fixed inset-0 z-30 bg-sidebar/95 flex flex-col pt-16">
             <nav class="flex-1 px-4 py-6 flex flex-col gap-2 overflow-y-auto">
                     <div v-for="group in navigationGroups" :key="group.name" class="space-y-3">
                         <h3 class="px-2 text-[10px] font-black text-purple-200/50 uppercase tracking-widest">{{ group.name }}</h3>

@@ -28,26 +28,41 @@ const props = defineProps({
 const emit = defineEmits(["toggle-menu", "close-menu"]);
 
 const activeSection = ref("");
+let isTicking = false;
 
 const handleScroll = () => {
-    const sections = props.links
-        .map((link) => link.href ? link.href.split('#')[1] : null)
-        .filter(Boolean)
-        .map((id) => document.getElementById(id))
-        .filter(Boolean);
+    if (!isTicking) {
+        window.requestAnimationFrame(() => {
+            const scrollPos = window.scrollY + 120;
+            const linkIds = props.links
+                .map((link) => link.href ? link.href.split('#')[1] : null)
+                .filter(Boolean);
 
-    let current = "";
-    for (const section of sections) {
-        const sectionTop = section.offsetTop;
-        if (window.scrollY >= sectionTop - 100) {
-            current = section.getAttribute("id");
-        }
+            let current = "";
+            for (const id of linkIds) {
+                const el = document.getElementById(id);
+                if (el) {
+                    const top = el.offsetTop;
+                    const height = el.offsetHeight;
+                    if (scrollPos >= top && scrollPos < top + height) {
+                        current = id;
+                        break;
+                    } else if (scrollPos >= top) {
+                        current = id;
+                    }
+                }
+            }
+            if (current) {
+                activeSection.value = current;
+            }
+            isTicking = false;
+        });
+        isTicking = true;
     }
-    activeSection.value = current;
 };
 
 onMounted(() => {
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 });
 

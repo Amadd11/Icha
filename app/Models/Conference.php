@@ -57,7 +57,7 @@ class Conference extends Model
 
     public function categories(): HasMany
     {
-        return $this->hasMany(Category::class)->orderBy('order');
+        return $this->hasMany(Category::class)->orderBy('id');
     }
 
     public function speakers(): HasMany

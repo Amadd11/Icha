@@ -129,7 +129,7 @@ function formatImageUrl(path) {
         <div
             v-if="isPosterModalOpen"
             @click.self="isPosterModalOpen = false"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xs"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
         >
             <div class="relative max-w-2xl max-h-[90vh] overflow-hidden rounded-3xl bg-slate-900 p-2 shadow-2xl border border-white/10">
                 <button

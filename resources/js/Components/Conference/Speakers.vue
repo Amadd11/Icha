@@ -104,6 +104,8 @@ function formatStorageUrl(path) {
                                             v-if="speaker.photo"
                                             :src="formatStorageUrl(speaker.photo)"
                                             :alt="speaker.name"
+                                            loading="lazy"
+                                            decoding="async"
                                             class="h-full w-full object-cover"
                                         />
                                         <div
@@ -126,6 +128,8 @@ function formatStorageUrl(path) {
                                         <img
                                             :src="getFlagUrl(speaker)"
                                             :alt="speaker.country || speaker.country_code"
+                                            loading="lazy"
+                                            decoding="async"
                                             class="h-6 w-6 rounded-full object-cover"
                                         />
                                     </div>

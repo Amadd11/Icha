@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
+import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
@@ -10,6 +12,17 @@ const props = defineProps({
     reviewers: Array,
     filters: Object,
 });
+
+const {
+    isModalOpen: isDeleteModalOpen,
+    itemToDelete: abstractToDelete,
+    deleteTitle,
+    deleteMessage,
+    isDeleting,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useDeleteConfirm();
 
 const abstractList = computed(() => {
     return Array.isArray(props.abstracts) ? props.abstracts : (props.abstracts?.data || []);
@@ -96,12 +109,13 @@ function submitAssign() {
     });
 }
 
-function deleteAbstract(id) {
-    if (confirm('Are you sure you want to delete this abstract? This action cannot be undone and will delete all associated reviews.')) {
-        router.delete(route('admin.abstracts.destroy', id), {
-            preserveScroll: true,
-        });
-    }
+function deleteAbstract(item) {
+    openDeleteModal({
+        item: item,
+        title: 'Delete Abstract Submission',
+        message: `Are you sure you want to delete abstract "${item.abstract_code} - ${item.title}"? This submission will be soft deleted.`,
+        url: route('admin.abstracts.destroy', item.id),
+    });
 }
 
 function getReviewStats(item) {
@@ -255,7 +269,7 @@ function getReviewStats(item) {
                                             Decision
                                         </button>
                                         <button
-                                            @click="deleteAbstract(item.id)"
+                                            @click="deleteAbstract(item)"
                                             class="px-2 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs transition cursor-pointer"
                                             title="Delete Abstract"
                                         >
@@ -444,6 +458,17 @@ function getReviewStats(item) {
                     </div>
                 </div>
             </div>
+
+            <!-- Reusable Delete Confirmation Modal -->
+            <DeleteConfirmModal
+                :show="isDeleteModalOpen"
+                :title="deleteTitle"
+                :message="deleteMessage"
+                :item-name="abstractToDelete ? `[${abstractToDelete.abstract_code}] ${abstractToDelete.title}` : ''"
+                :loading="isDeleting"
+                @close="closeDeleteModal"
+                @confirm="confirmDelete"
+            />
 
         </div>
     </AdminLayout>

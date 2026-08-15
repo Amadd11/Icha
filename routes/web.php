@@ -35,6 +35,36 @@ Route::get('/conferences', [ConferenceController::class, 'index'])->name('confer
 Route::get('/conferences/{conference:slug}', [ConferenceController::class, 'show'])->name('conferences.show');
 Route::get('/registration', [ConferenceController::class, 'registration'])->name('registration');
 
+// Dynamic XML Sitemap for Search Engines
+Route::get('/sitemap.xml', function () {
+    $baseUrl = url('/');
+    $conferences = \App\Models\Conference::where('is_active', true)->orWhere('status', 'active')->get();
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+    // Homepage
+    $xml .= "<url><loc>{$baseUrl}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>";
+    $xml .= "<url><loc>{$baseUrl}/conferences</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>";
+    $xml .= "<url><loc>{$baseUrl}/registration</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>";
+    $xml .= "<url><loc>{$baseUrl}/register</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>";
+    $xml .= "<url><loc>{$baseUrl}/login</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>";
+
+    // Active Conference Pages
+    foreach ($conferences as $conf) {
+        $xml .= "<url>";
+        $xml .= "<loc>{$baseUrl}/conferences/{$conf->slug}</loc>";
+        $xml .= "<lastmod>" . ($conf->updated_at ? $conf->updated_at->toAtomString() : now()->toAtomString()) . "</lastmod>";
+        $xml .= "<changefreq>weekly</changefreq>";
+        $xml .= "<priority>0.9</priority>";
+        $xml .= "</url>";
+    }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200, ['Content-Type' => 'application/xml']);
+})->name('sitemap');
+
 // Authenticated participant routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])

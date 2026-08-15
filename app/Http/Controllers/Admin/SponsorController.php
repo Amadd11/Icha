@@ -31,15 +31,12 @@ class SponsorController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Admin/Sponsors/Form', [
-            'sponsor'     => null,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.sponsors.index');
     }
 
-    public function store(StoreSponsorRequest $request)
+    public function store(StoreSponsorRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -54,12 +51,9 @@ class SponsorController extends Controller
             ->with('success', 'Sponsor added successfully.');
     }
 
-    public function edit(Sponsor $sponsor): Response
+    public function edit(Sponsor $sponsor): RedirectResponse
     {
-        return Inertia::render('Admin/Sponsors/Form', [
-            'sponsor'     => $sponsor,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.sponsors.index');
     }
 
     public function update(UpdateSponsorRequest $request, Sponsor $sponsor)

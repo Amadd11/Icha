@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Category extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['conference_id', 'name', 'badge', 'description', 'icon', 'order'];
+    protected $fillable = ['conference_id', 'name', 'badge', 'description'];
 
     public function conference(): BelongsTo
     {

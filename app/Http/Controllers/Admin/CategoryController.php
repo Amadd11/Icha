@@ -22,7 +22,7 @@ class CategoryController extends Controller
             ->when($confId, function ($q) use ($confId) {
                 $q->where('conference_id', $confId)->orWhereNull('conference_id');
             })
-            ->orderBy('order')
+            ->orderBy('id')
             ->get();
 
         return Inertia::render('Admin/Categories/Index', [
@@ -31,15 +31,12 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Admin/Categories/Form', [
-            'category'    => null,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.categories.index');
     }
 
-    public function store(StoreCategoryRequest $request)
+    public function store(StoreCategoryRequest $request): RedirectResponse
     {
         Category::create($request->validated());
 
@@ -47,12 +44,9 @@ class CategoryController extends Controller
             ->with('success', 'Category created successfully.');
     }
 
-    public function edit(Category $category): Response
+    public function edit(Category $category): RedirectResponse
     {
-        return Inertia::render('Admin/Categories/Form', [
-            'category'    => $category,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.categories.index');
     }
 
     public function update(UpdateCategoryRequest $request, Category $category)

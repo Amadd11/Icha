@@ -1,6 +1,9 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
+import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 
 const props = defineProps({
     registrationFees: Array,
@@ -8,12 +11,74 @@ const props = defineProps({
     selectedConfId: Number,
 });
 
-function deleteFee(id) {
-    if (confirm('Are you sure you want to delete this registration fee package?')) {
-        router.delete(route('admin.registration-fees.destroy', id), {
+const isModalOpen = ref(false);
+const editingFee = ref(null);
+
+const form = useForm({
+    conference_id: '',
+    name: '',
+    mode: 'offline',
+    price: 0,
+});
+
+function openCreateModal() {
+    editingFee.value = null;
+    form.reset();
+    form.clearErrors();
+    form.conference_id = props.selectedConfId || props.conferences?.[0]?.id || '';
+    form.mode = 'offline';
+    form.price = 0;
+    isModalOpen.value = true;
+}
+
+function openEditModal(item) {
+    editingFee.value = item;
+    form.clearErrors();
+    form.conference_id = item.conference_id || (props.conferences?.[0]?.id || '');
+    form.name = item.name || '';
+    form.mode = item.mode || 'offline';
+    form.price = item.price ?? 0;
+    isModalOpen.value = true;
+}
+
+function submit() {
+    if (editingFee.value) {
+        form.put(route('admin.registration-fees.update', editingFee.value.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                isModalOpen.value = false;
+                form.reset();
+            },
+        });
+    } else {
+        form.post(route('admin.registration-fees.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isModalOpen.value = false;
+                form.reset();
+            },
         });
     }
+}
+
+const {
+    isModalOpen: isDeleteModalOpen,
+    itemToDelete: feeToDelete,
+    deleteTitle,
+    deleteMessage,
+    isDeleting,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useDeleteConfirm();
+
+function deleteFee(item) {
+    openDeleteModal({
+        item: item,
+        title: 'Delete Fee Package',
+        message: `Are you sure you want to delete "${item.name}" package? This will soft delete the tier.`,
+        url: route('admin.registration-fees.destroy', item.id),
+    });
 }
 
 function formatPrice(val) {
@@ -36,19 +101,19 @@ function formatPrice(val) {
                 </div>
 
                 <div>
-                    <Link
-                        :href="route('admin.registration-fees.create')"
+                    <button
+                        @click="openCreateModal"
                         class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition shadow-xs cursor-pointer"
                     >
                         + Add Registration Fee
-                    </Link>
+                    </button>
                 </div>
             </div>
 
-            <!-- Table Card -->
-            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <!-- Minimalist Table Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Registration Fees List</h3>
+                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Fee Packages List</h3>
                     <span class="text-xs text-slate-400 font-semibold">Total: {{ props.registrationFees ? props.registrationFees.length : 0 }}</span>
                 </div>
 
@@ -56,71 +121,149 @@ function formatPrice(val) {
                     <table class="w-full text-sm text-left text-slate-600">
                         <thead class="bg-slate-50 border-b border-slate-100 uppercase text-[11px] font-bold text-slate-500">
                             <tr>
-                                <th scope="col" class="px-5 py-3">Package Name</th>
-                                <th scope="col" class="px-5 py-3">Conference</th>
+                                <th scope="col" class="px-5 py-3">Package / Category Name</th>
+                                <th scope="col" class="px-5 py-3">Conference Event</th>
                                 <th scope="col" class="px-5 py-3">Attendance Mode</th>
-                                <th scope="col" class="px-5 py-3">Registration Fee (Price)</th>
+                                <th scope="col" class="px-5 py-3">Price Rate</th>
                                 <th scope="col" class="px-5 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr
-                                v-for="item in props.registrationFees"
-                                :key="item.id"
-                                class="hover:bg-slate-50/80 transition"
-                            >
-                                <td class="px-5 py-4 font-bold text-slate-900">
-                                    {{ item.name }}
+                            <tr v-if="!props.registrationFees || props.registrationFees.length === 0">
+                                <td colspan="5" class="px-5 py-8 text-center text-xs text-slate-400">
+                                    No registration fees defined yet. Click "+ Add Registration Fee" to create one.
+                                </td>
+                            </tr>
+                            <tr v-for="item in props.registrationFees" :key="item.id" class="hover:bg-slate-50/50 transition">
+                                <!-- Name -->
+                                <td class="px-5 py-3.5">
+                                    <p class="font-bold text-slate-900 text-xs">{{ item.name }}</p>
                                 </td>
 
-                                <td class="px-5 py-4 text-xs font-semibold text-slate-600">
-                                    {{ item.conference?.title || 'Default Conference' }}
+                                <!-- Conference -->
+                                <td class="px-5 py-3.5 text-xs font-semibold text-slate-600">
+                                    {{ item.conference?.title || 'Default Event' }}
                                 </td>
 
-                                <td class="px-5 py-4 text-xs font-semibold">
-                                    <span
-                                        :class="[
-                                            'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border',
-                                            item.mode === 'offline'
-                                                ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                        ]"
-                                    >
+                                <!-- Mode -->
+                                <td class="px-5 py-3.5">
+                                    <span :class="[
+                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase border',
+                                        item.mode === 'offline' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'
+                                    ]">
                                         {{ item.mode }}
                                     </span>
                                 </td>
 
-                                <td class="px-5 py-4 text-sm font-black text-slate-900">
+                                <!-- Price -->
+                                <td class="px-5 py-3.5 font-bold text-xs text-slate-900">
                                     {{ formatPrice(item.price) }}
                                 </td>
 
-                                <td class="px-5 py-4 text-right">
+                                <!-- Actions -->
+                                <td class="px-5 py-3.5 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <Link
-                                            :href="route('admin.registration-fees.edit', item.id)"
-                                            class="text-xs font-bold text-primary hover:text-purple-900 transition px-2 py-1 rounded-lg hover:bg-purple-50"
+                                        <button
+                                            @click="openEditModal(item)"
+                                            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-50 transition cursor-pointer"
                                         >
                                             Edit
-                                        </Link>
+                                        </button>
                                         <button
-                                            @click="deleteFee(item.id)"
-                                            class="text-xs font-bold text-rose-600 hover:text-rose-800 transition px-2 py-1 rounded-lg hover:bg-rose-50 cursor-pointer"
+                                            @click="deleteFee(item)"
+                                            class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs transition cursor-pointer"
                                         >
                                             Delete
                                         </button>
                                     </div>
                                 </td>
                             </tr>
-
-                            <tr v-if="!props.registrationFees || props.registrationFees.length === 0">
-                                <td colspan="5" class="px-5 py-12 text-center text-slate-400 text-xs">
-                                    No registration fees added yet. Click "+ Add Registration Fee" above to create one.
-                                </td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- Create / Edit Registration Fee Modal -->
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 overflow-y-auto">
+                <div class="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-100 text-xs my-8 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-900">
+                                {{ editingFee ? 'Edit Fee Package' : 'Add New Fee Package' }}
+                            </h3>
+                            <p class="text-slate-500 text-[11px] mt-0.5">Configure participant tier rate and attendance format.</p>
+                        </div>
+                        <button
+                            @click="isModalOpen = false"
+                            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition cursor-pointer"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="submit" class="space-y-4">
+                        <div>
+                            <label class="mb-1 block font-bold text-slate-700">Target Conference <span class="text-red-500">*</span></label>
+                            <select v-model="form.conference_id" class="admin-input" required>
+                                <option value="" disabled>Select conference...</option>
+                                <option v-for="c in props.conferences" :key="c.id" :value="c.id">{{ c.title }}</option>
+                            </select>
+                            <span v-if="form.errors.conference_id" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.conference_id }}</span>
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block font-bold text-slate-700">Package / Participant Tier Name <span class="text-red-500">*</span></label>
+                            <input v-model="form.name" type="text" placeholder="e.g. Mahasiswa / Umum (Offline)" class="admin-input" required />
+                            <span v-if="form.errors.name" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.name }}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1 block font-bold text-slate-700">Attendance Mode <span class="text-red-500">*</span></label>
+                                <select v-model="form.mode" class="admin-input" required>
+                                    <option value="offline">Offline (On-Site)</option>
+                                    <option value="online">Online (Virtual)</option>
+                                </select>
+                                <span v-if="form.errors.mode" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.mode }}</span>
+                            </div>
+
+                            <div>
+                                <label class="mb-1 block font-bold text-slate-700">Price (IDR) <span class="text-red-500">*</span></label>
+                                <input v-model="form.price" type="number" min="0" step="5000" placeholder="e.g. 500000" class="admin-input" required />
+                                <span v-if="form.errors.price" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.price }}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                            <button
+                                type="button"
+                                @click="isModalOpen = false"
+                                class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="form.processing"
+                                class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold px-6 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                            >
+                                {{ form.processing ? 'Saving...' : (editingFee ? 'Update Package' : 'Save Package') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Reusable Delete Confirmation Modal -->
+            <DeleteConfirmModal
+                :show="isDeleteModalOpen"
+                :title="deleteTitle"
+                :message="deleteMessage"
+                :item-name="feeToDelete?.name"
+                :loading="isDeleting"
+                @close="closeDeleteModal"
+                @confirm="confirmDelete"
+            />
 
         </div>
     </AdminLayout>

@@ -14,8 +14,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('badge')->nullable(); // e.g. "Track 01"
             $table->text('description')->nullable();
-            $table->string('icon')->nullable();  // emoji or icon class
-            $table->unsignedSmallInteger('order')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

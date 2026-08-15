@@ -47,7 +47,7 @@ const props = defineProps({
                             <span
                                 :class="[
                                     index % 2 === 0 ? 'bg-white/20 text-white' : 'bg-amber-950/15 text-slate-950 font-bold',
-                                    'inline-block rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-md'
+                                    'inline-block rounded-full px-3 py-1 text-xs font-semibold'
                                 ]"
                             >
                                 {{ item.badge }}

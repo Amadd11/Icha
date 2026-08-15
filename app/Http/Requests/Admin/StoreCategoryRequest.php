@@ -18,8 +18,6 @@ class StoreCategoryRequest extends FormRequest
             'name'          => ['required', 'string', 'max:255'],
             'badge'         => ['nullable', 'string', 'max:50'],
             'description'   => ['nullable', 'string'],
-            'icon'          => ['nullable', 'string', 'max:50'],
-            'order'         => ['nullable', 'integer', 'min:0'],
         ];
     }
 

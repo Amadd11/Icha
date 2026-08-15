@@ -29,15 +29,12 @@ class TimelineController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Admin/Timelines/Form', [
-            'timeline'    => null,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.timelines.index');
     }
 
-    public function store(StoreTimelineRequest $request)
+    public function store(StoreTimelineRequest $request): RedirectResponse
     {
         Timeline::create($request->validated());
 
@@ -45,12 +42,9 @@ class TimelineController extends Controller
             ->with('success', 'Timeline item added successfully.');
     }
 
-    public function edit(Timeline $timeline): Response
+    public function edit(Timeline $timeline): RedirectResponse
     {
-        return Inertia::render('Admin/Timelines/Form', [
-            'timeline'    => $timeline,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.timelines.index');
     }
 
     public function update(UpdateTimelineRequest $request, Timeline $timeline)

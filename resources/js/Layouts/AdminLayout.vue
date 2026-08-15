@@ -28,36 +28,40 @@ const confList = computed(() =>
 
 const navigationGroups = [
     {
-        name: "Main",
+        name: "Overview",
         items: [
             { name: "Dashboard", routeName: "admin.dashboard" },
             { name: "Conferences", routeName: "admin.conferences.index" },
         ]
     },
     {
-        name: "Registrations",
+        name: "Registration & Finance",
         items: [
             { name: "Participants", routeName: "admin.registrations.index" },
-            { name: "Payments", routeName: "admin.payments.index" },
+            { name: "Payment Verification", routeName: "admin.payments.index" },
+            { name: "Fee Packages", routeName: "admin.registration-fees.index" },
         ]
     },
     {
-        name: "Submissions",
+        name: "Peer Review System",
         items: [
             { name: "Abstracts", routeName: "admin.abstracts.index" },
             { name: "Full Papers", routeName: "admin.papers.index" },
+            { name: "Scientific Tracks", routeName: "admin.categories.index" },
+            { name: "Reviewers", routeName: "admin.reviewers.index" },
         ]
     },
     {
-        name: "Master Data",
+        name: "Website & Content",
         items: [
-            { name: "Users", routeName: "admin.users.index", role: "super_admin" },
-            { name: "Registration Fees", routeName: "admin.registration-fees.index" },
             { name: "Speakers", routeName: "admin.speakers.index" },
-            { name: "Timeline", routeName: "admin.timelines.index" },
-            { name: "Sponsors", routeName: "admin.sponsors.index" },
-            { name: "Categories", routeName: "admin.categories.index" },
-            { name: "Reviewers", routeName: "admin.reviewers.index" },
+            { name: "Timeline & Schedule", routeName: "admin.timelines.index" },
+            { name: "Sponsors & Partners", routeName: "admin.sponsors.index" },
+        ]
+    },
+    {
+        items: [
+            { name: "User Management", routeName: "admin.users.index", role: "super_admin" },
         ]
     }
 ];
@@ -117,23 +121,23 @@ function logout() {
 
                 <!-- Navigation Links -->
                 <nav class="flex-1 px-4 py-6 overflow-y-auto [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none; -ms-overflow-style: none;">
-                    <div v-for="(group, idx) in navigationGroups" :key="idx" class="mb-6 last:mb-0">
-                        <p class="px-3 mb-2.5 text-xs font-black uppercase tracking-widest text-purple-300/70">
+                    <div v-for="(group, idx) in navigationGroups" :key="idx" class="mb-5 last:mb-0">
+                        <p v-if="group.name" class="px-3 mb-2 text-[11px] font-black uppercase tracking-wider text-purple-300/75">
                             {{ group.name }}
                         </p>
-                        <div class="space-y-1.5">
+                        <div class="space-y-1">
                             <Link
                                 v-for="item in group.items.filter(i => !i.role || i.role === $page.props.auth.user?.role)"
                                 :key="item.name"
                                 :href="item.routeName ? route(item.routeName) : '#'"
-                                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
+                                class="flex items-center rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200"
                                 :class="
                                     item.routeName && route().current(item.routeName)
                                         ? 'bg-gold text-slate-950 font-bold shadow-md'
                                         : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'
                                 "
                             >
-                                <span>{{ item.name }}</span>
+                                <span class="truncate">{{ item.name }}</span>
                             </Link>
                         </div>
                     </div>
@@ -164,13 +168,13 @@ function logout() {
         <!-- Mobile Drawer -->
         <div
             v-if="isMobileMenuOpen"
-            class="fixed inset-0 z-50 flex md:hidden bg-slate-950/80 backdrop-blur-xs"
+            class="fixed inset-0 z-50 flex md:hidden bg-slate-950/80"
         >
             <div
-                class="w-64 bg-sidebar text-white flex flex-col h-full p-4 border-r border-purple-800"
+                class="w-72 bg-sidebar text-white flex flex-col h-full p-4 border-r border-purple-800"
             >
                 <div
-                    class="flex items-center justify-between mb-6 pb-3 border-b border-purple-800"
+                    class="flex items-center justify-between mb-5 pb-3 border-b border-purple-800"
                 >
                     <span class="font-bold text-sm text-gold"
                         >ICHA Admin Menu</span
@@ -184,7 +188,7 @@ function logout() {
                 </div>
                 <nav class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none; -ms-overflow-style: none;">
                     <div v-for="(group, idx) in navigationGroups" :key="idx" class="mb-5 last:mb-0">
-                        <p class="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-purple-300/70">
+                        <p v-if="group.name" class="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-purple-300/70">
                             {{ group.name }}
                         </p>
                         <div class="space-y-1">
@@ -193,14 +197,14 @@ function logout() {
                                 :key="item.name"
                                 :href="item.routeName ? route(item.routeName) : '#'"
                                 @click="isMobileMenuOpen = false"
-                                class="block px-3 py-2.5 rounded-xl text-xs font-semibold"
+                                class="block px-3 py-2 rounded-xl text-xs font-semibold"
                                 :class="
                                     item.routeName && route().current(item.routeName)
                                         ? 'bg-gold text-slate-950 font-bold'
                                         : 'text-purple-100 hover:bg-purple-800/50 hover:text-gold'
                                 "
                             >
-                                {{ item.name }}
+                                <span class="truncate">{{ item.name }}</span>
                             </Link>
                         </div>
                     </div>

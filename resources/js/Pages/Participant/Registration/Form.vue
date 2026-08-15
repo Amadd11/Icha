@@ -286,7 +286,7 @@ function isPdf(path) {
             </div>
 
             <!-- Receipt Modal -->
-            <div v-if="isProofModalOpen && payment?.proof_file" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+            <div v-if="isProofModalOpen && payment?.proof_file" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
                 <div class="relative max-w-2xl w-full bg-white rounded-2xl p-6 shadow-2xl space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <h4 class="font-bold text-sm text-slate-900">Your Uploaded Receipt</h4>

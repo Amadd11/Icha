@@ -38,7 +38,7 @@ const props = defineProps({
                     </p>
                 </div>
 
-                <div v-if="props.nearestDeadline" class="shrink-0 rounded-xl bg-white/10 p-4 border border-white/10 text-center md:text-right backdrop-blur-sm">
+                <div v-if="props.nearestDeadline" class="shrink-0 rounded-xl bg-white/10 p-4 border border-white/10 text-center md:text-right">
                     <span class="block text-[10px] font-bold uppercase tracking-wider text-purple-200">Nearest Deadline</span>
                     <span class="block text-sm font-bold text-white mt-0.5">{{ props.nearestDeadline.title }}</span>
                     <span class="block text-xs text-gold font-bold mt-0.5">{{ props.nearestDeadline.date }}</span>

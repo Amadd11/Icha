@@ -18,7 +18,7 @@ class ConferenceSeeder extends Seeder
             [
                 'slug'        => 'icha-2026',
                 'year'        => 2026,
-                'tagline'     => '11th International Conference on Healthcare Administration',
+                'tagline'     => '10th International Conference on Healthcare Administration',
                 'description' => 'ICHA 2026 brings together researchers, academics, practitioners, students, and policymakers to share ideas, innovations, and best practices for the future of health systems.',
                 'start_date'  => '2026-11-10',
                 'end_date'    => '2026-11-11',
@@ -36,31 +36,23 @@ class ConferenceSeeder extends Seeder
         $tracks = [
             [
                 'badge'       => 'Track 01',
-                'icon'        => '🎓',
-                'name'        => 'Healthcare Administration Education',
-                'description' => 'Curriculum, learning innovation, and academic development in healthcare administration.',
-                'order'       => 1,
+                'name'        => 'Healthcare Education & Human Capital Development',
+                'description' => 'Building competent professionals, future leaders, and resilient healthcare workforce.',
             ],
             [
                 'badge'       => 'Track 02',
-                'icon'        => '🏥',
                 'name'        => 'Hospital Leadership & Management',
                 'description' => 'Leadership, governance, strategy, and operational excellence in healthcare organizations.',
-                'order'       => 2,
             ],
             [
                 'badge'       => 'Track 03',
-                'icon'        => '🤖',
                 'name'        => 'Quality, Innovation & Digital Health',
                 'description' => 'Quality improvement, patient safety, technology, and digital transformation in health services.',
-                'order'       => 3,
             ],
             [
                 'badge'       => 'Track 04',
-                'icon'        => '🌍',
                 'name'        => 'Health Policy, Research & Sustainability',
                 'description' => 'Health policy, health economics, research methods, and sustainable health systems development.',
-                'order'       => 4,
             ],
         ];
 

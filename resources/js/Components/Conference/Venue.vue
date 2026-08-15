@@ -28,7 +28,7 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
                     </div>
                 </div>
                 <div class="h-64 md:h-auto bg-slate-200">
-                    <img src="/assets/images/umsura.png" alt="Venue" class="h-full w-full object-cover" />
+                    <img src="/assets/images/umsura.png" alt="Venue" loading="lazy" decoding="async" class="h-full w-full object-cover" />
                 </div>
             </div>
         </div>

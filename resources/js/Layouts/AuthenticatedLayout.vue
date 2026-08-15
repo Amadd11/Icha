@@ -116,7 +116,7 @@ const navItems = computed(() => isAdmin.value ? adminNav : participantNav);
         <!-- Sidebar Overlay (mobile) -->
         <div
             v-if="sidebarOpen"
-            class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+            class="fixed inset-0 z-40 bg-slate-900/60 lg:hidden"
             @click="sidebarOpen = false"
         />
 
@@ -124,7 +124,7 @@ const navItems = computed(() => isAdmin.value ? adminNav : participantNav);
         <div class="flex flex-1 min-w-0 flex-col">
 
             <!-- Top Header -->
-            <header class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/80 bg-white/80 px-6 backdrop-blur-md">
+            <header class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200/80 bg-white px-6">
                 <button
                     class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 lg:hidden"
                     @click="sidebarOpen = !sidebarOpen"

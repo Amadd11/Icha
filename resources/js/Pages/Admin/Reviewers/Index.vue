@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
+import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 
 const props = defineProps({
     reviewers: Array,
@@ -10,6 +12,17 @@ const props = defineProps({
 
 const isModalOpen = ref(false);
 const editingReviewer = ref(null);
+
+const {
+    isModalOpen: isDeleteModalOpen,
+    itemToDelete: reviewerToDelete,
+    deleteTitle,
+    deleteMessage,
+    isDeleting,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useDeleteConfirm();
 
 const form = useForm({
     name: '',
@@ -32,11 +45,12 @@ function openEditModal(reviewer) {
 }
 
 function deleteReviewer(reviewer) {
-    if (confirm(`Are you sure you want to remove ${reviewer.name} as a reviewer?`)) {
-        router.delete(route('admin.reviewers.destroy', reviewer.id), {
-            preserveScroll: true,
-        });
-    }
+    openDeleteModal({
+        item: reviewer,
+        title: 'Remove Reviewer',
+        message: `Are you sure you want to remove reviewer "${reviewer.name}"? They will lose reviewer privileges.`,
+        url: route('admin.reviewers.destroy', reviewer.id),
+    });
 }
 
 function submit() {
@@ -183,6 +197,18 @@ function submit() {
                     </form>
                 </div>
             </div>
+
+            <!-- Reusable Delete Confirmation Modal -->
+            <DeleteConfirmModal
+                :show="isDeleteModalOpen"
+                :title="deleteTitle"
+                :message="deleteMessage"
+                :item-name="reviewerToDelete ? `${reviewerToDelete.name} (${reviewerToDelete.email})` : ''"
+                confirm-text="Yes, Remove"
+                :loading="isDeleting"
+                @close="closeDeleteModal"
+                @confirm="confirmDelete"
+            />
 
         </div>
     </AdminLayout>

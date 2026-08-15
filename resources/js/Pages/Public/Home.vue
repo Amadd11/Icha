@@ -52,12 +52,49 @@ const timelineItems = computed(() => {
     return [];
 });
 
+const jsonLd = computed(() => {
+    const conf = props.activeConference;
+    if (!conf) return null;
+
+    return JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": `${conf.title || 'ICHA 2026'} - ${conf.tagline || 'International Conference on Healthcare Administration'}`,
+        "description": conf.description || '11th International Conference on Healthcare Administration',
+        "startDate": conf.start_date || "2026-11-10",
+        "endDate": conf.end_date || "2026-11-11",
+        "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "location": {
+            "@type": "Place",
+            "name": conf.venue || "Surabaya International Convention Center",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": conf.city || "Surabaya",
+                "addressCountry": conf.country || "Indonesia"
+            }
+        },
+        "organizer": {
+            "@type": "Organization",
+            "name": "Perhimpunan Pengelola Program Magister Administrasi Rumah Sakit Indonesia (PERSI/MARSI) & Universitas Muhammadiyah Surabaya",
+            "url": "https://icha2026.id"
+        },
+        "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "IDR",
+            "availability": "https://schema.org/InStock",
+            "url": "https://icha2026.id/register"
+        }
+    });
+});
+
 onMounted(() => {
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add("visible");
+                    observer.unobserve(entry.target);
                 }
             });
         },
@@ -73,7 +110,24 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="ICHA" />
+    <Head>
+        <title>{{ props.activeConference?.title ? `${props.activeConference.title} - ${props.activeConference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA 2026 - International Conference on Healthcare Administration' }}</title>
+        
+        <!-- Standard Meta -->
+        <meta name="description" :content="props.activeConference?.description || 'The 11th International Conference on Healthcare Administration (ICHA 2026). Join global healthcare leaders, researchers, academics, and policymakers.'" />
+        <meta name="keywords" content="ICHA 2026, International Conference on Healthcare Administration, PIP MARSI, UMSURA, Call for Papers, Healthcare Management, Hospital Administration, Surabaya Conference" />
+        <meta name="author" content="PIP MARSI & Universitas Muhammadiyah Surabaya" />
+
+        <!-- Open Graph / WhatsApp / Facebook / LinkedIn -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" :content="props.activeConference?.title ? `${props.activeConference.title} - ${props.activeConference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA 2026 - International Conference on Healthcare Administration'" />
+        <meta property="og:description" :content="props.activeConference?.description || 'The 10th International Conference on Healthcare Administration (ICHA 2026). Join global healthcare leaders, researchers, academics, and policymakers.'" />
+        <meta property="og:image" content="/assets/logo/logo-umsura.png" />
+        <meta property="og:site_name" content="ICHA Conference" />
+
+        <!-- Google Structured Data (JSON-LD) -->
+        <component :is="'script'" type="application/ld+json" v-if="jsonLd" v-html="jsonLd" />
+    </Head>
 
     <PublicLayout
         :conference="props.activeConference"

@@ -31,8 +31,8 @@ import { Link } from "@inertiajs/vue3";
                     Submit Abstract Now
                 </Link>
                 <a
-                    href="#tracks"
-                    class="rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs px-8 py-3.5 transition cursor-pointer backdrop-blur-sm"
+                    href="#timeline"
+                    class="rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs px-8 py-3.5 transition cursor-pointer"
                 >
                     View Guidelines
                 </a>

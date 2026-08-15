@@ -1,6 +1,8 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
+import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 
 const props = defineProps({
     conferences: Array,
@@ -12,10 +14,24 @@ const statusColor = (status) => ({
     archived: 'bg-amber-50 text-amber-700 border-amber-200',
 }[status] ?? 'bg-slate-100 text-slate-600 border-slate-200');
 
-function destroy(id) {
-    if (confirm('Are you sure you want to delete this conference? This action cannot be undone.')) {
-        router.delete(route('admin.conferences.destroy', id));
-    }
+const {
+    isModalOpen: isDeleteModalOpen,
+    itemToDelete: conferenceToDelete,
+    deleteTitle,
+    deleteMessage,
+    isDeleting,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useDeleteConfirm();
+
+function destroy(c) {
+    openDeleteModal({
+        item: c,
+        title: 'Delete Conference Edition',
+        message: `Are you sure you want to delete conference "${c.title}"? This action will soft delete the conference and all associated items.`,
+        url: route('admin.conferences.destroy', c.id),
+    });
 }
 
 function formatStorageUrl(path) {
@@ -139,7 +155,7 @@ function formatDate(dateStr) {
                                         </Link>
                                         <button
                                             v-if="$page.props.auth.user?.role === 'super_admin'"
-                                            @click="destroy(c.id)"
+                                            @click="destroy(c)"
                                             class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs transition cursor-pointer"
                                         >
                                             Delete
@@ -151,6 +167,17 @@ function formatDate(dateStr) {
                     </table>
                 </div>
             </div>
+
+            <!-- Reusable Delete Confirmation Modal -->
+            <DeleteConfirmModal
+                :show="isDeleteModalOpen"
+                :title="deleteTitle"
+                :message="deleteMessage"
+                :item-name="conferenceToDelete?.title"
+                :loading="isDeleting"
+                @close="closeDeleteModal"
+                @confirm="confirmDelete"
+            />
         </div>
     </AdminLayout>
 </template>

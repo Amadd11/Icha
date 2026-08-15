@@ -31,12 +31,9 @@ class SpeakerController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Admin/Speakers/Form', [
-            'speaker'     => null,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.speakers.index');
     }
 
     public function store(StoreSpeakerRequest $request)
@@ -54,12 +51,9 @@ class SpeakerController extends Controller
             ->with('success', 'Speaker added successfully.');
     }
 
-    public function edit(Speaker $speaker): Response
+    public function edit(Speaker $speaker): RedirectResponse
     {
-        return Inertia::render('Admin/Speakers/Form', [
-            'speaker'     => $speaker,
-            'conferences' => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.speakers.index');
     }
 
     public function update(UpdateSpeakerRequest $request, Speaker $speaker)

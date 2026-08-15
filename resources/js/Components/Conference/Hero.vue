@@ -88,7 +88,7 @@ onUnmounted(() => {
                 </a>
                 <a
                     href="#about"
-                    class="inline-flex items-center justify-center rounded-xl border border-purple-400/50 bg-white/5 backdrop-blur-sm px-7 py-3.5 text-sm font-bold text-white transition-all hover:border-white hover:bg-white/10"
+                    class="inline-flex items-center justify-center rounded-xl border border-purple-400/50 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition-all hover:border-white hover:bg-white/10"
                 >
                     Learn More
                 </a>

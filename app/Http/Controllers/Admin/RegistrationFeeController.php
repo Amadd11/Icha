@@ -33,15 +33,12 @@ class RegistrationFeeController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse
     {
-        return Inertia::render('Admin/RegistrationFees/Form', [
-            'registrationFee' => null,
-            'conferences'     => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.registration-fees.index');
     }
 
-    public function store(StoreRegistrationFeeRequest $request)
+    public function store(StoreRegistrationFeeRequest $request): RedirectResponse
     {
         RegistrationFee::create($request->validated());
 
@@ -49,12 +46,9 @@ class RegistrationFeeController extends Controller
             ->with('success', 'Registration fee created successfully.');
     }
 
-    public function edit(RegistrationFee $registrationFee): Response
+    public function edit(RegistrationFee $registrationFee): RedirectResponse
     {
-        return Inertia::render('Admin/RegistrationFees/Form', [
-            'registrationFee' => $registrationFee,
-            'conferences'     => Conference::all(['id', 'title']),
-        ]);
+        return redirect()->route('admin.registration-fees.index');
     }
 
     public function update(UpdateRegistrationFeeRequest $request, RegistrationFee $registrationFee)

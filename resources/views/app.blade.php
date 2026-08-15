@@ -4,8 +4,14 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- Favicon -->
+        <!-- Meta / SEO Defaults -->
+        <meta name="theme-color" content="#52026d">
+        <meta name="author" content="PIP MARSI & UMSURA">
+        <meta name="robots" content="index, follow">
+
+        <!-- Favicons & Icons -->
         <link rel="icon" type="image/png" href="/assets/logo/logo-umsura.png">
+        <link rel="apple-touch-icon" href="/assets/logo/logo-umsura.png">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -15,7 +21,7 @@
         <!-- Scripts -->
         @routes
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
-        <title inertia>ICHA</title>
+        <title inertia>ICHA - International Conference on Healthcare Administration</title>
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
