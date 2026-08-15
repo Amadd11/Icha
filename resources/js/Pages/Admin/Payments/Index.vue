@@ -14,21 +14,28 @@ const props = defineProps({
 const selectedPayment = ref(null);
 const proofModalOpen = ref(false);
 const rejectionModalOpen = ref(false);
+const approveModalOpen = ref(false);
 
 const form = useForm({
     action:           'approve',
     rejection_reason: '',
 });
 
-function approve(payment) {
-    if (confirm(`Approve payment for ${payment.registration?.invoice_number}?`)) {
-        form.action = 'approve';
-        form.post(route('admin.payments.verify', payment.id), {
-            onSuccess: () => {
-                proofModalOpen.value = false;
-            }
-        });
-    }
+function openApproveModal(payment) {
+    selectedPayment.value = payment;
+    form.action = 'approve';
+    form.rejection_reason = '';
+    approveModalOpen.value = true;
+}
+
+function submitApprove() {
+    form.action = 'approve';
+    form.post(route('admin.payments.verify', selectedPayment.value.id), {
+        onSuccess: () => {
+            approveModalOpen.value = false;
+            proofModalOpen.value = false;
+        }
+    });
 }
 
 function openProofModal(payment) {
@@ -151,7 +158,7 @@ function isPdf(path) {
                             <td class="px-5 py-3.5 text-right">
                                 <template v-if="p.status === 'pending'">
                                     <div class="flex items-center justify-end gap-2">
-                                        <button @click="approve(p)" class="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition cursor-pointer">
+                                        <button @click="openApproveModal(p)" class="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition cursor-pointer">
                                             Approve
                                         </button>
                                         <button @click="openRejectModal(p)" class="rounded-lg bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-xs font-bold transition cursor-pointer">
@@ -177,34 +184,43 @@ function isPdf(path) {
             />
         </div>
 
-        <!-- Minimalist Payment Proof Modal -->
-        <div v-if="proofModalOpen && selectedPayment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-            <div class="relative w-full max-w-3xl rounded-2xl bg-white shadow-lg overflow-hidden border border-slate-200 my-8">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3.5">
+        <!-- Proof Image Modal (Fullscreen Viewer) -->
+        <div v-if="proofModalOpen && selectedPayment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+            <div class="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-bold text-slate-900">Payment Proof Inspection</h3>
-                            <span class="rounded bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-800">
-                                {{ selectedPayment.registration?.invoice_number }}
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-0.5">Participant: {{ selectedPayment.registration?.user?.name }} ({{ selectedPayment.registration?.user?.email }})</p>
+                        <h3 class="text-base font-bold text-slate-900">Payment Proof Preview</h3>
+                        <p class="text-xs text-slate-500 font-mono">{{ selectedPayment.registration?.invoice_number }} &bull; {{ selectedPayment.registration?.user?.name }}</p>
                     </div>
                     <button
+                        type="button"
                         @click="proofModalOpen = false"
-                        class="rounded-lg p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer text-sm"
+                        class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
                     >
-                        ✕
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
-                <!-- Modal Body Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 p-5">
-                    <!-- Left: Document Preview (2 cols) -->
-                    <div class="md:col-span-2 flex flex-col items-center justify-center bg-slate-100 rounded-xl border border-slate-200 p-2 min-h-[300px] max-h-[460px] overflow-hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Left: Proof Preview (2 cols) -->
+                    <div class="md:col-span-2 flex items-center justify-center bg-slate-950 rounded-xl p-4 min-h-[360px] overflow-hidden border border-slate-800">
                         <template v-if="isPdf(selectedPayment.proof_file)">
-                            <iframe :src="formatStorageUrl(selectedPayment.proof_file)" class="w-full h-[380px] rounded-lg border-0"></iframe>
+                            <div class="text-center p-8 text-white space-y-3">
+                                <svg class="h-16 w-16 mx-auto text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p class="text-sm font-semibold">PDF Document Uploaded</p>
+                                <a
+                                    :href="formatStorageUrl(selectedPayment.proof_file)"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold transition"
+                                >
+                                    Open PDF in New Tab
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                </a>
+                            </div>
                         </template>
                         <template v-else>
                             <img
@@ -220,7 +236,9 @@ function isPdf(path) {
                         <div class="space-y-3">
                             <div class="rounded-xl bg-slate-50 border border-slate-200 p-3.5">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Amount</p>
-                                <p class="text-xl font-bold text-slate-900 mt-0.5">{{ selectedPayment.currency }} {{ Number(selectedPayment.amount).toLocaleString() }}</p>
+                                <p class="text-xl font-bold text-slate-900 mt-0.5">
+                                    {{ selectedPayment.currency === 'USD' ? '$' + Number(selectedPayment.amount).toLocaleString() : formatRupiah(selectedPayment.amount) }}
+                                </p>
                             </div>
 
                             <div class="space-y-2">
@@ -254,7 +272,7 @@ function isPdf(path) {
                         <div class="pt-3 border-t border-slate-100 space-y-2">
                             <template v-if="selectedPayment.status === 'pending'">
                                 <button
-                                    @click="approve(selectedPayment)"
+                                    @click="openApproveModal(selectedPayment)"
                                     class="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs transition cursor-pointer"
                                 >
                                     Approve Payment
@@ -275,6 +293,66 @@ function isPdf(path) {
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve Confirmation Modal -->
+        <div v-if="approveModalOpen && selectedPayment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-200 text-xs">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Approve Payment</h3>
+                        <p class="text-xs text-slate-500 font-mono">{{ selectedPayment.registration?.invoice_number }}</p>
+                    </div>
+                </div>
+
+                <div class="my-4 space-y-2 rounded-xl bg-slate-50 border border-slate-200 p-3.5">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Participant:</span>
+                        <strong class="text-slate-800">{{ selectedPayment.registration?.user?.name }}</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Package:</span>
+                        <strong class="text-slate-800">{{ selectedPayment.registration?.registration_fee?.name || 'Registration' }}</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Amount:</span>
+                        <strong class="text-emerald-700 text-sm font-bold">
+                            {{ selectedPayment.currency === 'USD' ? '$' + Number(selectedPayment.amount).toLocaleString() : formatRupiah(selectedPayment.amount) }}
+                        </strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Method:</span>
+                        <span class="font-semibold text-slate-700 uppercase">{{ selectedPayment.payment_method || 'Bank Transfer' }}</span>
+                    </div>
+                </div>
+
+                <p class="text-slate-500 mb-5 leading-relaxed">
+                    Are you sure you want to approve this transaction? Approving will mark the participant's invoice as <strong>Paid</strong> and verify their conference registration.
+                </p>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="approveModalOpen = false"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="submitApprove"
+                        :disabled="form.processing"
+                        class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 font-bold transition disabled:opacity-50 cursor-pointer shadow-xs"
+                    >
+                        {{ form.processing ? 'Approving...' : 'Yes, Approve Payment' }}
+                    </button>
                 </div>
             </div>
         </div>

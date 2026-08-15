@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('recommendation', 50)->nullable(); // ORAL, POSTER, REJECT
             $table->text('summary')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Timeline extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['conference_id', 'title', 'description', 'date', 'period', 'is_completed', 'order'];
 
     protected function casts(): array

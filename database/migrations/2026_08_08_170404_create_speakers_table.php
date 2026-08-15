@@ -15,12 +15,14 @@ return new class extends Migration
             $table->string('title')->nullable();       // e.g. "Prof. Dr."
             $table->string('institution')->nullable();
             $table->string('country')->nullable();
+            $table->string('country_code', 5)->nullable();
             $table->text('bio')->nullable();
             $table->string('photo')->nullable();       // storage path
             $table->string('email')->nullable();
-            $table->enum('type', ['keynote', 'invited', 'plenary'])->default('invited');
+            $table->enum('type', ['keynote', 'invited', 'speaker', 'plenary'])->default('invited');
             $table->unsignedSmallInteger('order')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

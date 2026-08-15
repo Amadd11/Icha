@@ -18,6 +18,7 @@ return new class extends Migration
             $table->boolean('is_completed')->default(false);
             $table->unsignedSmallInteger('order')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

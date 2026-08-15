@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('submission_type', 50); // abstract or full_paper
             $table->unsignedBigInteger('submission_id');
+            $table->integer('round_number')->default(1);
             $table->string('status', 50)->default('pending'); // pending, locked, completed
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

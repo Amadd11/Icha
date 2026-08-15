@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'waiting_verification', 'paid', 'rejected', 'expired'])->default('pending');
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

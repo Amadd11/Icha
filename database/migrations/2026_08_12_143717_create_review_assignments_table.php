@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('reviewer_id')->constrained('users')->cascadeOnDelete();
             $table->string('status', 50)->default('assigned'); // assigned, completed
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['review_round_id', 'reviewer_id']);
         });

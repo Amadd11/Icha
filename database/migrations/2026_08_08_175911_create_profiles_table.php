@@ -13,11 +13,12 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('phone')->nullable();
             $table->string('institution')->nullable();
-            $table->string('country');
+            $table->string('country')->nullable();
             $table->string('city')->nullable();
             $table->enum('participant_category', ['student', 'non_student'])->default('non_student');
-            $table->enum('gender', ['male', 'female',])->nullable();
+            $table->enum('gender', ['male', 'female'])->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

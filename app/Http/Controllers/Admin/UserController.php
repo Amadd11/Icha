@@ -65,7 +65,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255'],
-            'email'       => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email'       => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'password'    => ['required', 'string', 'min:8'],
             'role'        => ['required', 'string', Rule::in(['super_admin', 'admin', 'reviewer', 'participant'])],
             'institution' => ['nullable', 'string', 'max:255'],
@@ -95,7 +95,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255'],
-            'email'       => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'email'       => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)->whereNull('deleted_at')],
             'password'    => ['nullable', 'string', 'min:8'],
             'role'        => ['required', 'string', Rule::in(['super_admin', 'admin', 'reviewer', 'participant'])],
             'institution' => ['nullable', 'string', 'max:255'],

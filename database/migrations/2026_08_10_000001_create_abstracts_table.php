@@ -18,12 +18,13 @@ return new class extends Migration
             $table->text('abstract_text')->nullable();
             $table->string('keywords')->nullable();
             $table->enum('presentation_type', ['oral', 'poster'])->default('oral');
-            $table->string('file_path');
-            $table->enum('status', ['pending', 'under_review', 'revision_required', 'accepted', 'rejected'])->default('pending');
+            $table->string('file_path')->nullable();
+            $table->enum('status', ['draft', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected'])->default('pending');
             $table->text('review_notes')->nullable();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

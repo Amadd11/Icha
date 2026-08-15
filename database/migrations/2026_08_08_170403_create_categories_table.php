@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('icon')->nullable();  // emoji or icon class
             $table->unsignedSmallInteger('order')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

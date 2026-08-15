@@ -14,10 +14,12 @@ return new class extends Migration
             $table->string('name');
             $table->enum('mode', ['offline', 'online'])->default('offline');
             $table->enum('type', ['presenter', 'non_presenter'])->default('presenter');
-            $table->string('category')->nullable(); // national, student, international
+            $table->string('category')->nullable(); // national_student, national_general, international_student, international_general
             $table->decimal('price', 15, 2);
+            $table->string('currency', 3)->default('IDR');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

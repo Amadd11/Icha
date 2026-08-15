@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('role_title')->nullable(); // e.g. "Presenter / Author", "Keynote Speaker", "Participant"
             $table->timestamp('issued_at')->useCurrent();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

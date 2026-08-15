@@ -11,19 +11,23 @@ return new class extends Migration
         Schema::create('conferences', function (Blueprint $table) {
             $table->id();
             $table->string('title');
+            $table->string('slug')->unique();
+            $table->year('year');
             $table->string('tagline')->nullable();
             $table->text('description')->nullable();
-            $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();
+            $table->date('start_date');
+            $table->date('end_date');
             $table->string('venue')->nullable();
             $table->string('city')->nullable();
-            $table->string('country')->default('Indonesia');
+            $table->string('country')->nullable();
             $table->string('theme')->nullable();
-            $table->string('website')->nullable();
             $table->string('email')->nullable();
-            $table->enum('status', ['draft', 'active', 'archived'])->default('draft');
+            $table->string('logo')->nullable();
+            $table->string('hero_image')->nullable();
+            $table->enum('status', ['draft', 'active', 'archived'])->default('active');
             $table->boolean('is_active')->default(false);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
