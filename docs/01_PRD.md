@@ -12,7 +12,7 @@ Modules:
 - Presentation
 - Certificate
 - Publication
-- Speakers, committee, topics, timeline, sponsors and FAQ
+- Speakers, topics, timeline, sponsors and FAQ
 
 ## Deployment
 Primary target is shared hosting. Core transactions MUST work synchronously without Redis, Supervisor, Docker, persistent workers or WebSockets. Jobs are optional only for non-critical tasks.

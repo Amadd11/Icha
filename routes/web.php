@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\{
     AbstractController,
     CategoryController,
-    CommitteeController,
     ConferenceController as AdminConferenceController,
     DashboardController as AdminDashboardController,
     PaymentController,
@@ -15,6 +14,7 @@ use App\Http\Controllers\Admin\{
     SpeakerController,
     SponsorController,
     TimelineController,
+    UserController,
 };
 use App\Http\Controllers\Participant\{
     CertificateController,
@@ -86,7 +86,6 @@ Route::prefix('admin')
         Route::resource('speakers', SpeakerController::class)->except(['show']);
         Route::resource('sponsors', SponsorController::class)->except(['show']);
         Route::resource('categories', CategoryController::class)->except(['show']);
-        Route::resource('committees', CommitteeController::class)->except(['show']);
         Route::resource('timelines', TimelineController::class)->except(['show']);
         Route::resource('registration-fees', RegistrationFeeController::class)->except(['show']);
 
@@ -105,6 +104,11 @@ Route::prefix('admin')
 
         // Reviewer Management
         Route::resource('reviewers', ReviewerManagementController::class)->except(['show']);
+
+        // Super Admin Only: User Management
+        Route::middleware('role:super_admin')->group(function () {
+            Route::resource('users', UserController::class)->except(['show']);
+        });
     });
 
 // Reviewer routes

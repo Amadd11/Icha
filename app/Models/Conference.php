@@ -63,11 +63,6 @@ class Conference extends Model
         return $this->hasMany(Speaker::class)->orderBy('order');
     }
 
-    public function committees(): HasMany
-    {
-        return $this->hasMany(Committee::class)->orderBy('order');
-    }
-
     public function timelines(): HasMany
     {
         return $this->hasMany(Timeline::class)->orderBy('order');

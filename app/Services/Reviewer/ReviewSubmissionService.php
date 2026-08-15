@@ -26,8 +26,16 @@ class ReviewSubmissionService
 
             $assignment->update(['status' => 'completed']);
 
-            // Locking Logic: If all assignments in round are completed, lock round
             $round = $assignment->round;
+
+            // Update submission status to under_review if still pending
+            if ($round && $round->submission_type === 'abstract' && $round->abstractSubmission) {
+                if ($round->abstractSubmission->status === 'pending') {
+                    $round->abstractSubmission->update(['status' => 'under_review']);
+                }
+            }
+
+            // Locking Logic: If all assignments in round are completed, lock round
             $totalAssignments = $round->assignments()->count();
             $completedAssignments = $round->assignments()->where('status', 'completed')->count();
 

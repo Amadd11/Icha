@@ -13,14 +13,25 @@ Project:
 
 Jangan mengubah fitur existing yang tidak berkaitan.
 
-## 1. Role
+## 1. Role & Access Control Matrix
 
-- `super_admin`: akses penuh.
-- `admin`: conference, registration, payment, submission, reviewer assignment, review monitoring, final decision, full paper, presentation, certificate, publication.
-- `reviewer`: hanya melakukan review terhadap abstract/paper yang ditugaskan.
-- `participant`: registration, payment, submission, revision, full paper, dan tracking.
+Sistem memiliki 4 Role resmi:
+- `super_admin`: Akses penuh ke seluruh sistem, termasuk User Management dan pembuatan/penghapusan Edisi Konferensi.
+- `admin`: Pengelola operasional harian konferensi (pembayaran, naskah abstrak, penugasan 3 reviewer, keputusan final, full paper, pembicara, timeline, sponsor, kategori).
+- `reviewer`: Melakukan penelaahan/review terhadap abstract/paper yang ditugaskan sesuai kategori kepakaran.
+- `participant`: Registrasi tiket, pembayaran, pengunggahan abstrak, revisi, full paper, dan tracking status.
 
-Tidak ada role `committee`.
+> ⚠️ **Catatan**: Modul dan role `committee` telah dihapus secara menyeluruh dari sistem.
+
+### Matriks Perbedaan Hak Akses:
+
+| Modul & Tindakan | Super Admin 👑 | Admin (Panitia / Sekretariat) 📋 | Implementasi & Batasan |
+| :--- | :---: | :---: | :--- |
+| **Kelola Pengguna (`Users`)** | ✅ **Penuh** | ❌ **Tidak Ada Akses** | Menu `Users` dipaginate 20 per halaman (`/admin/users`), hanya dapat diakses oleh `super_admin`. |
+| **Buat & Hapus Edisi Konferensi (`Conferences`)** | ✅ **Bisa Tambah & Hapus** | ✏️ *Edit Edisi Aktif Saja* | Tombol `+ Add New Conference` & `Delete Conference` hanya aktif untuk `super_admin`. |
+| **Verifikasi Pembayaran (`Payments`)** | ✅ | ✅ **Akses Penuh** | Verifikasi / Tolak bukti transfer peserta. |
+| **Kelola Reviewer & Naskah (`Submissions`)** | ✅ | ✅ **Akses Penuh** | Penugasan 3 Reviewer & Penetapan Keputusan Final (Accepted Oral/Poster, Revision, Rejected). |
+| **Kelola Landing Page Acara (Speakers, Timeline, Sponsors, Categories)** | ✅ | ✅ **Akses Penuh** | Pengelolaan konten website dan edisi aktif. |
 
 ## 2. Registration Fee
 
@@ -488,6 +499,11 @@ Setelah 3/3:
 3 / 3 Completed
 Waiting for Admin Decision
 ```
+
+### Standar Format Kode Dokumen:
+- **Abstrak (Abstract)**: `ABS-XXX` (Contoh: `ABS-001`, `ABS-002`)
+- **Full Paper**: `FP-XXX` (Contoh: `FP-001`, `FP-002`)
+- **Invoice & Pembayaran**: `INV-YYYY-MM-XXXX` (Contoh: `INV-2026-08-0001`)
 
 ## 23. Security
 

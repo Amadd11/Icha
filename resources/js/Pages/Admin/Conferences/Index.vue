@@ -47,7 +47,7 @@ function formatDate(dateStr) {
                     <p class="text-xs text-slate-500 mt-0.5">Manage annual conference editions, themes, venue settings, and active portals.</p>
                 </div>
 
-                <div>
+                <div v-if="$page.props.auth.user?.role === 'super_admin'">
                     <Link
                         :href="route('admin.conferences.create')"
                         class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2.5 transition shadow-xs cursor-pointer"
@@ -138,6 +138,7 @@ function formatDate(dateStr) {
                                             Edit
                                         </Link>
                                         <button
+                                            v-if="$page.props.auth.user?.role === 'super_admin'"
                                             @click="destroy(c.id)"
                                             class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs transition cursor-pointer"
                                         >

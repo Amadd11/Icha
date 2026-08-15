@@ -166,7 +166,7 @@ class SubmissionService
 
         // Create New Abstract Submission
         $abstractCount = AbstractSubmission::count() + 1;
-        $abstractCode = 'ABS-' . date('Y') . '-' . str_pad($abstractCount, 4, '0', STR_PAD_LEFT);
+        $abstractCode = 'ABS-' . str_pad($abstractCount, 3, '0', STR_PAD_LEFT);
 
         $abstract = AbstractSubmission::create([
             'user_id'           => $user->id,
@@ -247,7 +247,7 @@ class SubmissionService
         }
 
         $paperCount = FullPaper::count() + 1;
-        $paperCode = 'FP-' . date('Y') . '-' . str_pad($paperCount, 4, '0', STR_PAD_LEFT);
+        $paperCode = 'FP-' . str_pad($paperCount, 3, '0', STR_PAD_LEFT);
 
         return FullPaper::create([
             'user_id'       => $user->id,

@@ -21,8 +21,12 @@ class ConferenceController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        if ($request->user()->role !== 'super_admin') {
+            abort(403, 'Only Super Admin can create new conference editions.');
+        }
+
         return Inertia::render('Admin/Conferences/Form', [
             'conference' => null,
         ]);
@@ -30,6 +34,10 @@ class ConferenceController extends Controller
 
     public function store(StoreConferenceRequest $request)
     {
+        if ($request->user()->role !== 'super_admin') {
+            abort(403, 'Only Super Admin can create new conference editions.');
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('logo')) {
@@ -100,8 +108,12 @@ class ConferenceController extends Controller
             ->with('success', 'Conference updated successfully.');
     }
 
-    public function destroy(Conference $conference)
+    public function destroy(Request $request, Conference $conference)
     {
+        if ($request->user()->role !== 'super_admin') {
+            abort(403, 'Only Super Admin can delete conference editions.');
+        }
+
         if ($conference->logo) {
             Storage::disk('public')->delete($conference->logo);
         }

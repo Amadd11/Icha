@@ -29,7 +29,7 @@ class DashboardController extends Controller
                 'status'          => $assignment->status,
                 'submission'      => [
                     'id'            => $submission?->id,
-                    'abstract_code' => $submission?->abstract_code ?? $submission?->paper_code ?? ('ABS-' . str_pad($submission?->id ?? 1, 4, '0', STR_PAD_LEFT)),
+                    'abstract_code' => $submission?->abstract_code ?? $submission?->paper_code ?? ('ABS-' . str_pad($submission?->id ?? 1, 3, '0', STR_PAD_LEFT)),
                     'title'         => $submission?->title ?? 'Untitled Abstract',
                     'abstract_text' => $submission?->abstract_text ?? null,
                     'keywords'      => $submission?->keywords ?? null,

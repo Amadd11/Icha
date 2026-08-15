@@ -51,12 +51,12 @@ const navigationGroups = [
     {
         name: "Master Data",
         items: [
+            { name: "Users", routeName: "admin.users.index", role: "super_admin" },
             { name: "Registration Fees", routeName: "admin.registration-fees.index" },
             { name: "Speakers", routeName: "admin.speakers.index" },
             { name: "Timeline", routeName: "admin.timelines.index" },
             { name: "Sponsors", routeName: "admin.sponsors.index" },
             { name: "Categories", routeName: "admin.categories.index" },
-            { name: "Committees", routeName: "admin.committees.index" },
             { name: "Reviewers", routeName: "admin.reviewers.index" },
         ]
     }
@@ -122,7 +122,7 @@ function logout() {
                         </p>
                         <div class="space-y-1.5">
                             <Link
-                                v-for="item in group.items"
+                                v-for="item in group.items.filter(i => !i.role || i.role === $page.props.auth.user?.role)"
                                 :key="item.name"
                                 :href="item.routeName ? route(item.routeName) : '#'"
                                 class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
@@ -147,7 +147,7 @@ function logout() {
                             {{ $page.props.auth.user.name }}
                         </p>
                         <p class="text-xs text-purple-200 capitalize truncate">
-                            {{ $page.props.auth.user.role }}
+                            {{ $page.props.auth.user.role.replace('_', ' ') }}
                         </p>
                     </div>
                     <button
@@ -188,7 +188,7 @@ function logout() {
                         </p>
                         <div class="space-y-1">
                             <Link
-                                v-for="item in group.items"
+                                v-for="item in group.items.filter(i => !i.role || i.role === $page.props.auth.user?.role)"
                                 :key="item.name"
                                 :href="item.routeName ? route(item.routeName) : '#'"
                                 @click="isMobileMenuOpen = false"
