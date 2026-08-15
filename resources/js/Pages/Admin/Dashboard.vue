@@ -47,7 +47,7 @@ function changeConference(e) {
                         :href="route('admin.payments.index')"
                         class="px-3.5 py-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow-2xs"
                     >
-                        Verify Payments Queue →
+                        Verify Payments Queue
                     </Link>
                 </div>
 

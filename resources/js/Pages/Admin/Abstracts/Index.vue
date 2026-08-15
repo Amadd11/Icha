@@ -1,13 +1,18 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
-    abstracts: Array,
+    abstracts: [Array, Object],
     reviewers: Array,
     filters: Object,
+});
+
+const abstractList = computed(() => {
+    return Array.isArray(props.abstracts) ? props.abstracts : (props.abstracts?.data || []);
 });
 
 const selectedStatus = ref(props.filters?.status || 'all');
@@ -166,13 +171,13 @@ function getReviewStats(item) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-if="!props.abstracts || props.abstracts.length === 0">
+                            <tr v-if="abstractList.length === 0">
                                 <td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">
                                     No abstracts found in this filter view.
                                 </td>
                             </tr>
                             <tr
-                                v-for="item in props.abstracts"
+                                v-for="item in abstractList"
                                 :key="item.id"
                                 class="transition hover:bg-slate-50/50"
                             >
@@ -262,6 +267,14 @@ function getReviewStats(item) {
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination Footer -->
+                <Pagination
+                    :links="props.abstracts?.links || props.abstracts?.meta?.links"
+                    :from="props.abstracts?.from || props.abstracts?.meta?.from"
+                    :to="props.abstracts?.to || props.abstracts?.meta?.to"
+                    :total="props.abstracts?.total || props.abstracts?.meta?.total"
+                />
             </div>
 
             <!-- 👥 Assign Reviewers Modal -->

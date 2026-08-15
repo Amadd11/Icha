@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import Pagination from '@/Components/Pagination.vue';
 import { formatStorageUrl } from '@/Utils/formatters';
 import { formatRupiah } from '@/Composables/useFormatRupiah';
 
@@ -166,6 +167,14 @@ function isPdf(path) {
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Footer -->
+            <Pagination
+                :links="props.payments?.links"
+                :from="props.payments?.from"
+                :to="props.payments?.to"
+                :total="props.payments?.total"
+            />
         </div>
 
         <!-- Minimalist Payment Proof Modal -->

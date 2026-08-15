@@ -1,6 +1,8 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import Pagination from '@/Components/Pagination.vue';
+import { formatRupiah } from '@/Composables/useFormatRupiah';
 
 const props = defineProps({
     registrations: Object,
@@ -75,7 +77,8 @@ function filterStatus(status) {
                             {{ r.registration_fee?.name }}
                         </td>
                         <td class="px-5 py-4 font-bold text-slate-800">
-                            {{ r.currency }} {{ Number(r.amount).toLocaleString() }}
+                            <span v-if="r.currency === 'USD'">${{ Number(r.amount).toLocaleString() }}</span>
+                            <span v-else>{{ formatRupiah(r.amount) }}</span>
                         </td>
                         <td class="px-5 py-4">
                             <span :class="['rounded-full px-2.5 py-1 text-xs font-bold uppercase', statusColor(r.status)]">
@@ -91,5 +94,13 @@ function filterStatus(status) {
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Footer -->
+        <Pagination
+            :links="props.registrations?.links"
+            :from="props.registrations?.from"
+            :to="props.registrations?.to"
+            :total="props.registrations?.total"
+        />
     </AdminLayout>
 </template>

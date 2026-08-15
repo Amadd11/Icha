@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { getRoleBadgeClass as roleColor } from '@/Utils/badges';
 
 const props = defineProps({
@@ -179,26 +180,12 @@ function formatDate(dateStr) {
                 </div>
 
                 <!-- Pagination Footer (20 per page) -->
-                <div v-if="props.users?.links && props.users.total > 0" class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-4 border-t border-slate-100 bg-slate-50/50 gap-3">
-                    <p class="text-xs text-slate-500">
-                        Showing <strong class="text-slate-700">{{ props.users.from || 0 }}</strong> to <strong class="text-slate-700">{{ props.users.to || 0 }}</strong> of <strong class="text-slate-700">{{ props.users.total }}</strong> users (20 per page)
-                    </p>
-
-                    <div class="flex items-center gap-1 flex-wrap">
-                        <Link
-                            v-for="(link, i) in props.users.links"
-                            :key="i"
-                            :href="link.url || '#'"
-                            v-html="link.label"
-                            :class="[
-                                'px-3 py-1 text-xs rounded-lg transition font-medium',
-                                link.active ? 'bg-purple-900 text-gold font-bold shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50',
-                                !link.url ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'cursor-pointer'
-                            ]"
-                            preserve-scroll
-                        />
-                    </div>
-                </div>
+                <Pagination
+                    :links="props.users?.links"
+                    :from="props.users?.from"
+                    :to="props.users?.to"
+                    :total="props.users?.total"
+                />
             </div>
 
             <!-- Simple Modal for Create & Edit -->

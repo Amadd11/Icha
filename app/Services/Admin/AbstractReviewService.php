@@ -4,14 +4,14 @@ namespace App\Services\Admin;
 
 use App\Models\AbstractSubmission;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class AbstractReviewService
 {
     /**
-     * Get abstract submissions filtered by status.
+     * Get abstract submissions filtered by status with pagination.
      */
-    public function getAbstracts(?string $status = null): Collection
+    public function getAbstracts(?string $status = null, int $perPage = 15): LengthAwarePaginator
     {
         $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
 
@@ -29,7 +29,7 @@ class AbstractReviewService
             $query->where('status', $status);
         }
 
-        return $query->get();
+        return $query->paginate($perPage)->withQueryString();
     }
 
     /**

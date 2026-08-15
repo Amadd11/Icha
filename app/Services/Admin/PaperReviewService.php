@@ -4,14 +4,14 @@ namespace App\Services\Admin;
 
 use App\Models\FullPaper;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PaperReviewService
 {
     /**
-     * Get full paper submissions filtered by status.
+     * Get full paper submissions filtered by status with pagination.
      */
-    public function getPapers(?string $status = null): Collection
+    public function getPapers(?string $status = null, int $perPage = 15): LengthAwarePaginator
     {
         $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
 
@@ -23,7 +23,7 @@ class PaperReviewService
             $query->where('status', $status);
         }
 
-        return $query->get();
+        return $query->paginate($perPage)->withQueryString();
     }
 
     /**

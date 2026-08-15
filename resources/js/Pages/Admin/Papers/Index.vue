@@ -1,11 +1,17 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
+import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
-    papers: Array,
+    papers: [Array, Object],
     filters: Object,
+});
+
+const paperList = computed(() => {
+    return Array.isArray(props.papers) ? props.papers : (props.papers?.data || []);
 });
 
 const selectedStatus = ref(props.filters?.status || 'all');
@@ -40,14 +46,6 @@ function submitReview() {
             activePaper.value = null;
         },
     });
-}
-
-function formatStorageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/storage/')) return path;
-    if (path.startsWith('storage/')) return '/' + path;
-    return '/storage/' + path;
 }
 </script>
 
@@ -103,12 +101,12 @@ function formatStorageUrl(path) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-if="!props.papers || props.papers.length === 0">
+                            <tr v-if="paperList.length === 0">
                                 <td colspan="7" class="px-5 py-8 text-center text-xs text-slate-400">
                                     No full paper submissions found.
                                 </td>
                             </tr>
-                            <tr v-for="item in props.papers" :key="item.id" class="hover:bg-slate-50/50 transition">
+                            <tr v-for="item in paperList" :key="item.id" class="hover:bg-slate-50/50 transition">
                                 <!-- Paper Code -->
                                 <td class="px-5 py-3.5">
                                     <p class="font-bold text-purple-900 text-xs">{{ item.paper_code || item.abstract?.abstract_code }}</p>
@@ -173,6 +171,14 @@ function formatStorageUrl(path) {
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination Footer -->
+                <Pagination
+                    :links="props.papers?.links"
+                    :from="props.papers?.from"
+                    :to="props.papers?.to"
+                    :total="props.papers?.total"
+                />
             </div>
 
             <!-- Minimalist Full Paper Decision Modal -->
