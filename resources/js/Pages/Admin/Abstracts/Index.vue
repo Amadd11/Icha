@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
     abstracts: Array,
@@ -118,14 +119,6 @@ function getReviewStats(item) {
         totalCount: 3, // Exactly 3 reviewers required per abstract workflow
         reviews: completedAssignments,
     };
-}
-
-function formatStorageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/storage/')) return path;
-    if (path.startsWith('storage/')) return '/' + path;
-    return '/storage/' + path;
 }
 </script>
 

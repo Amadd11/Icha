@@ -22,7 +22,6 @@ const props = defineProps({
     },
 });
 
-const lang = ref("en");
 const isMenuOpen = ref(false);
 
 const navLinks = [
@@ -32,10 +31,6 @@ const navLinks = [
     { href: "/#speakers", label: "Speakers" },
     { href: "/registration", label: "Registration" },
 ];
-
-function setLang(value) {
-    lang.value = value;
-}
 
 function toggleMenu() {
     isMenuOpen.value = !isMenuOpen.value;
@@ -49,9 +44,7 @@ function toggleMenu() {
             :available-conferences="props.availableConferences"
             :links="navLinks"
             :can-login="props.canLogin"
-            :lang="lang"
             :is-menu-open="isMenuOpen"
-            @set-lang="setLang"
             @toggle-menu="toggleMenu"
             @close-menu="isMenuOpen = false"
         />

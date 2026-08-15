@@ -19,17 +19,13 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
-    lang: {
-        type: String,
-        default: "en",
-    },
     isMenuOpen: {
         type: Boolean,
         default: false,
     },
 });
 
-const emit = defineEmits(["set-lang", "toggle-menu", "close-menu"]);
+const emit = defineEmits(["toggle-menu", "close-menu"]);
 
 const activeSection = ref("");
 
@@ -195,33 +191,14 @@ function logout() {
                         </button>
                     </div>
                 </div>
-                <!-- Guest: show Login and Register links -->
-                <a
+                <Link
                     v-else
                     :href="route('login')"
                     class="hidden text-sm font-medium text-white/80 transition-colors hover:text-gold lg:inline-block"
                 >
                     Login
-                </a>
+                </Link>
             </template>
-
-            <!-- Language Switcher -->
-            <div class="ml-5 flex">
-                <button
-                    class="rounded-l border border-gold px-3 py-1 text-xs font-semibold transition-all cursor-pointer"
-                    :class="props.lang === 'en' ? 'bg-gold text-sidebar' : 'bg-white/10 text-white/70'"
-                    @click="emit('set-lang', 'en')"
-                >
-                    EN
-                </button>
-                <button
-                    class="rounded-r border border-white/25 px-3 py-1 text-xs font-semibold transition-all cursor-pointer"
-                    :class="props.lang === 'id' ? 'bg-gold text-sidebar' : 'bg-white/10 text-white/70'"
-                    @click="emit('set-lang', 'id')"
-                >
-                    ID
-                </button>
-            </div>
 
             <!-- Mobile Hamburger Toggle -->
             <button

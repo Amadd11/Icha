@@ -2,6 +2,8 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { formatStorageUrl } from '@/Utils/formatters';
+import { formatRupiah } from '@/Composables/useFormatRupiah';
 
 const props = defineProps({
     payments: Object,
@@ -51,14 +53,6 @@ function submitReject() {
 
 function filterStatus(status) {
     router.get(route('admin.payments.index'), { status }, { preserveState: true });
-}
-
-function formatStorageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/storage/')) return path;
-    if (path.startsWith('storage/')) return '/' + path;
-    return '/storage/' + path;
 }
 
 function isPdf(path) {
@@ -127,7 +121,8 @@ function isPdf(path) {
 
                             <!-- Amount -->
                             <td class="px-5 py-3.5 font-bold text-slate-900 text-sm">
-                                {{ p.currency }} {{ Number(p.amount).toLocaleString() }}
+                                <span v-if="p.currency === 'USD'">${{ Number(p.amount).toLocaleString() }}</span>
+                                <span v-else>{{ formatRupiah(p.amount) }}</span>
                             </td>
 
                             <!-- Proof File Button -->

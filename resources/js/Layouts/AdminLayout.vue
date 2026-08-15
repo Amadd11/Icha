@@ -94,24 +94,25 @@ function logout() {
                 class="hidden w-80 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden"
             >
                 <!-- Brand Header -->
-                <div
-                    class="flex h-18 items-center px-6 border-b border-purple-800/50 gap-3"
-                >
-                    <div
-                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gold text-slate-950 font-black text-base shadow-sm shrink-0"
-                    >
-                        IC
-                    </div>
-                    <div>
-                        <span
-                            class="font-extrabold text-base tracking-tight text-white block"
-                            >ICHA Admin</span
-                        >
-                        <span
-                            class="text-xs text-gold font-semibold block -mt-0.5"
-                            >Management Portal</span
-                        >
-                    </div>
+                <div class="flex h-18 items-center px-6 border-b border-purple-800/50 gap-3">
+                    <Link href="/" class="flex items-center gap-3 transition hover:opacity-95">
+                        <div class="flex items-center gap-1.5 p-1 rounded-md shrink-0">
+                            <img
+                                src="/assets/logo/logo-pipmarsi.png"
+                                alt="PIP MARSI"
+                                class="h-10 w-auto object-contain"
+                            />
+                            <img
+                                src="/assets/logo/logo-umsura.png"
+                                alt="UMSURA"
+                                class="h-10 w-auto object-contain"
+                            />
+                        </div>
+                        <div>
+                            <span class="font-extrabold text-xl tracking-tight text-white block leading-tight">Admin Portal</span>
+                            <span class="text-xs text-gold font-semibold block mt-0.5">ICHA 2026</span>
+                        </div>
+                    </Link>
                 </div>
 
                 <!-- Navigation Links -->

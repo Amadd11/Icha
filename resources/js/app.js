@@ -9,7 +9,19 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-    title: (title) => title.includes('ICHA') ? title : `${title} - ICHA 2026`,
+    title: (title) => {
+        if (!title || title.trim() === '' || title.toLowerCase() === 'icha' || title.toLowerCase() === 'home' || title.toLowerCase() === 'icha conference portal') {
+            return 'ICHA';
+        }
+        if (title.toLowerCase().includes('dashboard') || title.toLowerCase() === 'workspace') {
+            return 'ICHA | Dashboard';
+        }
+        if (title.startsWith('ICHA |')) {
+            return title;
+        }
+        const cleanTitle = title.replace(/\s*-\s*ICHA(\s*\d{4})?/i, '').replace(/\s*-\s*Admin/i, '').trim();
+        return `ICHA | ${cleanTitle}`;
+    },
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,

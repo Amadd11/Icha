@@ -20,7 +20,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head title="Participant Workspace & Progress" />
+    <Head title="Dashboard" />
 
     <ParticipantLayout>
         <div class="space-y-6">

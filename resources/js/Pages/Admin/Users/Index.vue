@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { getRoleBadgeClass as roleColor } from '@/Utils/badges';
 
 const props = defineProps({
     users: Object, // Paginated 20 per page
@@ -20,13 +21,6 @@ const form = useForm({
     institution: '',
     phone: '',
 });
-
-const roleColor = (role) => ({
-    super_admin: 'bg-purple-50 text-purple-700 border-purple-200',
-    admin:       'bg-blue-50 text-blue-700 border-blue-200',
-    reviewer:    'bg-amber-50 text-amber-700 border-amber-200',
-    participant: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-}[role] ?? 'bg-slate-50 text-slate-600 border-slate-200');
 
 function openCreateModal() {
     editingUser.value = null;

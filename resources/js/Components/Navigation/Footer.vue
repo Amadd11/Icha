@@ -76,7 +76,7 @@ function scrollToTop() {
                         </div>
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-[18px] text-gold shrink-0">mail</span>
-                            <a href="mailto:info@icha2026.id" class="hover:text-gold transition-colors font-semibold">info@icha2026.id</a>
+                            <a href="mailto:[EMAIL_ADDRESS]" class="hover:text-gold transition-colors font-semibold">conference.icha10@gmail.com</a>
                         </div>
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-[18px] text-gold shrink-0">call</span>

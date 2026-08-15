@@ -58,6 +58,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Category::class);
     }
 
+    public function abstracts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AbstractSubmission::class);
+    }
+
+    public function reviewerAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ReviewAssignment::class, 'reviewer_id');
+    }
+
     // ─── Role Helpers ───────────────────────────────────────────────
 
     public function isSuperAdmin(): bool

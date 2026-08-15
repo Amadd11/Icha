@@ -73,7 +73,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head :title="props.activeConference?.title || 'ICHA Conference Portal'" />
+    <Head title="ICHA" />
 
     <PublicLayout
         :conference="props.activeConference"

@@ -22,8 +22,7 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
                         <p class="text-xs text-slate-500 mt-1">Official conference email inquiries</p>
                     </div>
                     <div class="pt-2 border-t border-slate-100 space-y-1 text-xs font-bold text-primary">
-                        <a href="mailto:info@icha2026.id" class="block hover:underline">info@icha2026.id</a>
-                        <a href="mailto:secretariat@icha2026.id" class="block hover:underline text-slate-600">secretariat@icha2026.id</a>
+                        <a href="mailto:conference.icha10@gmail.com" class="block hover:underline">conference.icha10@gmail.com</a>
                     </div>
                 </div>
 

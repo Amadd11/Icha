@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import ReviewerLayout from '@/Layouts/ReviewerLayout.vue';
+import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
     stats: Object,
@@ -62,18 +63,10 @@ function submitReview() {
         }
     });
 }
-
-function formatStorageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/storage/')) return path;
-    if (path.startsWith('storage/')) return '/' + path;
-    return '/storage/' + path;
-}
 </script>
 
 <template>
-    <Head title="Reviewer Dashboard" />
+    <Head title="Dashboard" />
 
     <ReviewerLayout>
         <div class="mb-8">

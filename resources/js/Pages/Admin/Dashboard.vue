@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import { formatStorageUrl } from '@/Utils/formatters';
+import { formatRupiah } from '@/Composables/useFormatRupiah';
 
 const props = defineProps({
     selectedConference: Object,
@@ -15,18 +17,10 @@ function changeConference(e) {
     const id = e.target.value;
     router.get(route('admin.dashboard'), { conference_id: id }, { preserveState: true });
 }
-
-function formatStorageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/storage/')) return path;
-    if (path.startsWith('storage/')) return '/' + path;
-    return '/storage/' + path;
-}
 </script>
 
 <template>
-    <Head title="Admin Dashboard & Financial Overview" />
+    <Head title="Dashboard" />
 
     <AdminLayout
         :selected-conference="props.selectedConference"
@@ -82,7 +76,7 @@ function formatStorageUrl(path) {
                             <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">Verified</span>
                         </div>
                         <p class="text-2xl font-black text-emerald-950 mt-1">
-                            Rp {{ Number(props.stats?.verified_revenue_idr || 0).toLocaleString() }}
+                            {{ formatRupiah(props.stats?.verified_revenue_idr) }}
                         </p>
                         <p v-if="props.stats?.verified_revenue_usd > 0" class="text-xs font-bold text-emerald-800 mt-0.5">
                             + USD ${{ Number(props.stats?.verified_revenue_usd).toLocaleString() }}
@@ -99,7 +93,7 @@ function formatStorageUrl(path) {
                             <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">Pending</span>
                         </div>
                         <p class="text-2xl font-black text-amber-950 mt-1">
-                            Rp {{ Number(props.stats?.unpaid_revenue_idr || 0).toLocaleString() }}
+                            {{ formatRupiah(props.stats?.unpaid_revenue_idr) }}
                         </p>
                         <p v-if="props.stats?.unpaid_revenue_usd > 0" class="text-xs font-bold text-amber-800 mt-0.5">
                             + USD ${{ Number(props.stats?.unpaid_revenue_usd).toLocaleString() }}
