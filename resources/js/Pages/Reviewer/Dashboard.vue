@@ -69,34 +69,34 @@ function submitReview() {
     <Head title="Dashboard" />
 
     <ReviewerLayout>
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Reviewer Dashboard</h1>
-            <p class="text-slate-500 text-xs mt-1">Welcome back, {{ $page.props.auth.user.name }}! Review your assigned scientific submissions below.</p>
+        <div class="mb-8 animate-fade-in-up">
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Reviewer Dashboard</h1>
+            <p class="text-slate-500 text-xs mt-1 font-medium">Welcome back, {{ $page.props.auth.user.name }}! Review your assigned scientific submissions below.</p>
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 animate-fade-in-scale">
             
             <!-- Total Assigned -->
-            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-purple-300">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Assigned</span>
                 <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-extrabold text-slate-900">{{ stats?.total_assigned ?? 0 }}</span>
-                    <span class="text-xs font-semibold text-purple-600">Submissions</span>
+                    <span class="text-3xl font-black text-slate-900">{{ stats?.total_assigned ?? 0 }}</span>
+                    <span class="text-xs font-bold text-primary">Submissions</span>
                 </div>
             </div>
 
             <!-- Pending -->
-            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-amber-300">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Review</span>
                 <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-extrabold text-amber-600">{{ stats?.pending_reviews ?? 0 }}</span>
-                    <span class="text-xs font-semibold text-amber-600">Requires Action</span>
+                    <span class="text-3xl font-black text-amber-600">{{ stats?.pending_reviews ?? 0 }}</span>
+                    <span class="text-xs font-bold text-amber-600">Requires Action</span>
                 </div>
             </div>
 
             <!-- Completed -->
-            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Completed</span>
                 <div class="flex items-baseline gap-2 mt-2">
                     <span class="text-3xl font-extrabold text-emerald-600">{{ stats?.completed_reviews ?? 0 }}</span>

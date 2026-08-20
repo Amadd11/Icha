@@ -22,6 +22,8 @@ function scrollToTop() {
                         <img src="/assets/logo/logo-pipmarsi.png" alt="PIP MARSI" class="h-10 w-auto object-contain" />
                         <div class="w-px h-8 bg-white/20"></div>
                         <img src="/assets/logo/logo-umsura.png" alt="UMSURA" class="h-10 w-auto object-contain" />
+                        <div class="w-px h-8 bg-white/20"></div>
+                        <img src="/assets/logo/logo-ub.png" alt="Universitas Brawijaya" class="h-10 w-auto object-contain" />
                     </div>
 
                     <div>
@@ -76,7 +78,7 @@ function scrollToTop() {
                         </div>
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-[18px] text-gold shrink-0">mail</span>
-                            <a href="mailto:[EMAIL_ADDRESS]" class="hover:text-gold transition-colors font-semibold">conference.icha10@gmail.com</a>
+                            <a href="mailto:conference.icha10@gmail.com" class="hover:text-gold transition-colors font-semibold">conference.icha10@gmail.com</a>
                         </div>
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-[18px] text-gold shrink-0">call</span>

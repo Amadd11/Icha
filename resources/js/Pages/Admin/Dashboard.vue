@@ -27,9 +27,9 @@ function changeConference(e) {
     >
         <div class="space-y-6">
             <!-- Header Row with Conference Switcher -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in-up">
                 <div>
-                    <h1 class="text-xl font-bold text-slate-900">Executive Dashboard & Financial Recap</h1>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">Executive Dashboard & Financial Recap</h1>
                     <p class="text-xs text-slate-500 mt-0.5">
                         Financial metrics and submission recap for {{ props.selectedConference?.title || 'Active Conference' }}
                     </p>
@@ -37,7 +37,7 @@ function changeConference(e) {
             </div>
 
             <!-- 💰 TOTAL FINANCIAL RECAP & REGISTRATION REVENUE CARDS 💰 -->
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+            <div class="rounded-2xl border border-slate-200/90 bg-white p-5 space-y-4 shadow-sm animate-fade-in-scale">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
                         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Participant Financial Recap</h2>
@@ -45,7 +45,7 @@ function changeConference(e) {
                     </div>
                     <Link
                         :href="route('admin.payments.index')"
-                        class="px-3.5 py-1.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer shadow-2xs"
+                        class="px-4 py-2 rounded-xl bg-gold hover:bg-gold-dark text-slate-950 font-bold text-xs transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
                     >
                         Verify Payments Queue
                     </Link>
@@ -53,46 +53,46 @@ function changeConference(e) {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
                     <!-- Total Invoiced Amount (Seluruh Peserta Mendaftar) -->
-                    <div class="rounded-xl border border-purple-200 bg-purple-50/50 p-4">
+                    <div class="rounded-2xl border border-purple-200/80 bg-purple-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-purple-300">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Total Tagihan Peserta Mendaftar</span>
-                            <span class="text-[10px] font-bold text-purple-800 bg-purple-100 px-2 py-0.5 rounded">All Regs</span>
+                            <span class="text-[10px] font-bold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-full">All Regs</span>
                         </div>
-                        <p class="text-2xl font-black text-purple-950 mt-1">
+                        <p class="text-2xl font-black text-purple-950 mt-2">
                             Rp {{ Number(props.stats?.total_invoiced_idr || 0).toLocaleString() }}
                         </p>
                         <p v-if="props.stats?.total_invoiced_usd > 0" class="text-xs font-bold text-purple-800 mt-0.5">
                             + USD ${{ Number(props.stats?.total_invoiced_usd).toLocaleString() }}
                         </p>
-                        <span class="text-[11px] font-semibold text-slate-500 mt-1.5 block">
+                        <span class="text-[11px] font-semibold text-slate-500 mt-2 block">
                             Dari {{ props.stats?.total_registrations || 0 }} peserta mendaftar
                         </span>
                     </div>
 
                     <!-- Verified Received Money (Sudah Lunas) -->
-                    <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+                    <div class="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-emerald-300">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Uang Masuk (Lunas & Terverifikasi)</span>
-                            <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">Verified</span>
+                            <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">Verified</span>
                         </div>
-                        <p class="text-2xl font-black text-emerald-950 mt-1">
+                        <p class="text-2xl font-black text-emerald-950 mt-2">
                             {{ formatRupiah(props.stats?.verified_revenue_idr) }}
                         </p>
                         <p v-if="props.stats?.verified_revenue_usd > 0" class="text-xs font-bold text-emerald-800 mt-0.5">
                             + USD ${{ Number(props.stats?.verified_revenue_usd).toLocaleString() }}
                         </p>
-                        <span class="text-[11px] font-semibold text-emerald-700 mt-1.5 block">
+                        <span class="text-[11px] font-semibold text-emerald-700 mt-2 block">
                             {{ props.stats?.verified_payments || 0 }} transaksi telah lunas
                         </span>
                     </div>
 
                     <!-- Unpaid / Pending Balance (Belum Dibayar / Verifikasi) -->
-                    <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                    <div class="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-300">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Sisa Tagihan (Belum Lunas)</span>
-                            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">Pending</span>
+                            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">Pending</span>
                         </div>
-                        <p class="text-2xl font-black text-amber-950 mt-1">
+                        <p class="text-2xl font-black text-amber-950 mt-2">
                             {{ formatRupiah(props.stats?.unpaid_revenue_idr) }}
                         </p>
                         <p v-if="props.stats?.unpaid_revenue_usd > 0" class="text-xs font-bold text-amber-800 mt-0.5">

@@ -1,6 +1,6 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -8,6 +8,19 @@ const props = defineProps({
 });
 
 const proofModalOpen = ref(false);
+const sendingInvoice = ref(false);
+
+function sendInvoiceEmail() {
+    if (confirm(`Send invoice email to ${props.registration.user?.email}?`)) {
+        sendingInvoice.value = true;
+        router.post(route('admin.registrations.send-invoice', props.registration.id), {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                sendingInvoice.value = false;
+            }
+        });
+    }
+}
 
 function formatStorageUrl(path) {
     if (!path) return '';
@@ -25,17 +38,27 @@ function isPdf(path) {
 <template>
     <Head title="Registration Detail - Admin" />
     <AdminLayout>
-        <div class="mb-6 flex items-center justify-between">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Registration Detail</h1>
                 <p class="text-xs text-slate-500">Invoice: {{ registration.invoice_number }}</p>
             </div>
-            <Link
-                :href="route('admin.registrations.index')"
-                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-                &larr; Back to List
-            </Link>
+            <div class="flex items-center gap-2">
+                <button
+                    @click="sendInvoiceEmail"
+                    :disabled="sendingInvoice"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-purple-900 px-4 py-2 text-xs font-bold text-gold transition hover:bg-purple-950 disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                    <span>📧</span>
+                    <span>{{ sendingInvoice ? 'Sending...' : 'Send / Resend Invoice Email' }}</span>
+                </button>
+                <Link
+                    :href="route('admin.registrations.index')"
+                    class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                    &larr; Back to List
+                </Link>
+            </div>
         </div>
 
         <div class="max-w-4xl space-y-6">

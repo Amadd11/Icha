@@ -100,22 +100,27 @@ function logout() {
                     v-if="props.conference?.logo"
                     :src="'/storage/' + props.conference.logo"
                     :alt="props.conference?.title || 'Conference Logo'"
-                    class="h-9 w-auto object-contain"
+                    class="h-8 md:h-9 w-auto object-contain"
                 />
-                <img
-                    v-else
-                    src="/assets/logo/logo-pipmarsi.png"
-                    alt="PIP MARSI"
-                    class="h-9 w-auto object-contain"
-                />
-                <img
-                    v-if="!props.conference?.logo"
-                    src="/assets/logo/logo-umsura.png"
-                    alt="UMSURA"
-                    class="h-9 w-auto object-contain"
-                />
+                <template v-else>
+                    <img
+                        src="/assets/logo/logo-pipmarsi.png"
+                        alt="PIP MARSI"
+                        class="h-8 md:h-9 w-auto object-contain"
+                    />
+                    <img
+                        src="/assets/logo/logo-umsura.png"
+                        alt="UMSURA"
+                        class="h-8 md:h-9 w-auto object-contain"
+                    />
+                    <img
+                        src="/assets/logo/logo-ub.png"
+                        alt="Universitas Brawijaya"
+                        class="h-8 md:h-9 w-auto object-contain"
+                    />
+                </template>
             </div>
-            <span class="text-2xl font-bold tracking-tight text-white">{{ props.conference?.title || 'ICHA 2026' }}</span>
+            <span class="text-xl md:text-2xl font-bold tracking-tight text-white">{{ props.conference?.title || 'ICHA 2026' }}</span>
         </Link>
 
         <!-- Navigation Links (Desktop) -->

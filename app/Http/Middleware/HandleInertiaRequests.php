@@ -36,15 +36,24 @@ class HandleInertiaRequests extends Middleware
         }
 
         $selectedConfId = session('admin_conference_id');
-        $activeConference = $selectedConfId ? Conference::find($selectedConfId) : Conference::where('is_active', true)->first();
-        
-        if (!$activeConference) {
-            $activeConference = Conference::latest()->first();
-        }
+        $activeConference = null;
+        $availableConferences = [];
 
-        $availableConferences = Conference::select('id', 'title', 'year', 'slug', 'is_active', 'status')
-            ->orderByDesc('year')
-            ->get();
+        try {
+            $activeConference = $selectedConfId ? Conference::find($selectedConfId) : Conference::where('is_active', true)->first();
+            
+            if (!$activeConference) {
+                $activeConference = Conference::latest()->first();
+            }
+
+            $availableConferences = Conference::select('id', 'title', 'year', 'slug', 'is_active', 'status')
+                ->orderByDesc('year')
+                ->get();
+        } catch (\Throwable $e) {
+            // Graceful fallback if database is not migrated yet on fresh hosting
+            $activeConference = null;
+            $availableConferences = [];
+        }
 
         return [
             ...parent::share($request),
@@ -58,6 +67,11 @@ class HandleInertiaRequests extends Middleware
             ],
             'activeConference' => $activeConference,
             'availableConferences' => $availableConferences,
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error'   => fn () => $request->session()->get('error'),
+                'message' => fn () => $request->session()->get('message'),
+            ],
         ];
     }
 }

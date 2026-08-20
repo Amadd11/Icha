@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
+import ToastNotification from '@/Components/ToastNotification.vue';
 
 const isMobileOpen = ref(false);
 const page = usePage();
@@ -37,12 +38,17 @@ function logout() {
                         <img
                             src="/assets/logo/logo-pipmarsi.png"
                             alt="PIP MARSI"
-                            class="h-8 w-auto object-contain"
+                            class="h-7 w-auto object-contain"
                         />
                         <img
                             src="/assets/logo/logo-umsura.png"
                             alt="UMSURA"
-                            class="h-8 w-auto object-contain"
+                            class="h-7 w-auto object-contain"
+                        />
+                        <img
+                            src="/assets/logo/logo-ub.png"
+                            alt="Universitas Brawijaya"
+                            class="h-7 w-auto object-contain"
                         />
                     </div>
                     <div>
@@ -128,5 +134,7 @@ function logout() {
                 <slot />
             </div>
         </main>
+
+        <ToastNotification />
     </div>
 </template>

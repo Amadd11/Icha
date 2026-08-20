@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 
@@ -13,6 +13,7 @@ const props = defineProps({
 
 // Modal state
 const isProofModalOpen = ref(false);
+const showReuploadForm = ref(false);
 
 // Form 1: Registration Creation
 const regForm = useForm({
@@ -26,17 +27,35 @@ const selectedFee = computed(() => {
 });
 
 function submitRegistration() {
-    regForm.post(route('participant.registration.store'));
+    regForm.post(route('participant.registration.store'), {
+        preserveScroll: true,
+    });
 }
 
 // Form 2: Payment Receipt Upload
-const proofPreview = ref(props.payment?.proof_file ? '/storage/' + props.payment.proof_file : null);
+const proofPreview = ref(props.payment?.proof_file ? formatStorageUrl(props.payment.proof_file) : null);
 
 const paymentForm = useForm({
-    registration_id: props.existingRegistration?.id,
+    registration_id: props.existingRegistration?.id || null,
     payment_method:  props.payment?.payment_method ?? 'Bank Transfer (BSI)',
     proof_file:      null,
 });
+
+// Sync registration id & preview when props change
+watch(() => props.existingRegistration, (newVal) => {
+    if (newVal?.id) {
+        paymentForm.registration_id = newVal.id;
+    }
+}, { immediate: true });
+
+watch(() => props.payment, (newVal) => {
+    if (newVal?.proof_file) {
+        proofPreview.value = formatStorageUrl(newVal.proof_file);
+    }
+    if (newVal?.payment_method) {
+        paymentForm.payment_method = newVal.payment_method;
+    }
+}, { immediate: true });
 
 function onFileChange(e) {
     const file = e.target.files[0];
@@ -47,8 +66,14 @@ function onFileChange(e) {
 }
 
 function submitPayment() {
+    paymentForm.registration_id = props.existingRegistration?.id;
     paymentForm.post(route('participant.payment.submit'), {
         forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            paymentForm.reset('proof_file');
+            showReuploadForm.value = false;
+        },
     });
 }
 
@@ -61,7 +86,7 @@ function formatStorageUrl(path) {
 }
 
 function isPdf(path) {
-    return path && path.toLowerCase().endsWith('.pdf');
+    return path && (path.toLowerCase().endsWith('.pdf') || path.includes('application/pdf') || (paymentForm.proof_file?.type === 'application/pdf'));
 }
 </script>
 
@@ -135,6 +160,9 @@ function isPdf(path) {
                                 </p>
                             </label>
                         </div>
+                        <p v-if="regForm.errors.registration_fee_id" class="text-xs font-bold text-red-600 mt-1">
+                            {{ regForm.errors.registration_fee_id }}
+                        </p>
                     </div>
 
                     <!-- Currency Selection -->
@@ -185,9 +213,10 @@ function isPdf(path) {
                             'rounded-full px-3 py-1 text-xs font-bold uppercase border',
                             payment?.status === 'verified' || existingRegistration.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                             payment?.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                            payment?.status === 'pending' || existingRegistration.status === 'waiting_verification' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                             'bg-amber-50 text-amber-700 border-amber-200'
                         ]">
-                            {{ payment?.status ? payment.status.replace('_', ' ') : 'Unpaid' }}
+                            {{ payment?.status ? (payment.status === 'pending' ? 'Waiting Verification' : payment.status.replace('_', ' ')) : 'Unpaid' }}
                         </span>
                     </div>
                 </div>
@@ -211,19 +240,25 @@ function isPdf(path) {
                                 Include Invoice Number <strong>{{ existingRegistration.invoice_number }}</strong> in transfer description.
                             </p>
                         </div>
+
+                        <div class="rounded-xl bg-purple-50/50 p-3 border border-purple-100 text-[11px] text-purple-900 space-y-1">
+                            <p class="font-bold">ℹ️ Need Help?</p>
+                            <p>For payment confirmation issues, contact secretariat at <strong>conference.icha10@gmail.com</strong>.</p>
+                        </div>
                     </div>
 
                     <!-- Right: Payment Proof Upload Form -->
                     <div class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3">
-                            Upload Payment Receipt
+                            Payment Receipt
                         </h3>
 
                         <!-- If verified -->
-                        <div v-if="payment?.status === 'verified'" class="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center text-xs text-emerald-800 space-y-1">
-                            <p class="font-black text-sm">✅ Payment Verified</p>
+                        <div v-if="payment?.status === 'verified'" class="rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-center text-xs text-emerald-800 space-y-2">
+                            <div class="text-2xl">✅</div>
+                            <p class="font-black text-sm text-emerald-950">Payment Verified & Approved</p>
                             <p>Your registration is confirmed. You can now submit your abstract and attend the event.</p>
-                            <div v-if="payment?.proof_file" class="pt-3">
+                            <div v-if="payment?.proof_file" class="pt-2">
                                 <button
                                     @click="isProofModalOpen = true"
                                     class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 underline hover:text-emerald-900 cursor-pointer"
@@ -233,21 +268,56 @@ function isPdf(path) {
                             </div>
                         </div>
 
-                        <!-- If not verified yet -->
+                        <!-- If waiting verification (already uploaded) -->
+                        <div v-else-if="(payment?.status === 'pending' || existingRegistration.status === 'waiting_verification') && !showReuploadForm" class="rounded-xl bg-blue-50 border border-blue-200 p-5 text-center text-xs text-blue-900 space-y-3">
+                            <div class="text-2xl">⏳</div>
+                            <p class="font-black text-sm text-blue-950">Payment Proof Submitted</p>
+                            <p class="text-blue-800">
+                                Your payment proof is currently being verified by the committee (takes 1-2 business days).
+                            </p>
+                            <div class="flex items-center justify-center gap-3 pt-1">
+                                <button
+                                    v-if="payment?.proof_file"
+                                    @click="isProofModalOpen = true"
+                                    type="button"
+                                    class="rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-900 px-3.5 py-1.5 font-bold text-xs transition cursor-pointer"
+                                >
+                                    🔍 View Receipt
+                                </button>
+                                <button
+                                    @click="showReuploadForm = true"
+                                    type="button"
+                                    class="rounded-xl border border-blue-300 bg-white hover:bg-blue-50 text-blue-900 px-3.5 py-1.5 font-bold text-xs transition cursor-pointer"
+                                >
+                                    🔄 Update Receipt
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- If not uploaded yet OR rejected OR user clicks update receipt -->
                         <form v-else @submit.prevent="submitPayment" class="space-y-4">
+                            <!-- Rejection Alert -->
                             <div v-if="payment?.status === 'rejected'" class="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
                                 <p class="font-bold">❌ Previous Proof Rejected</p>
                                 <p class="mt-0.5 text-[11px]">{{ payment?.rejection_reason || 'Please upload a clearer receipt photo showing transaction date and amount.' }}</p>
                             </div>
 
+                            <div v-if="showReuploadForm" class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span class="text-xs font-bold text-slate-700">Replacing Existing Receipt</span>
+                                <button @click="showReuploadForm = false" type="button" class="text-xs text-slate-500 hover:text-slate-800 underline">Cancel</button>
+                            </div>
+
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method <span class="text-red-500">*</span></label>
                                 <select v-model="paymentForm.payment_method" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white focus:border-purple-600">
                                     <option value="Bank Transfer (BSI)">Bank Transfer (BSI)</option>
                                     <option value="Bank Transfer (Mandiri)">Bank Transfer (Mandiri)</option>
                                     <option value="Bank Transfer (BCA)">Bank Transfer (BCA)</option>
                                     <option value="Credit Card / Stripe">Credit Card / Stripe</option>
                                 </select>
+                                <p v-if="paymentForm.errors.payment_method" class="text-xs font-bold text-red-600 mt-1">
+                                    {{ paymentForm.errors.payment_method }}
+                                </p>
                             </div>
 
                             <div>
@@ -256,16 +326,22 @@ function isPdf(path) {
                                 </label>
                                 <input
                                     type="file"
-                                    accept="image/*,application/pdf"
+                                    accept="image/jpeg,image/png,image/jpg,application/pdf"
                                     @change="onFileChange"
                                     required
                                     class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-slate-200 rounded-xl p-1"
                                 />
                                 <p class="text-[10px] text-slate-400 mt-1">Accepted: JPG, PNG, PDF (Max 5MB)</p>
+                                <p v-if="paymentForm.errors.proof_file" class="text-xs font-bold text-red-600 mt-1">
+                                    {{ paymentForm.errors.proof_file }}
+                                </p>
+                                <p v-if="paymentForm.errors.registration_id" class="text-xs font-bold text-red-600 mt-1">
+                                    {{ paymentForm.errors.registration_id }}
+                                </p>
                             </div>
 
                             <!-- Preview -->
-                            <div v-if="proofPreview" class="pt-2">
+                            <div v-if="proofPreview" class="pt-1">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Selected Preview</span>
                                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-2 text-center">
                                     <img v-if="!isPdf(proofPreview)" :src="proofPreview" alt="Receipt Preview" class="max-h-40 mx-auto rounded-lg object-contain shadow-xs" />
@@ -276,9 +352,10 @@ function isPdf(path) {
                             <button
                                 type="submit"
                                 :disabled="paymentForm.processing || !paymentForm.proof_file"
-                                class="w-full rounded-xl bg-purple-900 hover:bg-purple-950 text-gold font-bold text-xs py-2.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                                class="w-full rounded-xl bg-purple-900 hover:bg-purple-950 text-gold font-bold text-xs py-2.5 transition shadow-xs cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                {{ paymentForm.processing ? 'Uploading...' : 'Submit Payment Proof' }}
+                                <span v-if="paymentForm.processing" class="animate-spin">⏳</span>
+                                <span>{{ paymentForm.processing ? 'Uploading Payment Proof...' : 'Submit Payment Proof →' }}</span>
                             </button>
                         </form>
                     </div>

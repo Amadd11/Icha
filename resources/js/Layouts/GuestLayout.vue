@@ -9,10 +9,10 @@ const activeConference = computed(() => page.props.activeConference);
 <template>
     <div class="relative flex min-h-screen w-full flex-col justify-between bg-slate-950 bg-gradient-to-br from-sidebar via-purple-950 to-slate-950 font-sans text-white">
         
-        <!-- Background Subtle Pattern & Ambient Orbs -->
+        <!-- Background Subtle Pattern & Animated Ambient Orbs -->
         <div class="pointer-events-none fixed inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;80&quot; height=&quot;80&quot; viewBox=&quot;0 0 80 80&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M0 0h80v80H0z&quot; fill=&quot;none&quot;/%3E%3Cpath d=&quot;M40 0L0 40l40 40 40-40zM40 10L10 40l30 30 30-30z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
-        <div class="pointer-events-none fixed -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-purple-600/30 blur-3xl"></div>
-        <div class="pointer-events-none fixed -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-amber-500/20 blur-3xl"></div>
+        <div class="pointer-events-none fixed -top-40 -left-40 h-[550px] w-[550px] rounded-full bg-purple-600/30 blur-3xl animate-pulse duration-10000"></div>
+        <div class="pointer-events-none fixed -bottom-40 -right-40 h-[550px] w-[550px] rounded-full bg-primary/40 blur-3xl animate-pulse duration-7000"></div>
 
         <!-- Top Header Bar -->
         <header class="relative z-20 flex shrink-0 items-center justify-between px-6 py-4 sm:px-10">

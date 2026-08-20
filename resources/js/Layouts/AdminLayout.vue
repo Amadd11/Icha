@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
+import ToastNotification from "@/Components/ToastNotification.vue";
 
 const props = defineProps({
     selectedConference: {
@@ -104,12 +105,17 @@ function logout() {
                             <img
                                 src="/assets/logo/logo-pipmarsi.png"
                                 alt="PIP MARSI"
-                                class="h-10 w-auto object-contain"
+                                class="h-8 sm:h-9 w-auto object-contain"
                             />
                             <img
                                 src="/assets/logo/logo-umsura.png"
                                 alt="UMSURA"
-                                class="h-10 w-auto object-contain"
+                                class="h-8 sm:h-9 w-auto object-contain"
+                            />
+                            <img
+                                src="/assets/logo/logo-ub.png"
+                                alt="Universitas Brawijaya"
+                                class="h-8 sm:h-9 w-auto object-contain"
                             />
                         </div>
                         <div>
@@ -278,5 +284,7 @@ function logout() {
                 <slot />
             </main>
         </div>
+
+        <ToastNotification />
     </div>
 </template>

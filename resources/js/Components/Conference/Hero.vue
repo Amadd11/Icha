@@ -46,10 +46,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <section id="hero" class="relative flex min-h-screen flex-col lg:flex-row bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 overflow-hidden pt-12 lg:pt-16 pb-8">
+    <section id="hero" class="relative flex min-h-screen flex-col lg:flex-row bg-[#1a1133] overflow-hidden pt-12 lg:pt-16 pb-12 border-b border-purple-900/30">
         
-        <!-- Subtle Grid Pattern for Texture -->
-        <div class="absolute inset-0 z-0 pointer-events-none opacity-10" :style="{ backgroundImage: 'url(\'data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm1 1h38v38H1V1z\' fill=\'%23ffffff\' fill-opacity=\'0.1\' fill-rule=\'evenodd\'/%3E%3C/svg%3E\')' }"></div>
+        <!-- Clean Layered Gradient Background -->
+        <div class="absolute inset-0 bg-gradient-to-b from-[#160c2d] via-[#241747] to-[#160c2d] pointer-events-none"></div>
+
+        <!-- Premium Subtle Micro-Dot Matrix with Radial Vignette Fade -->
+        <div 
+            class="absolute inset-0 pointer-events-none opacity-20"
+            style="background-image: radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px); background-size: 28px 28px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 80%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 80%);"
+        ></div>
+
+        <!-- Refined Soft Atmospheric Lightings -->
+        <div class="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-[350px] w-[700px] rounded-full bg-purple-500/15 blur-[100px]"></div>
+        <div class="pointer-events-none absolute top-1/3 left-10 h-[300px] w-[300px] rounded-full bg-amber-400/10 blur-[90px]"></div>
+        <div class="pointer-events-none absolute bottom-10 right-10 h-[350px] w-[350px] rounded-full bg-indigo-500/10 blur-[100px]"></div>
 
         <!-- Left Column (Content) -->
         <div class="relative z-10 flex w-full lg:w-1/2 flex-col justify-center px-6 py-6 md:px-12 lg:px-16 xl:px-24">
@@ -62,14 +73,14 @@ onUnmounted(() => {
             </div>
 
             <!-- Main Title -->
-            <h1 class="mb-4 font-sans text-5xl font-extrabold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-md">
+            <h1 class="mb-4 font-sans text-5xl font-extrabold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-xs">
                 <span class="text-gold">
                     {{ conference?.title || 'ICHA 2026' }}
                 </span>
             </h1>
 
             <!-- Description -->
-            <p class="mb-6 text-base md:text-lg leading-relaxed text-purple-200 max-w-xl">
+            <p class="mb-6 text-base md:text-lg leading-relaxed text-purple-100/90 max-w-xl font-medium">
                 <strong class="font-bold text-white">{{ conference?.tagline || 'Musyawarah Nasional PIPMARSI' }}</strong><br />
                 <em class="not-italic opacity-90">{{ conference?.theme || 'Leading the Future of Healthcare Administration' }}</em>
             </p>
@@ -78,17 +89,16 @@ onUnmounted(() => {
             <div class="mb-8 flex flex-wrap items-center gap-4">
                 <a
                     href="#abstract"
-                    class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-gold to-yellow-500 px-7 py-3.5 text-sm font-bold text-slate-900 shadow-[0_0_20px_rgba(250,206,104,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(250,206,104,0.5)]"
+                    class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gold hover:bg-amber-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-md shadow-amber-500/15 transition-all hover:scale-103 cursor-pointer"
                 >
                     <span class="relative z-10">Submit Your Abstract</span>
                     <svg class="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
-                    <div class="absolute inset-0 z-0 bg-gradient-to-r from-yellow-500 to-gold opacity-0 transition-opacity group-hover:opacity-100"></div>
                 </a>
                 <a
                     href="#about"
-                    class="inline-flex items-center justify-center rounded-xl border border-purple-400/50 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition-all hover:border-white hover:bg-white/10"
+                    class="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-white/20 hover:border-white/40 cursor-pointer"
                 >
                     Learn More
                 </a>

@@ -25,42 +25,42 @@ const props = defineProps({
     <ParticipantLayout>
         <div class="space-y-6">
             <!-- Welcome Header Banner -->
-            <div class="rounded-2xl bg-gradient-to-r from-sidebar via-purple-900 to-purple-950 p-6 md:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-purple-800/40">
-                <div>
-                    <span class="inline-block rounded-md bg-gold/20 px-2.5 py-0.5 text-[11px] font-bold text-gold border border-gold/30 mb-2 uppercase tracking-wider">
+            <div class="animate-fade-in-up rounded-3xl bg-gradient-to-r from-sidebar via-purple-900 to-primary p-6 md:p-8 text-white shadow-xl shadow-purple-950/20 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-purple-800/40 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <span class="inline-block rounded-full bg-gold/20 px-3 py-1 text-[11px] font-black text-gold border border-gold/40 mb-2 uppercase tracking-wider shadow-xs">
                         {{ props.activeConference?.title || 'ICHA 2026' }} Participant Portal
                     </span>
-                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+                    <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">
                         Welcome back, {{ props.user?.name || 'Participant' }}!
                     </h1>
-                    <p class="mt-1 text-xs md:text-sm text-purple-100/90 max-w-xl">
+                    <p class="mt-1 text-xs md:text-sm text-purple-100/90 max-w-xl font-medium">
                         {{ props.activeConference?.theme || 'Healthcare Administration for a Sustainable Future' }}
                     </p>
                 </div>
 
-                <div v-if="props.nearestDeadline" class="shrink-0 rounded-xl bg-white/10 p-4 border border-white/10 text-center md:text-right">
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-purple-200">Nearest Deadline</span>
+                <div v-if="props.nearestDeadline" class="relative z-10 shrink-0 rounded-2xl bg-white/10 p-4.5 border border-white/15 text-center md:text-right backdrop-blur-xs transition-all group-hover:bg-white/15">
+                    <span class="block text-[10px] font-extrabold uppercase tracking-wider text-purple-200">Nearest Deadline</span>
                     <span class="block text-sm font-bold text-white mt-0.5">{{ props.nearestDeadline.title }}</span>
-                    <span class="block text-xs text-gold font-bold mt-0.5">{{ props.nearestDeadline.date }}</span>
+                    <span class="block text-xs text-gold font-black mt-0.5">{{ props.nearestDeadline.date }}</span>
                 </div>
             </div>
 
             <!-- Next Action Required Banner -->
-            <div v-if="props.nextAction" class="rounded-2xl border border-purple-200 bg-purple-50/70 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div class="flex items-start gap-3">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar text-gold font-black text-sm shadow-2xs">
+            <div v-if="props.nextAction" class="animate-fade-in-scale animation-delay-100 rounded-3xl border-2 border-purple-200/80 bg-purple-50/70 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm hover:shadow-md transition-all">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-gold font-black text-sm shadow-md animate-pulse">
                         ➜
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-purple-950">Next Action: {{ props.nextAction.title }}</h3>
-                        <p class="text-xs text-purple-800 mt-0.5">{{ props.nextAction.description }}</p>
+                        <h3 class="text-sm font-black text-purple-950">Next Action: {{ props.nextAction.title }}</h3>
+                        <p class="text-xs text-purple-800 mt-0.5 font-medium">{{ props.nextAction.description }}</p>
                     </div>
                 </div>
 
                 <Link
                     v-if="props.nextAction.url"
                     :href="props.nextAction.url"
-                    class="inline-flex shrink-0 items-center justify-center rounded-xl bg-gold hover:bg-amber-400 px-5 py-2.5 text-xs font-bold text-slate-950 transition cursor-pointer"
+                    class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-gold hover:bg-gold-dark px-6 py-3 text-xs font-black text-slate-950 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
                 >
                     {{ props.nextAction.button_label }} →
                 </Link>

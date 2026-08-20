@@ -30,42 +30,38 @@ const props = defineProps({
                 :description="props.description"
             />
 
-            <!-- Grid of Tracks (If items exist) -->
+            <!-- Grid of Tracks (Alternating White and Royal Indigo Cards) -->
             <div v-if="props.items && props.items.length > 0" class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div
                     v-for="(item, index) in props.items"
                     :key="item.title"
+                    class="fade-in rounded-3xl p-7 border-2 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between group relative overflow-hidden"
                     :class="[
                         index % 2 === 0
-                            ? 'bg-gradient-to-br from-sidebar to-primary text-white shadow-purple-500/20'
-                            : 'bg-gradient-to-br from-gold to-amber-400 text-slate-950 shadow-amber-500/20',
-                        'fade-in flex flex-col justify-between rounded-2xl p-6 shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl'
+                            ? 'bg-white text-slate-900 border-slate-100 hover:border-primary/40'
+                            : 'bg-primary text-white border-primary-dark shadow-purple-950/20 hover:border-gold'
                     ]"
                 >
-                    <div>
-                        <div v-if="item.badge" class="mb-4">
-                            <span
-                                :class="[
-                                    index % 2 === 0 ? 'bg-white/20 text-white' : 'bg-amber-950/15 text-slate-950 font-bold',
-                                    'inline-block rounded-full px-3 py-1 text-xs font-semibold'
-                                ]"
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-start mb-5">
+                            <div 
+                                class="w-10 h-10 rounded-2xl font-black text-xs flex items-center justify-center shadow-xs border-2"
+                                :class="index % 2 === 0 ? 'bg-primary text-gold border-gold/40' : 'bg-white text-primary border-white'"
                             >
-                                {{ item.badge }}
-                            </span>
+                                {{ String(index + 1).padStart(2, '0') }}
+                            </div>
                         </div>
-                        <h3
-                            :class="[
-                                index % 2 === 0 ? 'text-white' : 'text-slate-950',
-                                'mb-3 text-lg font-bold'
-                            ]"
+
+                        <h3 
+                            class="mb-3 text-lg font-black tracking-tight transition-colors"
+                            :class="index % 2 === 0 ? 'text-slate-900 group-hover:text-primary' : 'text-white'"
                         >
                             {{ item.title }}
                         </h3>
-                        <p
-                            :class="[
-                                index % 2 === 0 ? 'text-white/80' : 'text-slate-800',
-                                'text-sm leading-relaxed'
-                            ]"
+
+                        <p 
+                            class="text-xs sm:text-sm leading-relaxed font-medium"
+                            :class="index % 2 === 0 ? 'text-slate-600' : 'text-indigo-100'"
                         >
                             {{ item.description }}
                         </p>

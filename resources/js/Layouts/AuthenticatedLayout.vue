@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
+import ToastNotification from '@/Components/ToastNotification.vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -148,5 +149,7 @@ const navItems = computed(() => isAdmin.value ? adminNav : participantNav);
                 <slot />
             </main>
         </div>
+
+        <ToastNotification />
     </div>
 </template>

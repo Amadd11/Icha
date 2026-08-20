@@ -11,19 +11,15 @@ import { Link } from "@inertiajs/vue3";
         <div class="relative mx-auto max-w-4xl text-center space-y-8">
             <!-- Heading -->
             <div>
-                <span class="inline-block rounded-full bg-amber-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-300 border border-amber-400/20 mb-4">
-                    Call for Papers
+                <span class="inline-block rounded-full bg-purple-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-purple-300 border border-purple-400/20 mb-4">
+                    Call For Abstracts
                 </span>
-                <h2 class="text-3xl font-black tracking-tight text-white md:text-5xl">
-                    Submit Your Abstract
+                <h2 class="text-3xl font-black text-white sm:text-4xl md:text-5xl tracking-tight mb-6">
+                    Submit Your Scientific Work Today
                 </h2>
-                <p class="mt-4 max-w-2xl mx-auto text-sm leading-relaxed text-purple-200/80 md:text-base">
-                    Share your research, case studies, or innovative projects with global healthcare administration leaders.
+                <p class="text-slate-300 text-base sm:text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+                    Join leading scholars, healthcare professionals, and researchers at ICHA 2026. Submit your abstract and present your innovations.
                 </p>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
                 <Link
                     :href="route('participant.submission.index')"
                     class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-8 py-3.5 shadow-lg shadow-amber-500/20 transition cursor-pointer"

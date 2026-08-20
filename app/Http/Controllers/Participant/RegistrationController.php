@@ -61,11 +61,20 @@ class RegistrationController extends Controller
     public function submitPayment(PaymentProofRequest $request)
     {
         $user = $request->user();
-        $this->paymentService->submitProof(
-            registrationId: (int) $request->validated('registration_id'),
-            paymentMethod:  $request->validated('payment_method'),
-            proofFile:      $request->file('proof_file'),
-            user:           $user
+        $activeConference = Conference::active()->first() ?? Conference::latest()->first();
+
+        $registrationId = $request->validated('registration_id');
+
+        $registration = Registration::where('user_id', $user->id)
+            ->when($registrationId, fn($q) => $q->where('id', $registrationId))
+            ->when(!$registrationId && $activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
+            ->latest()
+            ->firstOrFail();
+
+        $this->paymentService->submitPaymentProof(
+            registration:  $registration,
+            paymentMethod: $request->validated('payment_method'),
+            proofFile:     $request->file('proof_file')
         );
 
         return redirect()->route('participant.registration.create')

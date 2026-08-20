@@ -43,20 +43,20 @@ const props = defineProps({
                             :key="item.title || index"
                             class="relative flex flex-col group"
                         >
-                            <!-- Timeline Node Badge (Larger Node with Gold Border) -->
+                            <!-- Timeline Node Badge -->
                             <div class="flex items-center justify-center mb-8">
-                                <div class="w-13 h-13 rounded-2xl bg-linear-to-br from-primary-dark via-primary to-purple-900 text-gold font-black text-base flex items-center justify-center shadow-lg border-2 border-gold group-hover:scale-115 group-hover:border-white transition-all duration-300">
+                                <div class="w-13 h-13 rounded-2xl bg-primary text-white font-black text-base flex items-center justify-center shadow-lg border-2 border-gold group-hover:scale-115 transition-all duration-300">
                                     {{ String(index + 1).padStart(2, '0') }}
                                 </div>
                             </div>
 
-                            <!-- Card Content Below Node (Colored Cards: Purple & Gold) -->
+                            <!-- Card Content Below Node (Official ICHA 2026 Style) -->
                             <div 
                                 class="rounded-4xl p-7 sm:p-9 shadow-xl border-2 transition-all duration-300 hover:-translate-y-2 flex-1 flex flex-col justify-between relative overflow-hidden"
                                 :class="[
                                     index % 2 === 0 
-                                        ? 'bg-linear-to-br from-slate-900 via-purple-950 to-primary-dark text-white border-purple-800/60 hover:border-gold shadow-purple-900/20' 
-                                        : 'bg-linear-to-br from-amber-400 via-amber-300 to-gold text-slate-950 border-amber-300 hover:border-purple-900 shadow-amber-500/20'
+                                        ? 'bg-primary text-white border-primary-dark shadow-primary/20' 
+                                        : 'bg-white text-slate-900 border-primary/20 hover:border-primary shadow-slate-200/60'
                                 ]"
                             >
                                 <div class="relative z-10">
@@ -65,8 +65,8 @@ const props = defineProps({
                                             class="px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase shadow-xs"
                                             :class="[
                                                 index % 2 === 0 
-                                                    ? 'bg-gold/20 text-gold border border-gold/40' 
-                                                    : 'bg-purple-950 text-gold border border-purple-900'
+                                                    ? 'bg-gold/20 text-white border border-gold/40' 
+                                                    : 'bg-primary/10 text-primary border border-primary/20'
                                             ]"
                                         >
                                             {{ item.period }}
@@ -74,15 +74,15 @@ const props = defineProps({
                                     </div>
                                     <h3 
                                         class="text-lg sm:text-xl font-black mb-4 tracking-tight"
-                                        :class="index % 2 === 0 ? 'text-white' : 'text-slate-950'"
+                                        :class="index % 2 === 0 ? 'text-white' : 'text-primary'"
                                     >
                                         {{ item.title }}
                                     </h3>
-                                    <ul class="space-y-3 text-xs sm:text-sm font-medium" :class="index % 2 === 0 ? 'text-purple-100' : 'text-slate-900'">
+                                    <ul class="space-y-3 text-xs sm:text-sm font-medium" :class="index % 2 === 0 ? 'text-indigo-100' : 'text-slate-600'">
                                         <li v-for="point in item.points" :key="point" class="flex items-start gap-3">
                                             <span 
                                                 class="mt-1.5 h-2 w-2 shrink-0 rounded-full shadow-xs"
-                                                :class="index % 2 === 0 ? 'bg-gold' : 'bg-purple-900'"
+                                                :class="index % 2 === 0 ? 'bg-gold' : 'bg-gold'"
                                             ></span>
                                             <span>{{ point }}</span>
                                         </li>

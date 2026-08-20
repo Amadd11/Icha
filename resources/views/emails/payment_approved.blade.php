@@ -69,8 +69,9 @@
             </div>
         </div>
         <div class="footer">
-            <p style="margin: 0;">International Conference on Healthcare Administration (ICHA)</p>
-            <p style="margin: 4px 0 0 0;">This is an automated system notification. Please do not reply directly to this email.</p>
+            <p style="margin: 0; font-weight: 700; color: #334155;">International Conference on Healthcare Administration (ICHA)</p>
+            <p style="margin: 4px 0 0 0;">Need assistance? Contact our committee at <a href="mailto:conference.icha10@gmail.com" style="color: #3b0764; text-decoration: underline;">conference.icha10@gmail.com</a></p>
+            <p style="margin: 6px 0 0 0;">This is an automated system notification. Please do not reply directly to this email.</p>
         </div>
     </div>
 </body>

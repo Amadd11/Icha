@@ -120,6 +120,7 @@ Route::prefix('admin')
         Route::resource('registration-fees', RegistrationFeeController::class)->except(['show']);
 
         Route::resource('registrations', AdminRegistrationController::class)->only(['index', 'show']);
+        Route::post('registrations/{registration}/send-invoice', [AdminRegistrationController::class, 'sendInvoice'])->name('registrations.send-invoice');
         Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 
@@ -162,14 +163,20 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 // Email preview routes for local testing
+Route::get('/preview-mail/invoice', function () {
+    $registration = \App\Models\Registration::with(['user.profile', 'conference', 'registrationFee'])->first();
+    if (!$registration) return 'No registration found in database to preview. Please seed or register a participant first.';
+    return new \App\Mail\InvoiceMail($registration);
+});
+
 Route::get('/preview-mail/approved', function () {
-    $payment = \App\Models\Payment::with(['registration.user', 'registration.conference', 'registration.registrationType'])->first();
+    $payment = \App\Models\Payment::with(['registration.user.profile', 'registration.conference', 'registration.registrationFee'])->first();
     if (!$payment) return 'No payment found in database to preview. Please seed or register a participant first.';
     return new \App\Mail\PaymentApprovedMail($payment);
 });
 
 Route::get('/preview-mail/rejected', function () {
-    $payment = \App\Models\Payment::with(['registration.user', 'registration.conference', 'registration.registrationType'])->first();
+    $payment = \App\Models\Payment::with(['registration.user.profile', 'registration.conference', 'registration.registrationFee'])->first();
     if (!$payment) return 'No payment found in database to preview. Please seed or register a participant first.';
     $payment->rejection_reason = 'Gambar bukti transfer kurang jelas / nominal transfer tidak sesuai invoice.';
     return new \App\Mail\PaymentRejectedMail($payment);

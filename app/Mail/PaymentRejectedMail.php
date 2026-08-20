@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Payment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -20,7 +21,7 @@ class PaymentRejectedMail extends Mailable
      */
     public function __construct(Payment $payment)
     {
-        $this->payment = $payment;
+        $this->payment = $payment->loadMissing(['registration.user.profile', 'registration.conference', 'registration.registrationFee']);
     }
 
     /**
@@ -31,6 +32,10 @@ class PaymentRejectedMail extends Mailable
         $invoiceNumber = $this->payment->registration->invoice_number ?? 'Invoice';
 
         return new Envelope(
+            from: new Address(config('mail.from.address', 'conference.icha10@gmail.com'), config('mail.from.name', 'ICHA Conference Committee')),
+            replyTo: [
+                new Address('conference.icha10@gmail.com', 'ICHA Conference Committee'),
+            ],
             subject: "[ICHA] Action Required: Payment Proof Re-upload Needed (#{$invoiceNumber})",
         );
     }
