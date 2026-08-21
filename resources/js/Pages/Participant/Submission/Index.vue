@@ -69,6 +69,21 @@ function submitPaper() {
         onSuccess: () => paperForm.reset(),
     });
 }
+
+function downloadTemplate(type) {
+    const hasFile = type === 'abstract'
+        ? !!props.activeConference?.abstract_template
+        : !!props.activeConference?.paper_template;
+
+    if (hasFile && props.activeConference?.slug) {
+        window.location.href = route('template.download', {
+            conference: props.activeConference.slug,
+            type: type,
+        });
+    } else {
+        alert(type === 'abstract' ? 'Berkas template abstrak belum diunggah oleh panitia.' : 'Berkas template full paper belum diunggah oleh panitia.');
+    }
+}
 </script>
 
 <template>
@@ -289,14 +304,14 @@ function submitPaper() {
                                 </div>
 
                                 <div class="mt-6 pt-4 border-t border-slate-200">
-                                    <a
-                                        href="#"
-                                        onclick="alert('Template file download feature initialized.'); return false;"
-                                        class="w-full inline-flex items-center justify-center gap-2 bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition-all text-center"
+                                    <button
+                                        type="button"
+                                        @click="downloadTemplate('abstract')"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition-all text-center cursor-pointer"
                                     >
                                         <span class="material-symbols-outlined text-[18px]">download</span>
                                         Download Abstract Template
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -400,14 +415,14 @@ function submitPaper() {
                                 </div>
 
                                 <div class="mt-6 pt-4 border-t border-slate-200">
-                                    <a
-                                        href="#"
-                                        onclick="alert('Paper template download initialized.'); return false;"
-                                        class="w-full inline-flex items-center justify-center gap-2 bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition-all text-center"
+                                    <button
+                                        type="button"
+                                        @click="downloadTemplate('paper')"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition-all text-center cursor-pointer"
                                     >
                                         <span class="material-symbols-outlined text-[18px]">download</span>
                                         Download Paper Template
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </div>

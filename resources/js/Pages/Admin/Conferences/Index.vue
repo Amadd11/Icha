@@ -106,8 +106,8 @@ function formatDate(dateStr) {
                                     <div class="flex items-center gap-3">
                                         <div class="h-10 w-14 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center p-0.5">
                                             <img 
-                                                v-if="c.hero_image || c.logo" 
-                                                :src="formatStorageUrl(c.hero_image || c.logo)" 
+                                                v-if="(c.hero_images && c.hero_images.length > 0) || c.logo" 
+                                                :src="formatStorageUrl((c.hero_images && c.hero_images[0]) || c.logo)" 
                                                 alt="Banner" 
                                                 class="h-full w-full object-cover rounded" 
                                             />

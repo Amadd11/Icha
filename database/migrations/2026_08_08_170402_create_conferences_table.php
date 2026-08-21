@@ -23,7 +23,14 @@ return new class extends Migration
             $table->string('theme')->nullable();
             $table->string('email')->nullable();
             $table->string('logo')->nullable();
-            $table->string('hero_image')->nullable();
+            $table->json('hero_images')->nullable();
+            $table->string('poster')->nullable();
+            $table->string('bank_name')->nullable();
+            $table->string('bank_account_number')->nullable();
+            $table->string('bank_account_holder')->nullable();
+            $table->text('bank_instructions')->nullable();
+            $table->string('abstract_template')->nullable();
+            $table->string('paper_template')->nullable();
             $table->enum('status', ['draft', 'active', 'archived'])->default('active');
             $table->boolean('is_active')->default(false);
             $table->timestamps();

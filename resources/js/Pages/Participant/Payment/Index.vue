@@ -6,8 +6,10 @@ import { ref } from 'vue';
 const props = defineProps({
     registration: Object,
     payment: Object,
+    conference: Object,
 });
 
+const activeConf = props.conference || props.registration?.conference;
 const proofPreview = ref(props.payment?.proof_file ? '/storage/' + props.payment.proof_file : null);
 
 const form = useForm({
@@ -76,9 +78,12 @@ function submit() {
                 <!-- Bank Transfer Instructions -->
                 <div class="mt-8 rounded-xl bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
                     <p class="font-bold text-slate-800">Bank Transfer Details:</p>
-                    <p><strong>Bank:</strong> Bank Syariah Indonesia (BSI)</p>
-                    <p><strong>Account Number:</strong> 7123-4567-89</p>
-                    <p><strong>Account Name:</strong> Panitia ICHA 2026</p>
+                    <p><strong>Bank:</strong> {{ activeConf?.bank_name || 'Bank Syariah Indonesia (BSI)' }}</p>
+                    <p><strong>Account Number:</strong> {{ activeConf?.bank_account_number || '7192837465' }}</p>
+                    <p><strong>Account Name:</strong> {{ activeConf?.bank_account_holder || 'PANITIA ICHA PIPMARSI' }}</p>
+                    <p v-if="activeConf?.bank_instructions" class="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
+                        {{ activeConf.bank_instructions }}
+                    </p>
                 </div>
             </div>
 

@@ -376,11 +376,16 @@
                         <p style="font-size: 13px; color: #475569; margin: 0 0 10px 0;">Please transfer the exact total amount to our official committee account:</p>
                         
                         <div>
-                            <div class="bank-name">Bank Syariah Indonesia (BSI)</div>
-                            <div class="acc-number">7192837465</div>
+                            <div class="bank-name">{{ $conference->bank_name ?? 'Bank Syariah Indonesia (BSI)' }}</div>
+                            <div class="acc-number">{{ $conference->bank_account_number ?? '7192837465' }}</div>
                             <p style="font-size: 12px; color: #475569; margin: 4px 0 0 0;">
-                                Account Name: <strong>PANITIA ICHA PIPMARSI</strong>
+                                Account Name: <strong>{{ $conference->bank_account_holder ?? 'PANITIA ICHA PIPMARSI' }}</strong>
                             </p>
+                            @if(!empty($conference->bank_instructions))
+                            <p style="font-size: 11px; color: #64748b; margin: 6px 0 0 0; font-style: italic;">
+                                {{ $conference->bank_instructions }}
+                            </p>
+                            @endif
                         </div>
 
                         <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #d8b4fe; font-size: 11px; color: #6b21a8;">

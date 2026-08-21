@@ -104,6 +104,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware('auth')->get('/certificate/{certificate}/download', [CertificateController::class, 'download'])
     ->name('certificate.download');
 
+// Submission Template Download route (Preserves original uploaded filename)
+Route::get('/template/{conference:slug}/{type}', [SubmissionController::class, 'downloadTemplate'])
+    ->name('template.download');
+
 // Admin routes
 Route::prefix('admin')
     ->middleware(['auth', 'role:super_admin,admin'])

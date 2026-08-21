@@ -10,6 +10,7 @@ use App\Models\Registration;
 use App\Models\RegistrationFee;
 use App\Services\PaymentService;
 use App\Services\RegistrationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,7 +45,7 @@ class RegistrationController extends Controller
         ]);
     }
 
-    public function store(ConferenceRegistrationRequest $request)
+    public function store(ConferenceRegistrationRequest $request): RedirectResponse
     {
         $user = $request->user();
         $this->registrationService->createRegistration($user, $request->validated());
@@ -53,7 +54,7 @@ class RegistrationController extends Controller
             ->with('success', 'Registration submitted. Please proceed to payment proof upload below.');
     }
 
-    public function paymentIndex(Request $request): Response
+    public function paymentIndex(Request $request): RedirectResponse
     {
         return redirect()->route('participant.registration.create');
     }

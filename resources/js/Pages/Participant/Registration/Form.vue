@@ -231,11 +231,14 @@ function isPdf(path) {
 
                         <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 space-y-2 text-xs text-slate-700">
                             <p class="font-bold text-slate-900">Please transfer the exact amount to:</p>
-                            <div class="space-y-1 py-1 font-mono text-xs">
-                                <p><span class="text-slate-400">Bank:</span> <strong>Bank Syariah Indonesia (BSI)</strong></p>
-                                <p><span class="text-slate-400">Account No:</span> <strong class="text-purple-900 text-sm">7192837465</strong></p>
-                                <p><span class="text-slate-400">Account Name:</span> <strong>PANITIA ICHA PIPMARSI</strong></p>
+                            <div class="space-y-1.5 py-1 font-mono text-xs">
+                                <p><span class="text-slate-400 font-sans">Bank:</span> <strong>{{ activeConference?.bank_name || 'Bank Syariah Indonesia (BSI)' }}</strong></p>
+                                <p><span class="text-slate-400 font-sans">Account No:</span> <strong class="text-purple-900 text-sm tracking-wider">{{ activeConference?.bank_account_number || '7192837465' }}</strong></p>
+                                <p><span class="text-slate-400 font-sans">Account Name:</span> <strong>{{ activeConference?.bank_account_holder || 'PANITIA ICHA PIPMARSI' }}</strong></p>
                             </div>
+                            <p v-if="activeConference?.bank_instructions" class="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
+                                {{ activeConference.bank_instructions }}
+                            </p>
                             <p class="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
                                 Include Invoice Number <strong>{{ existingRegistration.invoice_number }}</strong> in transfer description.
                             </p>
@@ -243,7 +246,7 @@ function isPdf(path) {
 
                         <div class="rounded-xl bg-purple-50/50 p-3 border border-purple-100 text-[11px] text-purple-900 space-y-1">
                             <p class="font-bold">ℹ️ Need Help?</p>
-                            <p>For payment confirmation issues, contact secretariat at <strong>conference.icha10@gmail.com</strong>.</p>
+                            <p>For payment confirmation issues, contact secretariat at <strong>{{ activeConference?.email || 'conference.icha10@gmail.com' }}</strong>.</p>
                         </div>
                     </div>
 

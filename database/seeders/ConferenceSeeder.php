@@ -26,9 +26,13 @@ class ConferenceSeeder extends Seeder
                 'city'        => 'Surabaya',
                 'country'     => 'Indonesia',
                 'theme'       => 'Healthcare Administration for a Sustainable Future',
-                'email'       => 'info@icha2026.id',
-                'status'      => 'active',
-                'is_active'   => true,
+                'email'               => 'info@icha2026.id',
+                'bank_name'           => 'Bank Syariah Indonesia (BSI)',
+                'bank_account_number' => '7192837465',
+                'bank_account_holder' => 'PANITIA ICHA PIPMARSI',
+                'bank_instructions'   => 'Mohon cantumkan Nomor Invoice pada berita/keterangan transfer saat melakukan pembayaran.',
+                'status'              => 'active',
+                'is_active'           => true,
             ]
         );
 
@@ -105,6 +109,44 @@ class ConferenceSeeder extends Seeder
             Sponsor::updateOrCreate(
                 ['conference_id' => $conference->id, 'name' => $s['name']],
                 array_merge($s, ['conference_id' => $conference->id, 'is_active' => true])
+            );
+        }
+
+        // Speakers
+        $speakers = [
+            [
+                'name'         => 'Prof. Dr. Elizabeth Montgomery, PhD',
+                'title'        => 'Professor of Global Health Systems & Quality Management',
+                'institution'  => 'Johns Hopkins Bloomberg School of Public Health',
+                'country'      => 'United States',
+                'country_code' => 'US',
+                'type'         => 'keynote',
+                'bio'          => 'Prof. Montgomery is an internationally recognized authority on digital health governance and hospital quality transformation.',
+            ],
+            [
+                'name'         => 'Prof. Hiroshi Tanaka, MD, PhD',
+                'title'        => 'Director of Health Informatics Research Institute',
+                'institution'  => 'Tokyo Medical and Dental University',
+                'country'      => 'Japan',
+                'country_code' => 'JP',
+                'type'         => 'plenary',
+                'bio'          => 'Leading expert in artificial intelligence applications in clinical workflows and patient safety protocols in East Asia.',
+            ],
+            [
+                'name'         => 'Dr. Ayesha Rahman, MPH',
+                'title'        => 'Senior Advisor on Health System Sustainability',
+                'institution'  => 'World Health Organization (WHO) SEARO',
+                'country'      => 'Malaysia',
+                'country_code' => 'MY',
+                'type'         => 'invited',
+                'bio'          => 'Dr. Rahman has advised multiple ASEAN health ministries on pandemic resilience and sustainable hospital administration.',
+            ],
+        ];
+
+        foreach ($speakers as $sp) {
+            \App\Models\Speaker::updateOrCreate(
+                ['conference_id' => $conference->id, 'name' => $sp['name']],
+                array_merge($sp, ['conference_id' => $conference->id])
             );
         }
     }

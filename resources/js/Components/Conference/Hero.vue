@@ -16,28 +16,45 @@ const props = defineProps({
     },
 });
 
+function formatHeroUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/storage/')) return path;
+    if (path.startsWith('storage/')) return '/' + path;
+    if (path.startsWith('/assets/')) return path;
+    return '/storage/' + path;
+}
+
 const carouselImages = computed(() => {
-    if (props.conference?.hero_image) {
-        const path = props.conference.hero_image;
-        const formatted = (path.startsWith('http://') || path.startsWith('https://'))
-            ? path
-            : (path.startsWith('/storage/') ? path : (path.startsWith('storage/') ? '/' + path : '/storage/' + path));
-        return [formatted];
+    // 1. Check array of hero_images uploaded by admin
+    if (Array.isArray(props.conference?.hero_images) && props.conference.hero_images.length > 0) {
+        const list = props.conference.hero_images.map(img => formatHeroUrl(img)).filter(Boolean);
+        if (list.length > 0) return list;
     }
-    return [
-        '/assets/images/umsura.png',
-    ];
+
+    // 2. Default fallback: UMSURA Campus Photo
+    return ['/assets/images/umsura.png'];
 });
 
 const currentIndex = ref(0);
 let intervalId = null;
 
-onMounted(() => {
+function startAutoSlide() {
+    if (intervalId) clearInterval(intervalId);
     if (carouselImages.value.length > 1) {
         intervalId = setInterval(() => {
             currentIndex.value = (currentIndex.value + 1) % carouselImages.value.length;
         }, 5000);
     }
+}
+
+function setSlide(idx) {
+    currentIndex.value = idx;
+    startAutoSlide();
+}
+
+onMounted(() => {
+    startAutoSlide();
 });
 
 onUnmounted(() => {
@@ -181,10 +198,10 @@ onUnmounted(() => {
                     <button 
                         v-for="(_, idx) in carouselImages" 
                         :key="idx" 
-                        @click="currentIndex = idx"
-                        class="h-1.5 rounded-full transition-all duration-300"
-                        :class="currentIndex === idx ? 'w-8 bg-white' : 'w-4 bg-white/40 hover:bg-white/60'"
-                        aria-label="Switch slide"
+                        @click="setSlide(idx)"
+                        class="h-2 rounded-full transition-all duration-300 cursor-pointer shadow-sm"
+                        :class="currentIndex === idx ? 'w-8 bg-amber-400 shadow-amber-400/50' : 'w-3 bg-white/40 hover:bg-white/70'"
+                        :aria-label="'Switch to slide ' + (idx + 1)"
                     ></button>
                 </div>
             </div>

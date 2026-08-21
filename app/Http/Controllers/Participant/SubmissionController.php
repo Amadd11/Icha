@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Participant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\StoreAbstractRequest;
 use App\Http\Requests\Participant\StorePaperRequest;
+use App\Models\Conference;
 use App\Services\Participant\SubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,5 +46,24 @@ class SubmissionController extends Controller
         );
 
         return redirect()->back()->with('success', 'Full Paper submitted successfully!');
+    }
+
+    public function downloadTemplate(Conference $conference, string $type)
+    {
+        $filePath = $type === 'abstract' ? $conference->abstract_template : $conference->paper_template;
+
+        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
+            abort(404, 'Berkas template belum diunggah oleh panitia.');
+        }
+
+        // Extract clean original filename without the timestamp prefix
+        $filename = basename($filePath);
+        $cleanName = preg_replace('/^\d+_/', '', $filename);
+        if (empty($cleanName)) {
+            $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+            $cleanName = ($type === 'abstract' ? 'Abstract-Template' : 'Full-Paper-Template') . '.' . $extension;
+        }
+
+        return Storage::disk('public')->download($filePath, $cleanName);
     }
 }

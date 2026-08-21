@@ -46,8 +46,30 @@ class ConferenceController extends Controller
             $data['logo'] = $request->file('logo')->store('conferences/logos', 'public');
         }
 
-        if ($request->hasFile('hero_image')) {
-            $data['hero_image'] = $request->file('hero_image')->store('conferences/heroes', 'public');
+        if ($request->hasFile('hero_images')) {
+            $heroPaths = [];
+            foreach (array_slice($request->file('hero_images'), 0, 4) as $file) {
+                $heroPaths[] = $file->store('conferences/heroes', 'public');
+            }
+            $data['hero_images'] = $heroPaths;
+        }
+
+        if ($request->hasFile('poster')) {
+            $data['poster'] = $request->file('poster')->store('conferences/posters', 'public');
+        }
+
+        if ($request->hasFile('abstract_template')) {
+            $file = $request->file('abstract_template');
+            $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
+            $filename = time() . '_' . $cleanName;
+            $data['abstract_template'] = $file->storeAs('conferences/templates', $filename, 'public');
+        }
+
+        if ($request->hasFile('paper_template')) {
+            $file = $request->file('paper_template');
+            $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
+            $filename = time() . '_' . $cleanName;
+            $data['paper_template'] = $file->storeAs('conferences/templates', $filename, 'public');
         }
 
         Conference::create($data);
@@ -90,18 +112,83 @@ class ConferenceController extends Controller
             unset($data['logo']);
         }
 
-        if ($request->boolean('remove_hero_image')) {
-            if ($conference->hero_image) {
-                Storage::disk('public')->delete($conference->hero_image);
+        // Manage hero carousel images array (Max 4 photos)
+        $currentHeroImages = is_array($conference->hero_images) ? $conference->hero_images : [];
+
+        // Handle specific image deletions
+        $removeHeroImages = $request->input('remove_hero_images', []);
+        if (!empty($removeHeroImages)) {
+            $filtered = [];
+            foreach ($currentHeroImages as $imgPath) {
+                if (in_array($imgPath, $removeHeroImages)) {
+                    Storage::disk('public')->delete($imgPath);
+                } else {
+                    $filtered[] = $imgPath;
+                }
             }
-            $data['hero_image'] = null;
-        } elseif ($request->hasFile('hero_image')) {
-            if ($conference->hero_image) {
-                Storage::disk('public')->delete($conference->hero_image);
+            $currentHeroImages = $filtered;
+        }
+
+        // Upload new multiple hero images up to limit of 4
+        if ($request->hasFile('hero_images')) {
+            foreach ($request->file('hero_images') as $file) {
+                if (count($currentHeroImages) < 4) {
+                    $currentHeroImages[] = $file->store('conferences/heroes', 'public');
+                }
             }
-            $data['hero_image'] = $request->file('hero_image')->store('conferences/heroes', 'public');
+        }
+
+        $currentHeroImages = array_slice($currentHeroImages, 0, 4);
+        $data['hero_images'] = array_values($currentHeroImages);
+
+        if ($request->boolean('remove_poster')) {
+            if ($conference->poster) {
+                Storage::disk('public')->delete($conference->poster);
+            }
+            $data['poster'] = null;
+        } elseif ($request->hasFile('poster')) {
+            if ($conference->poster) {
+                Storage::disk('public')->delete($conference->poster);
+            }
+            $data['poster'] = $request->file('poster')->store('conferences/posters', 'public');
         } else {
-            unset($data['hero_image']);
+            unset($data['poster']);
+        }
+
+        // Abstract Template
+        if ($request->boolean('remove_abstract_template')) {
+            if ($conference->abstract_template) {
+                Storage::disk('public')->delete($conference->abstract_template);
+            }
+            $data['abstract_template'] = null;
+        } elseif ($request->hasFile('abstract_template')) {
+            if ($conference->abstract_template) {
+                Storage::disk('public')->delete($conference->abstract_template);
+            }
+            $file = $request->file('abstract_template');
+            $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
+            $filename = time() . '_' . $cleanName;
+            $data['abstract_template'] = $file->storeAs('conferences/templates', $filename, 'public');
+        } else {
+            unset($data['abstract_template']);
+        }
+
+        // Full Paper Template
+        if ($request->boolean('remove_paper_template')) {
+            if ($conference->paper_template) {
+                Storage::disk('public')->delete($conference->paper_template);
+            }
+            $data['paper_template'] = null;
+        } elseif ($request->hasFile('paper_template')) {
+            if ($conference->paper_template) {
+                Storage::disk('public')->delete($conference->paper_template);
+            }
+            $file = $request->file('paper_template');
+            $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
+            $filename = time() . '_' . $cleanName;
+            $data['paper_template'] = $file->storeAs('conferences/templates', $filename, 'public');
+        } else {
+            unset($data['paper_template']);
         }
 
         $conference->update($data);
@@ -119,8 +206,19 @@ class ConferenceController extends Controller
         if ($conference->logo) {
             Storage::disk('public')->delete($conference->logo);
         }
-        if ($conference->hero_image) {
-            Storage::disk('public')->delete($conference->hero_image);
+        if (is_array($conference->hero_images)) {
+            foreach ($conference->hero_images as $imgPath) {
+                Storage::disk('public')->delete($imgPath);
+            }
+        }
+        if ($conference->poster) {
+            Storage::disk('public')->delete($conference->poster);
+        }
+        if ($conference->abstract_template) {
+            Storage::disk('public')->delete($conference->abstract_template);
+        }
+        if ($conference->paper_template) {
+            Storage::disk('public')->delete($conference->paper_template);
         }
 
         $conference->delete();

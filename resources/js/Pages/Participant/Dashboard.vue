@@ -62,7 +62,7 @@ const props = defineProps({
                     :href="props.nextAction.url"
                     class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-gold hover:bg-gold-dark px-6 py-3 text-xs font-black text-slate-950 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
                 >
-                    {{ props.nextAction.button_label }} →
+                    {{ props.nextAction.button_label }} 
                 </Link>
             </div>
 

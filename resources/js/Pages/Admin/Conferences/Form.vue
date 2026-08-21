@@ -10,27 +10,41 @@ const props = defineProps({
 const isEdit = !!props.conference;
 
 const logoPreview = ref(null);
-const heroPreview = ref(null);
+const posterPreview = ref(null);
+const newHeroPreviews = ref([]);
+const existingHeroImages = ref([
+    ...(Array.isArray(props.conference?.hero_images) ? props.conference.hero_images : [])
+]);
 
 const form = useForm({
-    _method:           isEdit ? 'put' : 'post',
-    title:             props.conference?.title       ?? '',
-    year:              props.conference?.year        ?? new Date().getFullYear(),
-    tagline:           props.conference?.tagline     ?? '',
-    description:       props.conference?.description ?? '',
-    start_date:        props.conference?.start_date  ?? '',
-    end_date:          props.conference?.end_date    ?? '',
-    venue:             props.conference?.venue       ?? '',
-    city:              props.conference?.city        ?? '',
-    country:           props.conference?.country     ?? 'Indonesia',
-    theme:             props.conference?.theme       ?? '',
-    email:             props.conference?.email       ?? '',
-    status:            props.conference?.status      ?? 'draft',
-    is_active:         props.conference?.is_active   ?? false,
-    logo:              null,
-    hero_image:        null,
-    remove_logo:       false,
-    remove_hero_image: false,
+    _method:            isEdit ? 'put' : 'post',
+    title:              props.conference?.title       ?? '',
+    year:               props.conference?.year        ?? new Date().getFullYear(),
+    tagline:            props.conference?.tagline     ?? '',
+    description:        props.conference?.description ?? '',
+    start_date:         props.conference?.start_date  ?? '',
+    end_date:           props.conference?.end_date    ?? '',
+    venue:              props.conference?.venue       ?? '',
+    city:               props.conference?.city        ?? 'Surabaya',
+    country:            props.conference?.country     ?? 'Indonesia',
+    theme:               props.conference?.theme               ?? '',
+    email:               props.conference?.email               ?? '',
+    bank_name:                props.conference?.bank_name                ?? 'Bank Syariah Indonesia (BSI)',
+    bank_account_number:      props.conference?.bank_account_number      ?? '7192837465',
+    bank_account_holder:      props.conference?.bank_account_holder      ?? 'PANITIA ICHA PIPMARSI',
+    bank_instructions:        props.conference?.bank_instructions        ?? '',
+    status:                   props.conference?.status                   ?? 'draft',
+    is_active:                props.conference?.is_active                ?? false,
+    logo:                     null,
+    hero_images:              [],
+    remove_hero_images:       [],
+    poster:                   null,
+    abstract_template:        null,
+    paper_template:           null,
+    remove_logo:              false,
+    remove_poster:            false,
+    remove_abstract_template: false,
+    remove_paper_template:    false,
 });
 
 function handleLogoChange(e) {
@@ -42,12 +56,59 @@ function handleLogoChange(e) {
     }
 }
 
-function handleHeroChange(e) {
+const heroUploadError = ref('');
+
+function handleHeroImagesChange(e) {
+    heroUploadError.value = '';
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const currentTotal = existingHeroImages.value.length + form.hero_images.length;
+    const availableSlots = 4 - currentTotal;
+
+    if (availableSlots <= 0) {
+        heroUploadError.value = 'Maksimal 4 foto hero banner yang dapat diunggah. Hapus foto lama terlebih dahulu jika ingin mengganti.';
+        e.target.value = '';
+        return;
+    }
+
+    const filesToAdd = files.slice(0, availableSlots);
+    if (files.length > availableSlots) {
+        heroUploadError.value = `Hanya ${availableSlots} foto yang ditambahkan karena batas maksimal adalah 4 foto.`;
+    }
+
+    form.hero_images.push(...filesToAdd);
+    filesToAdd.forEach(f => {
+        newHeroPreviews.value.push({
+            file: f,
+            url: URL.createObjectURL(f),
+        });
+    });
+
+    e.target.value = '';
+}
+
+function removeNewHeroImage(index) {
+    heroUploadError.value = '';
+    newHeroPreviews.value.splice(index, 1);
+    form.hero_images.splice(index, 1);
+}
+
+function removeExistingHeroImage(imgPath) {
+    heroUploadError.value = '';
+    const idx = existingHeroImages.value.indexOf(imgPath);
+    if (idx !== -1) {
+        existingHeroImages.value.splice(idx, 1);
+        form.remove_hero_images.push(imgPath);
+    }
+}
+
+function handlePosterChange(e) {
     const file = e.target.files[0];
     if (file) {
-        form.hero_image = file;
-        form.remove_hero_image = false;
-        heroPreview.value = URL.createObjectURL(file);
+        form.poster = file;
+        form.remove_poster = false;
+        posterPreview.value = URL.createObjectURL(file);
     }
 }
 
@@ -57,10 +118,48 @@ function removeLogo() {
     logoPreview.value = null;
 }
 
-function removeHeroImage() {
-    form.hero_image = null;
-    form.remove_hero_image = true;
-    heroPreview.value = null;
+function removePoster() {
+    form.poster = null;
+    form.remove_poster = true;
+    posterPreview.value = null;
+}
+
+const abstractTemplateName = ref(null);
+const paperTemplateName = ref(null);
+
+function handleAbstractTemplateChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+        form.abstract_template = file;
+        form.remove_abstract_template = false;
+        abstractTemplateName.value = file.name;
+    }
+}
+
+function removeAbstractTemplate() {
+    form.abstract_template = null;
+    form.remove_abstract_template = true;
+    abstractTemplateName.value = null;
+}
+
+function handlePaperTemplateChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+        form.paper_template = file;
+        form.remove_paper_template = false;
+        paperTemplateName.value = file.name;
+    }
+}
+
+function removePaperTemplate() {
+    form.paper_template = null;
+    form.remove_paper_template = true;
+    paperTemplateName.value = null;
+}
+
+function getFilename(path) {
+    if (!path) return '';
+    return path.split('/').pop();
 }
 
 function formatStorageUrl(path) {
@@ -202,23 +301,257 @@ function submit() {
                                 </div>
                             </div>
 
-                            <!-- Hero Image Banner -->
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Hero Banner (Max 10MB)</label>
-                                <input type="file" @change="handleHeroChange" class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer" accept="image/*" />
-                                <p v-if="form.errors.hero_image" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.hero_image }}</p>
+                            <!-- Hero Carousel Banners (Multi-Upload, Max 4) -->
+                            <div class="sm:col-span-2">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                        Hero Carousel Banners (Maksimal 4 Foto, Max 10MB per berkas)
+                                    </label>
+                                    <span class="text-xs font-black" :class="(existingHeroImages.length + newHeroPreviews.length) >= 4 ? 'text-amber-600' : 'text-purple-600'">
+                                        {{ existingHeroImages.length + newHeroPreviews.length }} / 4 Terpilih
+                                    </span>
+                                </div>
                                 
-                                <div v-if="!form.remove_hero_image && (heroPreview || (isEdit && conference.hero_image))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
-                                    <div class="flex items-center gap-3">
-                                        <img :src="heroPreview || formatStorageUrl(conference.hero_image)" alt="Hero preview" class="h-14 w-24 rounded-lg object-cover border border-slate-200 shadow-xs" />
-                                        <span class="text-xs text-slate-600 font-bold">{{ heroPreview ? 'New hero banner selected' : 'Current active hero banner' }}</span>
+                                <div v-if="(existingHeroImages.length + newHeroPreviews.length) < 4">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        @change="handleHeroImagesChange"
+                                        class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
+                                        accept="image/*"
+                                    />
+                                    <span class="mt-1 block text-[11px] text-slate-400 font-medium">Bisa memilih 1 hingga {{ 4 - (existingHeroImages.length + newHeroPreviews.length) }} foto tambahan lagi.</span>
+                                </div>
+                                <div v-else class="p-3 rounded-xl border border-amber-200 bg-amber-50 text-xs font-bold text-amber-800 flex items-center justify-between">
+                                    <span>Batas maksimal 4 foto telah terpenuhi. Hapus salah satu slide di bawah jika ingin mengganti.</span>
+                                </div>
+
+                                <!-- Error Alert if attempted to upload > 4 -->
+                                <p v-if="heroUploadError" class="mt-2 text-xs text-red-600 font-bold bg-red-50 p-2 rounded-lg border border-red-200">
+                                    {{ heroUploadError }}
+                                </p>
+                                <p v-if="form.errors.hero_images" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.hero_images }}</p>
+
+                                <!-- Banners Gallery & Previews -->
+                                <div v-if="existingHeroImages.length > 0 || newHeroPreviews.length > 0" class="mt-4 space-y-2">
+                                    <span class="text-xs font-bold text-slate-700 block">Daftar Slide Hero Carousel ({{ existingHeroImages.length + newHeroPreviews.length }} Foto):</span>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <!-- Existing Stored Banners -->
+                                        <div
+                                            v-for="(imgPath, idx) in existingHeroImages"
+                                            :key="imgPath"
+                                            class="relative group rounded-xl border border-slate-200 bg-slate-50 p-2 flex flex-col justify-between gap-2 shadow-xs"
+                                        >
+                                            <img :src="formatStorageUrl(imgPath)" alt="Hero banner" class="h-20 w-full rounded-lg object-cover border border-slate-200" />
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-[11px] font-bold text-slate-700 truncate">Slide #{{ idx + 1 }} (Aktif)</span>
+                                                <button
+                                                    type="button"
+                                                    @click="removeExistingHeroImage(imgPath)"
+                                                    class="text-xs font-extrabold text-red-600 hover:text-red-800 px-2 py-1 rounded-md border border-red-200 hover:bg-red-50 transition cursor-pointer"
+                                                    title="Hapus foto ini"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Newly Selected Banners (Pending Save) -->
+                                        <div
+                                            v-for="(item, idx) in newHeroPreviews"
+                                            :key="idx"
+                                            class="relative group rounded-xl border border-purple-200 bg-purple-50/50 p-2 flex flex-col justify-between gap-2 shadow-xs"
+                                        >
+                                            <img :src="item.url" alt="New banner" class="h-20 w-full rounded-lg object-cover border border-purple-200" />
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-[11px] font-bold text-purple-900 truncate">Foto Baru #{{ idx + 1 }}</span>
+                                                <button
+                                                    type="button"
+                                                    @click="removeNewHeroImage(idx)"
+                                                    class="text-xs font-extrabold text-red-600 hover:text-red-800 px-2 py-1 rounded-md border border-red-200 hover:bg-red-50 transition cursor-pointer"
+                                                    title="Batalkan foto ini"
+                                                >
+                                                    Batal
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button type="button" @click="removeHeroImage" class="text-xs font-extrabold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition cursor-pointer">
+                                </div>
+                                <div v-else class="mt-2 text-[11px] text-slate-400 font-medium">
+                                    Belum ada foto khusus. Sistem otomatis menggunakan foto default kampus UMSURA di landing page.
+                                </div>
+                            </div>
+
+                            <!-- Official Conference Poster -->
+                            <div class="sm:col-span-2 pt-4 border-t border-slate-100">
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Official Conference Poster / Flyer (Max 10MB)</label>
+                                <input type="file" @change="handlePosterChange" class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer" accept="image/*" />
+                                <p v-if="form.errors.poster" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.poster }}</p>
+                                
+                                <div v-if="!form.remove_poster && (posterPreview || (isEdit && conference.poster))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
+                                    <div class="flex items-center gap-3">
+                                        <img :src="posterPreview || formatStorageUrl(conference.poster)" alt="Poster preview" class="h-20 w-16 rounded-lg object-cover border border-slate-200 shadow-xs" />
+                                        <div>
+                                            <span class="block text-xs text-slate-700 font-bold">{{ posterPreview ? 'New poster selected' : 'Current active official poster' }}</span>
+                                            <span class="text-[11px] text-slate-400">Displayed dynamically in About Section &amp; Lightbox Modal</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="removePoster" class="text-xs font-extrabold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition cursor-pointer">
                                         Delete
                                     </button>
                                 </div>
-                                <div v-else-if="form.remove_hero_image" class="mt-2 text-xs font-bold text-amber-600">
-                                    Hero banner will be removed upon saving.
+                                <div v-else-if="form.remove_poster" class="mt-2 text-xs font-bold text-amber-600">
+                                    Poster will be removed (default poster will be used).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment & Bank Account Settings Card -->
+                    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                        <div class="mb-5 border-b border-slate-100 pb-3 flex items-center justify-between">
+                            <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Payment &amp; Bank Account Settings</h2>
+                            <span class="text-[11px] text-purple-700 font-bold bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-md">
+                                Tampil di Invoice &amp; Konfirmasi Pembayaran
+                            </span>
+                        </div>
+
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            <!-- Bank Name -->
+                            <div>
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Bank Name (Nama Bank)</label>
+                                <input v-model="form.bank_name" type="text" class="admin-input" placeholder="e.g. Bank Syariah Indonesia (BSI), Mandiri, BCA" />
+                                <p v-if="form.errors.bank_name" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_name }}</p>
+                            </div>
+
+                            <!-- Account Number -->
+                            <div>
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Account Number (Nomor Rekening)</label>
+                                <input v-model="form.bank_account_number" type="text" class="admin-input font-mono font-bold" placeholder="e.g. 7192837465" />
+                                <p v-if="form.errors.bank_account_number" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_account_number }}</p>
+                            </div>
+
+                            <!-- Account Holder -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Account Holder Name (Atas Nama / Rekening Penerima)</label>
+                                <input v-model="form.bank_account_holder" type="text" class="admin-input" placeholder="e.g. PANITIA ICHA PIPMARSI" />
+                                <p v-if="form.errors.bank_account_holder" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_account_holder }}</p>
+                            </div>
+
+                            <!-- Transfer Instructions / Notes -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Payment Instructions / Notes (Instruksi Pembayaran)</label>
+                                <textarea v-model="form.bank_instructions" rows="2" class="admin-input" placeholder="e.g. Mohon cantumkan Nomor Invoice pada berita transfer saat melakukan pembayaran..."></textarea>
+                                <p v-if="form.errors.bank_instructions" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_instructions }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submission Templates Card (Abstract & Full Paper) -->
+                    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                        <div class="mb-5 border-b border-slate-100 pb-3 flex items-center justify-between">
+                            <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Submission Document Templates</h2>
+                            <span class="text-[11px] text-purple-700 font-bold bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-md">
+                                Otomatis Diunduh oleh Peserta di Menu Submission
+                            </span>
+                        </div>
+
+                        <div class="grid gap-6 sm:grid-cols-2">
+                            <!-- Abstract Template Upload -->
+                            <div>
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Abstract Template (.doc, .docx, .pdf)
+                                </label>
+                                <input
+                                    type="file"
+                                    @change="handleAbstractTemplateChange"
+                                    class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
+                                    accept=".doc,.docx,.pdf"
+                                />
+                                <p class="mt-1 text-[11px] text-slate-400">Max size: 20MB (.doc, .docx, .pdf)</p>
+                                <p v-if="form.errors.abstract_template" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.abstract_template }}</p>
+
+                                <div v-if="!form.remove_abstract_template && (abstractTemplateName || (isEdit && conference.abstract_template))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-800 font-bold text-sm">
+                                            📄
+                                        </div>
+                                        <div class="min-w-0">
+                                            <span class="block text-xs text-slate-800 font-bold truncate">
+                                                {{ abstractTemplateName || getFilename(conference.abstract_template) }}
+                                            </span>
+                                            <a
+                                                v-if="isEdit && conference.abstract_template && !abstractTemplateName"
+                                                :href="formatStorageUrl(conference.abstract_template)"
+                                                target="_blank"
+                                                class="text-[11px] text-primary font-semibold hover:underline"
+                                            >
+                                                Download Active Template
+                                            </a>
+                                            <span v-else class="text-[11px] text-emerald-600 font-semibold">
+                                                New file selected
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="removeAbstractTemplate"
+                                        class="shrink-0 text-xs font-extrabold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition cursor-pointer"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                                <div v-else-if="form.remove_abstract_template" class="mt-2 text-xs font-bold text-amber-600">
+                                    Abstract template will be removed.
+                                </div>
+                            </div>
+
+                            <!-- Full Paper Template Upload -->
+                            <div>
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Full Paper Template (.doc, .docx, .pdf)
+                                </label>
+                                <input
+                                    type="file"
+                                    @change="handlePaperTemplateChange"
+                                    class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
+                                    accept=".doc,.docx,.pdf"
+                                />
+                                <p class="mt-1 text-[11px] text-slate-400">Max size: 20MB (.doc, .docx, .pdf)</p>
+                                <p v-if="form.errors.paper_template" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.paper_template }}</p>
+
+                                <div v-if="!form.remove_paper_template && (paperTemplateName || (isEdit && conference.paper_template))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-800 font-bold text-sm">
+                                            📑
+                                        </div>
+                                        <div class="min-w-0">
+                                            <span class="block text-xs text-slate-800 font-bold truncate">
+                                                {{ paperTemplateName || getFilename(conference.paper_template) }}
+                                            </span>
+                                            <a
+                                                v-if="isEdit && conference.paper_template && !paperTemplateName"
+                                                :href="formatStorageUrl(conference.paper_template)"
+                                                target="_blank"
+                                                class="text-[11px] text-primary font-semibold hover:underline"
+                                            >
+                                                Download Active Template
+                                            </a>
+                                            <span v-else class="text-[11px] text-emerald-600 font-semibold">
+                                                New file selected
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="removePaperTemplate"
+                                        class="shrink-0 text-xs font-extrabold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition cursor-pointer"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                                <div v-else-if="form.remove_paper_template" class="mt-2 text-xs font-bold text-amber-600">
+                                    Paper template will be removed.
                                 </div>
                             </div>
                         </div>

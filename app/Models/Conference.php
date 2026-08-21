@@ -24,7 +24,14 @@ class Conference extends Model
         'theme',
         'email',
         'logo',
-        'hero_image',
+        'hero_images',
+        'poster',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_holder',
+        'bank_instructions',
+        'abstract_template',
+        'paper_template',
         'status',
         'is_active',
     ];
@@ -47,9 +54,10 @@ class Conference extends Model
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'end_date'   => 'date',
-            'is_active'  => 'boolean',
+            'hero_images' => 'array',
+            'start_date'  => 'date',
+            'end_date'    => 'date',
+            'is_active'   => 'boolean',
         ];
     }
 
