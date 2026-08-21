@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
+import { formatRupiah } from '@/Composables/useFormatRupiah';
 
 const props = defineProps({
     registrationFees: Array,
@@ -19,6 +20,19 @@ const form = useForm({
     name: '',
     mode: 'offline',
     price: 0,
+});
+
+const formattedPrice = computed({
+    get() {
+        if (form.price === null || form.price === undefined || form.price === '' || form.price === 0) {
+            return form.price === 0 ? '0' : '';
+        }
+        return Number(form.price).toLocaleString('id-ID');
+    },
+    set(val) {
+        const clean = String(val).replace(/\D/g, '');
+        form.price = clean ? parseInt(clean, 10) : 0;
+    }
 });
 
 function openCreateModal() {
@@ -229,8 +243,18 @@ function formatPrice(val) {
 
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Price (IDR) <span class="text-red-500">*</span></label>
-                                <input v-model="form.price" type="number" min="0" step="5000" placeholder="e.g. 500000" class="admin-input" required />
-                                <span v-if="form.errors.price" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.price }}</span>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">Rp</span>
+                                    <input
+                                        v-model="formattedPrice"
+                                        type="text"
+                                        inputmode="numeric"
+                                        placeholder="500.000"
+                                        class="admin-input !pl-10 font-bold text-slate-900"
+                                        required
+                                    />
+                                </div>
+                                <span v-if="form.errors.price" class="text-[10px] text-rose-500 font-bold mt-1 block">{{ form.errors.price }}</span>
                             </div>
                         </div>
 

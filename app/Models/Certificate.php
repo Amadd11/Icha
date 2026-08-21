@@ -19,6 +19,7 @@ class Certificate extends Model
         'conference_id',
         'type',
         'role_title',
+        'file_path',
         'issued_at',
     ];
 

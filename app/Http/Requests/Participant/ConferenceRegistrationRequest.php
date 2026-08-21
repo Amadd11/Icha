@@ -15,7 +15,6 @@ class ConferenceRegistrationRequest extends FormRequest
     {
         return [
             'registration_fee_id' => ['required', 'exists:registration_fees,id'],
-            'currency'            => ['required', 'in:IDR,USD'],
             'notes'               => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -25,8 +24,6 @@ class ConferenceRegistrationRequest extends FormRequest
         return [
             'registration_fee_id.required' => 'Paket pendaftaran wajib dipilih.',
             'registration_fee_id.exists'   => 'Paket pendaftaran tidak valid.',
-            'currency.required'            => 'Mata uang wajib dipilih (IDR/USD).',
-            'currency.in'                  => 'Pilihan mata uang harus IDR atau USD.',
         ];
     }
 }

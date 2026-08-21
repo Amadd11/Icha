@@ -40,6 +40,7 @@ const navigationGroups = [
         items: [
             { name: "Participants", routeName: "admin.registrations.index" },
             { name: "Payment Verification", routeName: "admin.payments.index" },
+            { name: "Certificates", routeName: "admin.certificates.index" },
             { name: "Fee Packages", routeName: "admin.registration-fees.index" },
         ]
     },

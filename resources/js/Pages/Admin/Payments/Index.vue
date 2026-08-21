@@ -1,20 +1,28 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Pagination from '@/Components/Pagination.vue';
 import { formatStorageUrl } from '@/Utils/formatters';
 import { formatRupiah } from '@/Composables/useFormatRupiah';
+import { useTableFilter } from '@/Composables/useTableFilter';
+import { useStatusBadge } from '@/Composables/useStatusBadge';
+import { useModal } from '@/Composables/useModal';
 
 const props = defineProps({
     payments: Object,
     currentFilter: String,
 });
 
-const selectedPayment = ref(null);
-const proofModalOpen = ref(false);
-const rejectionModalOpen = ref(false);
-const approveModalOpen = ref(false);
+const { filters, applyFilter } = useTableFilter('admin.payments.index', {
+    status: props.currentFilter || 'pending',
+});
+
+const { getBadgeClass, getStatusLabel } = useStatusBadge();
+
+const proofModal = useModal();
+const rejectionModal = useModal();
+const approveModal = useModal();
 
 const form = useForm({
     action:           'approve',
@@ -22,45 +30,42 @@ const form = useForm({
 });
 
 function openApproveModal(payment) {
-    selectedPayment.value = payment;
+    approveModal.open(payment);
     form.action = 'approve';
     form.rejection_reason = '';
-    approveModalOpen.value = true;
 }
 
 function submitApprove() {
     form.action = 'approve';
-    form.post(route('admin.payments.verify', selectedPayment.value.id), {
+    form.post(route('admin.payments.verify', approveModal.activeItem.value.id), {
         onSuccess: () => {
-            approveModalOpen.value = false;
-            proofModalOpen.value = false;
+            approveModal.close();
+            proofModal.close();
         }
     });
 }
 
 function openProofModal(payment) {
-    selectedPayment.value = payment;
-    proofModalOpen.value = true;
+    proofModal.open(payment);
 }
 
 function openRejectModal(payment) {
-    selectedPayment.value = payment;
+    rejectionModal.open(payment);
     form.action = 'reject';
     form.rejection_reason = '';
-    rejectionModalOpen.value = true;
 }
 
 function submitReject() {
-    form.post(route('admin.payments.verify', selectedPayment.value.id), {
+    form.post(route('admin.payments.verify', rejectionModal.activeItem.value.id), {
         onSuccess: () => {
-            rejectionModalOpen.value = false;
-            proofModalOpen.value = false;
+            rejectionModal.close();
+            proofModal.close();
         }
     });
 }
 
 function filterStatus(status) {
-    router.get(route('admin.payments.index'), { status }, { preserveState: true });
+    applyFilter({ status });
 }
 
 function isPdf(path) {
@@ -129,8 +134,7 @@ function isPdf(path) {
 
                             <!-- Amount -->
                             <td class="px-5 py-3.5 font-bold text-slate-900 text-sm">
-                                <span v-if="p.currency === 'USD'">${{ Number(p.amount).toLocaleString() }}</span>
-                                <span v-else>{{ formatRupiah(p.amount) }}</span>
+                                {{ formatRupiah(p.amount) }}
                             </td>
 
                             <!-- Proof File Button -->
@@ -147,10 +151,9 @@ function isPdf(path) {
                             <td class="px-5 py-3.5">
                                 <span :class="[
                                     'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold capitalize border',
-                                    p.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                    p.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                                    getBadgeClass(p.status)
                                 ]">
-                                    {{ p.status }}
+                                    {{ getStatusLabel(p.status) }}
                                 </span>
                             </td>
 
@@ -185,16 +188,16 @@ function isPdf(path) {
         </div>
 
         <!-- Proof Image Modal (Fullscreen Viewer) -->
-        <div v-if="proofModalOpen && selectedPayment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+        <div v-if="proofModal.isOpen.value && proofModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
             <div class="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Payment Proof Preview</h3>
-                        <p class="text-xs text-slate-500 font-mono">{{ selectedPayment.registration?.invoice_number }} &bull; {{ selectedPayment.registration?.user?.name }}</p>
+                        <p class="text-xs text-slate-500 font-mono">{{ proofModal.activeItem.value.registration?.invoice_number }} &bull; {{ proofModal.activeItem.value.registration?.user?.name }}</p>
                     </div>
                     <button
                         type="button"
-                        @click="proofModalOpen = false"
+                        @click="proofModal.close()"
                         class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
                     >
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -206,14 +209,14 @@ function isPdf(path) {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- Left: Proof Preview (2 cols) -->
                     <div class="md:col-span-2 flex items-center justify-center bg-slate-950 rounded-xl p-4 min-h-[360px] overflow-hidden border border-slate-800">
-                        <template v-if="isPdf(selectedPayment.proof_file)">
+                        <template v-if="isPdf(proofModal.activeItem.value.proof_file)">
                             <div class="text-center p-8 text-white space-y-3">
                                 <svg class="h-16 w-16 mx-auto text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <p class="text-sm font-semibold">PDF Document Uploaded</p>
                                 <a
-                                    :href="formatStorageUrl(selectedPayment.proof_file)"
+                                    :href="formatStorageUrl(proofModal.activeItem.value.proof_file)"
                                     target="_blank"
                                     class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold transition"
                                 >
@@ -224,7 +227,7 @@ function isPdf(path) {
                         </template>
                         <template v-else>
                             <img
-                                :src="formatStorageUrl(selectedPayment.proof_file)"
+                                :src="formatStorageUrl(proofModal.activeItem.value.proof_file)"
                                 alt="Payment Proof"
                                 class="max-h-[400px] w-auto max-w-full object-contain rounded-lg"
                             />
@@ -237,48 +240,48 @@ function isPdf(path) {
                             <div class="rounded-xl bg-slate-50 border border-slate-200 p-3.5">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Amount</p>
                                 <p class="text-xl font-bold text-slate-900 mt-0.5">
-                                    {{ selectedPayment.currency === 'USD' ? '$' + Number(selectedPayment.amount).toLocaleString() : formatRupiah(selectedPayment.amount) }}
+                                    {{ formatRupiah(proofModal.activeItem.value.amount) }}
                                 </p>
                             </div>
 
                             <div class="space-y-2">
                                 <div>
                                     <span class="text-slate-400 font-medium block">Registration Package</span>
-                                    <span class="font-bold text-slate-800">{{ selectedPayment.registration?.registration_fee?.name || selectedPayment.registration?.registration_type?.name }}</span>
+                                    <span class="font-bold text-slate-800">{{ proofModal.activeItem.value.registration?.registration_fee?.name || proofModal.activeItem.value.registration?.registration_type?.name }}</span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 font-medium block">Payment Method</span>
-                                    <span class="font-bold text-slate-800 uppercase">{{ selectedPayment.payment_method || 'Bank Transfer' }}</span>
+                                    <span class="font-bold text-slate-800 uppercase">{{ proofModal.activeItem.value.payment_method || 'Bank Transfer' }}</span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 font-medium block">Status</span>
                                     <span :class="[
                                         'inline-flex items-center rounded px-2 py-0.5 text-xs font-bold capitalize mt-0.5 border',
-                                        selectedPayment.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                        selectedPayment.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                                        proofModal.activeItem.value.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                        proofModal.activeItem.value.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                                     ]">
-                                        {{ selectedPayment.status }}
+                                        {{ proofModal.activeItem.value.status }}
                                     </span>
                                 </div>
 
-                                <div v-if="selectedPayment.rejection_reason" class="rounded-lg bg-red-50 border border-red-200 p-2.5 text-xs">
+                                <div v-if="proofModal.activeItem.value.rejection_reason" class="rounded-lg bg-red-50 border border-red-200 p-2.5 text-xs">
                                     <span class="font-bold text-red-700 block">Rejection Reason:</span>
-                                    <p class="text-red-800 mt-0.5">{{ selectedPayment.rejection_reason }}</p>
+                                    <p class="text-red-800 mt-0.5">{{ proofModal.activeItem.value.rejection_reason }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="pt-3 border-t border-slate-100 space-y-2">
-                            <template v-if="selectedPayment.status === 'pending'">
+                            <template v-if="proofModal.activeItem.value.status === 'pending'">
                                 <button
-                                    @click="openApproveModal(selectedPayment)"
+                                    @click="openApproveModal(proofModal.activeItem.value)"
                                     class="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs transition cursor-pointer"
                                 >
                                     Approve Payment
                                 </button>
                                 <button
-                                    @click="openRejectModal(selectedPayment)"
+                                    @click="openRejectModal(proofModal.activeItem.value)"
                                     class="w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold py-2 text-xs transition cursor-pointer"
                                 >
                                     Reject Payment
@@ -286,7 +289,7 @@ function isPdf(path) {
                             </template>
                             <button
                                 type="button"
-                                @click="proofModalOpen = false"
+                                @click="proofModal.close()"
                                 class="w-full rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-2 text-xs transition cursor-pointer"
                             >
                                 Close Preview
@@ -298,7 +301,7 @@ function isPdf(path) {
         </div>
 
         <!-- Approve Confirmation Modal -->
-        <div v-if="approveModalOpen && selectedPayment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+        <div v-if="approveModal.isOpen.value && approveModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
             <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-200 text-xs">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
@@ -308,28 +311,28 @@ function isPdf(path) {
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Approve Payment</h3>
-                        <p class="text-xs text-slate-500 font-mono">{{ selectedPayment.registration?.invoice_number }}</p>
+                        <p class="text-xs text-slate-500 font-mono">{{ approveModal.activeItem.value.registration?.invoice_number }}</p>
                     </div>
                 </div>
 
                 <div class="my-4 space-y-2 rounded-xl bg-slate-50 border border-slate-200 p-3.5">
                     <div class="flex justify-between">
                         <span class="text-slate-500">Participant:</span>
-                        <strong class="text-slate-800">{{ selectedPayment.registration?.user?.name }}</strong>
+                        <strong class="text-slate-800">{{ approveModal.activeItem.value.registration?.user?.name }}</strong>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Package:</span>
-                        <strong class="text-slate-800">{{ selectedPayment.registration?.registration_fee?.name || 'Registration' }}</strong>
+                        <strong class="text-slate-800">{{ approveModal.activeItem.value.registration?.registration_fee?.name || 'Registration' }}</strong>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Amount:</span>
                         <strong class="text-emerald-700 text-sm font-bold">
-                            {{ selectedPayment.currency === 'USD' ? '$' + Number(selectedPayment.amount).toLocaleString() : formatRupiah(selectedPayment.amount) }}
+                            {{ formatRupiah(approveModal.activeItem.value.amount) }}
                         </strong>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">Method:</span>
-                        <span class="font-semibold text-slate-700 uppercase">{{ selectedPayment.payment_method || 'Bank Transfer' }}</span>
+                        <span class="font-semibold text-slate-700 uppercase">{{ approveModal.activeItem.value.payment_method || 'Bank Transfer' }}</span>
                     </div>
                 </div>
 
@@ -340,7 +343,7 @@ function isPdf(path) {
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
                     <button
                         type="button"
-                        @click="approveModalOpen = false"
+                        @click="approveModal.close()"
                         class="rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                     >
                         Cancel
@@ -358,7 +361,7 @@ function isPdf(path) {
         </div>
 
         <!-- Reject Reason Modal -->
-        <div v-if="rejectionModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+        <div v-if="rejectionModal.isOpen.value && rejectionModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
             <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg border border-slate-200 text-xs">
                 <h3 class="text-base font-bold text-slate-900 mb-1">Reject Payment Proof</h3>
                 <p class="text-slate-500 mb-3">Please specify the reason for rejecting this payment proof file.</p>
@@ -370,7 +373,7 @@ function isPdf(path) {
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2">
-                        <button type="button" @click="rejectionModalOpen = false" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                        <button type="button" @click="rejectionModal.close()" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
                         <button type="submit" :disabled="form.processing" class="rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 font-bold cursor-pointer">Confirm Rejection</button>
                     </div>
                 </form>

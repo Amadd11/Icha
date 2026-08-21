@@ -49,9 +49,10 @@ class DashboardService
         $abstractStatus = $abstract ? $abstract->status : 'not_submitted';
         $fullPaperStatus = $fullPaper ? $fullPaper->status : 'not_submitted';
 
-        // Certificate real status
+        // Certificate status (Ready if admin uploaded certificate file)
         $hasCertificate = \App\Models\Certificate::where('user_id', $user->id)
             ->where('conference_id', $activeConference?->id)
+            ->whereNotNull('file_path')
             ->exists();
 
         // Determine Next Action

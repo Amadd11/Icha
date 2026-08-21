@@ -27,20 +27,20 @@ function logout() {
                 <Link href="/" class="flex items-center gap-3 transition hover:opacity-95">
                     <div class="flex items-center gap-1.5 p-1 rounded-md shrink-0">
                         <img
-                            src="/assets/logo/logo-pipmarsi.png"
-                            alt="PIP MARSI"
-                            class="h-7 w-auto object-contain"
-                        />
-                        <img
-                            src="/assets/logo/logo-umsura.png"
-                            alt="UMSURA"
-                            class="h-7 w-auto object-contain"
-                        />
-                        <img
-                            src="/assets/logo/logo-ub.png"
-                            alt="Universitas Brawijaya"
-                            class="h-7 w-auto object-contain"
-                        />
+                                src="/assets/logo/logo-pipmarsi.png"
+                                alt="PIP MARSI"
+                                class="h-8 sm:h-9 w-auto object-contain"
+                            />
+                            <img
+                                src="/assets/logo/logo-umsura.png"
+                                alt="UMSURA"
+                                class="h-8 sm:h-9 w-auto object-contain"
+                            />
+                            <img
+                                src="/assets/logo/logo-ub.png"
+                                alt="Universitas Brawijaya"
+                                class="h-8 sm:h-9 w-auto object-contain"
+                            />
                     </div>
                     <div>
                         <span class="font-extrabold text-sm tracking-tight text-white block leading-tight">Participant Portal</span>

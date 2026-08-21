@@ -34,7 +34,7 @@ class RegistrationService
                 'conference_id'       => $conference?->id ?? 1,
                 'registration_fee_id' => $fee->id,
                 'is_early_bird'       => false,
-                'currency'            => $data['currency'] ?? 'IDR',
+                'currency'            => 'IDR',
                 'amount'              => $amount,
                 'status'              => 'pending',
                 'notes'               => $data['notes'] ?? null,

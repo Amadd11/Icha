@@ -1,7 +1,9 @@
 <script setup>
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { useClipboard } from '@/Composables/useClipboard';
+import { useFileUpload } from '@/Composables/useFileUpload';
+import { useStatusBadge } from '@/Composables/useStatusBadge';
 
 const props = defineProps({
     registration: Object,
@@ -10,7 +12,21 @@ const props = defineProps({
 });
 
 const activeConf = props.conference || props.registration?.conference;
-const proofPreview = ref(props.payment?.proof_file ? '/storage/' + props.payment.proof_file : null);
+
+const { copyItem, copiedKey } = useClipboard();
+const { getBadgeClass, getStatusLabel } = useStatusBadge();
+
+const {
+    file: selectedProof,
+    previewUrl: proofPreview,
+    isPdf: isProofPdf,
+    handleFileChange,
+    error: fileError,
+} = useFileUpload({
+    allowedTypes: ['.jpg', '.jpeg', '.png', '.pdf'],
+    maxSizeMb: 5,
+    initialPreview: props.payment?.proof_file ? '/storage/' + props.payment.proof_file : null,
+});
 
 const form = useForm({
     registration_id: props.registration.id,
@@ -19,10 +35,9 @@ const form = useForm({
 });
 
 function onFileChange(e) {
-    const file = e.target.files[0];
-    if (file) {
-        form.proof_file = file;
-        proofPreview.value = URL.createObjectURL(file);
+    handleFileChange(e);
+    if (selectedProof.value) {
+        form.proof_file = selectedProof.value;
     }
 }
 
@@ -48,15 +63,26 @@ function submit() {
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <span class="text-xs font-bold uppercase tracking-widest text-slate-400">INVOICE</span>
-                        <h2 class="text-xl font-extrabold text-primary">{{ registration.invoice_number }}</h2>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-extrabold text-primary">{{ registration.invoice_number }}</h2>
+                            <button
+                                type="button"
+                                @click="copyItem('invoice', registration.invoice_number)"
+                                class="inline-flex items-center gap-1 text-slate-400 hover:text-primary transition cursor-pointer p-0.5"
+                                title="Copy Invoice Number"
+                            >
+                                <span class="material-symbols-outlined text-[16px] leading-none">
+                                    {{ copiedKey === 'invoice' ? 'check' : 'content_copy' }}
+                                </span>
+                                <span v-if="copiedKey === 'invoice'" class="text-emerald-600 text-[10px] font-bold">Copied!</span>
+                            </button>
+                        </div>
                     </div>
                     <span :class="[
-                        'rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wider',
-                        registration.status === 'paid' ? 'bg-green-100 text-green-700' :
-                        registration.status === 'waiting_verification' ? 'bg-amber-100 text-amber-700' :
-                        registration.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border',
+                        getBadgeClass(registration.status)
                     ]">
-                        {{ registration.status.replace('_', ' ') }}
+                        {{ getStatusLabel(registration.status) }}
                     </span>
                 </div>
 
@@ -79,7 +105,20 @@ function submit() {
                 <div class="mt-8 rounded-xl bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
                     <p class="font-bold text-slate-800">Bank Transfer Details:</p>
                     <p><strong>Bank:</strong> {{ activeConf?.bank_name || 'Bank Syariah Indonesia (BSI)' }}</p>
-                    <p><strong>Account Number:</strong> {{ activeConf?.bank_account_number || '7192837465' }}</p>
+                    <div class="flex items-center gap-2">
+                        <p><strong>Account Number:</strong> <span class="font-mono font-bold text-slate-900">{{ activeConf?.bank_account_number || '7192837465' }}</span></p>
+                        <button
+                            type="button"
+                            @click="copyItem('bank', activeConf?.bank_account_number || '7192837465')"
+                            class="inline-flex items-center gap-1 text-slate-400 hover:text-purple-800 transition cursor-pointer p-0.5"
+                            title="Copy Account Number"
+                        >
+                            <span class="material-symbols-outlined text-[16px] leading-none">
+                                {{ copiedKey === 'bank' ? 'check' : 'content_copy' }}
+                            </span>
+                            <span v-if="copiedKey === 'bank'" class="text-emerald-600 text-[10px] font-bold">Copied!</span>
+                        </button>
+                    </div>
                     <p><strong>Account Name:</strong> {{ activeConf?.bank_account_holder || 'PANITIA ICHA PIPMARSI' }}</p>
                     <p v-if="activeConf?.bank_instructions" class="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
                         {{ activeConf.bank_instructions }}
@@ -99,8 +138,28 @@ function submit() {
 
                 <form @submit.prevent="submit" class="space-y-5">
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">Payment Method <span class="text-red-400">*</span></label>
-                        <input v-model="form.payment_method" type="text" class="admin-input" required />
+                        <label class="mb-1 block text-xs font-bold text-slate-700">Payment Method <span class="text-red-500">*</span></label>
+                        <select v-model="form.payment_method" class="admin-input text-xs font-semibold py-2.5" required>
+                            <optgroup label="Bank Transfer (Indonesia)">
+                                <option value="Bank Transfer (BSI)">Bank Syariah Indonesia (BSI)</option>
+                                <option value="Bank Transfer (Mandiri)">Bank Mandiri</option>
+                                <option value="Bank Transfer (BCA)">Bank Central Asia (BCA)</option>
+                                <option value="Bank Transfer (BRI)">Bank Rakyat Indonesia (BRI)</option>
+                                <option value="Bank Transfer (BNI)">Bank Negara Indonesia (BNI)</option>
+                            </optgroup>
+                            <optgroup label="E-Wallet & QRIS">
+                                <option value="QRIS / E-Wallet (GoPay, OVO, Dana, ShopeePay)">QRIS / E-Wallet (GoPay, OVO, Dana, ShopeePay)</option>
+                            </optgroup>
+                            <optgroup label="Credit Card & International">
+                                <option value="Credit Card / Debit Card (Visa / Mastercard)">Credit Card / Debit Card (Visa / Mastercard)</option>
+                                <option value="International Wire / TT (SWIFT)">International Wire Transfer (SWIFT / Telegraphic Transfer)</option>
+                                <option value="PayPal / Stripe">PayPal / Stripe</option>
+                            </optgroup>
+                            <optgroup label="Other">
+                                <option value="Institutional Sponsorship / Invoice Billing">Institutional Sponsorship / Invoice Billing</option>
+                                <option value="Other Payment Method">Other Payment Method</option>
+                            </optgroup>
+                        </select>
                     </div>
 
                     <div>

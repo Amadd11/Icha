@@ -1,23 +1,51 @@
 <script setup>
+import { ref } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 import { formatRupiah } from '@/Composables/useFormatRupiah';
+import { useTableFilter } from '@/Composables/useTableFilter';
+import { useStatusBadge } from '@/Composables/useStatusBadge';
+import { useModal } from '@/Composables/useModal';
 
 const props = defineProps({
     registrations: Object,
     currentFilter: String,
 });
 
-const statusColor = (status) => ({
-    unpaid:               'bg-slate-100 text-slate-600',
-    waiting_verification: 'bg-amber-100 text-amber-700',
-    paid:                 'bg-green-100 text-green-700',
-    cancelled:            'bg-red-100 text-red-700',
-}[status] ?? 'bg-slate-100 text-slate-600');
+const { filters, applyFilter } = useTableFilter('admin.registrations.index', {
+    status: props.currentFilter || null,
+});
+
+const { getBadgeClass, getStatusLabel } = useStatusBadge();
+const { isOpen: isInvoiceModalOpen, activeItem: selectedRegistration, open: openInvoiceModal, close: closeInvoiceModal } = useModal();
 
 function filterStatus(status) {
-    router.get(route('admin.registrations.index'), { status }, { preserveState: true });
+    applyFilter({ status });
+}
+
+const sendingInvoice = ref(false);
+
+function sendInvoiceEmail() {
+    if (!selectedRegistration.value) return;
+    const email = selectedRegistration.value.user?.email;
+    if (confirm(`Send invoice email to ${email}?`)) {
+        sendingInvoice.value = true;
+        router.post(route('admin.registrations.send-invoice', selectedRegistration.value.id), {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                sendingInvoice.value = false;
+            }
+        });
+    }
+}
+
+function formatStorageUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/storage/')) return path;
+    if (path.startsWith('storage/')) return '/' + path;
+    return '/storage/' + path;
 }
 </script>
 
@@ -38,7 +66,7 @@ function filterStatus(status) {
                 :key="s"
                 @click="filterStatus(s)"
                 :class="[
-                    'rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition',
+                    'rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition cursor-pointer',
                     (currentFilter === s || (!currentFilter && !s)) ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 ]"
             >
@@ -77,18 +105,20 @@ function filterStatus(status) {
                             {{ r.registration_fee?.name }}
                         </td>
                         <td class="px-5 py-4 font-bold text-slate-800">
-                            <span v-if="r.currency === 'USD'">${{ Number(r.amount).toLocaleString() }}</span>
-                            <span v-else>{{ formatRupiah(r.amount) }}</span>
+                            {{ formatRupiah(r.amount) }}
                         </td>
                         <td class="px-5 py-4">
-                            <span :class="['rounded-full px-2.5 py-1 text-xs font-bold uppercase', statusColor(r.status)]">
-                                {{ r.status.replace('_', ' ') }}
+                            <span :class="['rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border', getBadgeClass(r.status)]">
+                                {{ getStatusLabel(r.status) }}
                             </span>
                         </td>
                         <td class="px-5 py-4 text-right">
-                            <Link :href="route('admin.registrations.show', r.id)" class="text-xs font-semibold text-primary hover:underline">
+                            <button
+                                @click="openInvoiceModal(r)"
+                                class="text-xs font-bold text-primary hover:underline cursor-pointer"
+                            >
                                 View Invoice
-                            </Link>
+                            </button>
                         </td>
                     </tr>
                 </tbody>
@@ -102,5 +132,98 @@ function filterStatus(status) {
             :to="props.registrations?.to"
             :total="props.registrations?.total"
         />
+
+        <!-- 📄 Invoice Detail Modal -->
+        <div
+            v-if="isInvoiceModalOpen && selectedRegistration"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs"
+        >
+            <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-6 animate-fade-in-scale">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">INVOICE DETAILS</span>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <h2 class="text-lg font-black text-primary">{{ selectedRegistration.invoice_number }}</h2>
+                            <span :class="[
+                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border',
+                                getBadgeClass(selectedRegistration.status)
+                            ]">
+                                {{ getStatusLabel(selectedRegistration.status) }}
+                            </span>
+                        </div>
+                    </div>
+                    <button
+                        @click="closeInvoiceModal"
+                        class="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 cursor-pointer"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Invoice Body Content -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+                    <!-- Participant Details -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Participant Information</span>
+                        <p class="text-sm font-bold text-slate-900">{{ selectedRegistration.user?.name }}</p>
+                        <p class="text-slate-600"><strong>Email:</strong> {{ selectedRegistration.user?.email }}</p>
+                        <p class="text-slate-600"><strong>Phone:</strong> {{ selectedRegistration.user?.profile?.phone || '-' }}</p>
+                        <p class="text-slate-600"><strong>Institution:</strong> {{ selectedRegistration.user?.profile?.institution || '-' }}</p>
+                    </div>
+
+                    <!-- Package & Payment Details -->
+                    <div class="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-2">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-purple-700 block">Package & Pricing</span>
+                        <p class="text-sm font-bold text-purple-950">{{ selectedRegistration.registration_fee?.name || 'Standard Registration' }}</p>
+                        <p class="text-purple-800"><strong>Rate:</strong> {{ selectedRegistration.is_early_bird ? 'Early Bird' : 'Regular' }}</p>
+                        <div class="pt-2 border-t border-purple-100/80">
+                            <span class="text-[10px] font-bold uppercase text-purple-700 block">Total Amount</span>
+                            <span class="text-xl font-black text-purple-950">
+                                {{ formatRupiah(selectedRegistration.amount) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Receipt (If Uploaded) -->
+                <div v-if="selectedRegistration.payment" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
+                    <div>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Payment Receipt</span>
+                        <p class="font-bold text-slate-800">Method: {{ selectedRegistration.payment.payment_method || 'Bank Transfer' }}</p>
+                        <p class="text-slate-500 text-[11px]">Submitted at: {{ selectedRegistration.payment.created_at ? new Date(selectedRegistration.payment.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '-' }}</p>
+                    </div>
+                    <a
+                        v-if="selectedRegistration.payment.proof_file"
+                        :href="formatStorageUrl(selectedRegistration.payment.proof_file)"
+                        target="_blank"
+                        class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 font-bold transition inline-flex items-center gap-1 shadow-xs"
+                    >
+                        <span>🔍</span> View Receipt
+                    </a>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="sendInvoiceEmail"
+                        :disabled="sendingInvoice"
+                        class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-900 hover:bg-purple-950 text-gold text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                    >
+                        <span>📧</span>
+                        <span>{{ sendingInvoice ? 'Sending Email...' : 'Send / Resend Invoice Email' }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="closeInvoiceModal"
+                        class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </AdminLayout>
 </template>

@@ -79,8 +79,8 @@ function submit() {
 function destroy(user) {
     openDeleteModal({
         item: user,
-        title: 'Delete User Account',
-        message: `Are you sure you want to delete user "${user.name}"? Their account will be moved to trash and cannot log in.`,
+        title: 'Permanently Delete User',
+        message: `Are you sure you want to permanently delete user "${user.name}" (${user.email})? All associated data will be removed and this action cannot be undone.`,
         url: route('admin.users.destroy', user.id),
     });
 }

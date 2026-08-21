@@ -40,24 +40,29 @@ class CertificateService
         $isEligibleForParticipant = (bool) $registration;
         $isEligibleForPresenter = $hasAcceptedAbstract;
 
-        // Issue certificates if eligible and not issued yet
-        if ($isEligibleForParticipant) {
-            $this->issueIfNotExists($user->id, $activeConference->id, 'participant', 'Participant / Attendee');
-        }
-
-        if ($isEligibleForPresenter) {
-            $this->issueIfNotExists($user->id, $activeConference->id, 'presenter', 'Presenter & Author');
-        }
-
         $certificates = Certificate::with('conference')
             ->where('user_id', $user->id)
-            ->get();
+            ->where('conference_id', $activeConference->id)
+            ->get()
+            ->map(function ($cert) {
+                return [
+                    'id'                 => $cert->id,
+                    'certificate_number' => $cert->certificate_number,
+                    'type'               => $cert->type,
+                    'role_title'         => $cert->role_title,
+                    'file_path'          => $cert->file_path,
+                    'file_url'           => $cert->file_path ? '/storage/' . $cert->file_path : null,
+                    'issued_at'          => $cert->issued_at,
+                    'conference'         => $cert->conference,
+                ];
+            });
 
         return [
-            'certificates' => $certificates,
-            'isEligible' => $isEligibleForParticipant || $isEligibleForPresenter,
+            'certificates'       => $certificates,
+            'isEligible'         => $isEligibleForParticipant || $isEligibleForPresenter,
+            'hasUploadedCert'    => $certificates->whereNotNull('file_path')->isNotEmpty(),
             'registrationStatus' => $registration ? 'paid' : 'unpaid',
-            'activeConference' => $activeConference,
+            'activeConference'   => $activeConference,
         ];
     }
 

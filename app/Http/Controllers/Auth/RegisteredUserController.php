@@ -39,7 +39,7 @@ class RegisteredUserController extends Controller
             'country'     => 'nullable|string|max:255',
             'institution' => 'nullable|string|max:255',
             'phone'       => 'nullable|string|max:50',
-            'email'       => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->whereNull('deleted_at')],
+            'email'       => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'password'    => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 

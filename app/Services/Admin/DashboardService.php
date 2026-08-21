@@ -50,16 +50,13 @@ class DashboardService
         $pendingPayments     = (clone $paymentQuery)->where('status', 'pending')->count();
 
         // 💵 Total Invoiced Revenue (Daftar Tagihan dari Seluruh Peserta Mendaftar)
-        $totalInvoicedIdr    = (clone $registrationQuery)->where('currency', 'IDR')->sum('amount');
-        $totalInvoicedUsd    = (clone $registrationQuery)->where('currency', 'USD')->sum('amount');
+        $totalInvoicedIdr    = (clone $registrationQuery)->sum('amount');
 
         // 💰 Verified Received Revenue (Total Uang Masuk yang Sudah Lunas & Terverifikasi)
-        $verifiedRevenueIdr  = (clone $paymentQuery)->where('status', 'verified')->where('currency', 'IDR')->sum('amount');
-        $verifiedRevenueUsd  = (clone $paymentQuery)->where('status', 'verified')->where('currency', 'USD')->sum('amount');
+        $verifiedRevenueIdr  = (clone $paymentQuery)->where('status', 'verified')->sum('amount');
 
         // ⏳ Unpaid / Pending Revenue (Sisa Uang Tagihan Peserta yang Belum Lunas)
         $unpaidRevenueIdr    = max(0, $totalInvoicedIdr - $verifiedRevenueIdr);
-        $unpaidRevenueUsd    = max(0, $totalInvoicedUsd - $verifiedRevenueUsd);
 
         // Abstract Breakdown
         $totalAbstracts      = (clone $abstractQuery)->count();
@@ -79,13 +76,10 @@ class DashboardService
             'verified_payments'    => $verifiedPayments,
             'pending_payments'     => $pendingPayments,
 
-            // Financial Breakdown
+            // Financial Breakdown (Rupiah)
             'total_invoiced_idr'   => $totalInvoicedIdr,
-            'total_invoiced_usd'   => $totalInvoicedUsd,
             'verified_revenue_idr' => $verifiedRevenueIdr,
-            'verified_revenue_usd' => $verifiedRevenueUsd,
             'unpaid_revenue_idr'   => $unpaidRevenueIdr,
-            'unpaid_revenue_usd'   => $unpaidRevenueUsd,
 
             'total_abstracts'      => $totalAbstracts,
             'accepted_abstracts'   => $acceptedAbstracts,

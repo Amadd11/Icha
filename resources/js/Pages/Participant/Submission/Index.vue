@@ -203,7 +203,7 @@ function downloadTemplate(type) {
                                     </div>
                                     <div class="pt-2 flex items-center gap-2">
                                         <span :class="[
-                                            'inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border',
+                                            'inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border',
                                             props.abstracts[0].status === 'accepted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' :
                                             props.abstracts[0].status === 'rejected' ? 'border-rose-200 bg-rose-50 text-rose-700' :
                                             props.abstracts[0].status === 'revision_required' ? 'border-amber-200 bg-amber-50 text-amber-700' :
@@ -211,7 +211,7 @@ function downloadTemplate(type) {
                                         ]">
                                             Status: {{ props.abstracts[0].status ? props.abstracts[0].status.replace('_', ' ') : 'Under Review' }}
                                         </span>
-                                        <span v-if="props.abstracts[0].status === 'accepted' && props.abstracts[0].presentation_type" class="inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border border-purple-200 bg-purple-50 text-purple-900">
+                                        <span v-if="props.abstracts[0].status === 'accepted' && props.abstracts[0].presentation_type" class="inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border border-purple-200 bg-purple-50 text-purple-900">
                                             {{ props.abstracts[0].presentation_type === 'poster' ? '🖼️ Poster' : '🎤 Oral' }}
                                         </span>
                                     </div>

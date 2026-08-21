@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('conference_id')->constrained()->cascadeOnDelete();
             $table->enum('type', ['participant', 'presenter', 'speaker'])->default('participant');
             $table->string('role_title')->nullable(); // e.g. "Presenter / Author", "Keynote Speaker", "Participant"
+            $table->string('file_path')->nullable();
             $table->timestamp('issued_at')->useCurrent();
             $table->timestamps();
             $table->softDeletes();

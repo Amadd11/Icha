@@ -1,17 +1,25 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatStorageUrl } from '@/Utils/formatters';
+import { useTableFilter } from '@/Composables/useTableFilter';
+import { useStatusBadge } from '@/Composables/useStatusBadge';
 
 const props = defineProps({
     abstracts: [Array, Object],
     reviewers: Array,
     filters: Object,
 });
+
+const { filters, applyFilter } = useTableFilter('admin.abstracts.index', {
+    status: props.filters?.status || 'all',
+});
+
+const { getBadgeClass, getStatusLabel } = useStatusBadge();
 
 const {
     isModalOpen: isDeleteModalOpen,
@@ -28,7 +36,6 @@ const abstractList = computed(() => {
     return Array.isArray(props.abstracts) ? props.abstracts : (props.abstracts?.data || []);
 });
 
-const selectedStatus = ref(props.filters?.status || 'all');
 const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
 const isAssignModalOpen = ref(false);
@@ -42,12 +49,6 @@ const reviewForm = useForm({
 const assignForm = useForm({
     reviewer_ids: [],
 });
-
-function applyFilter() {
-    router.get(route('admin.abstracts.index'), {
-        status: selectedStatus.value,
-    }, { preserveState: true });
-}
 
 function openReviewModal(item) {
     activeAbstract.value = item;
@@ -159,10 +160,10 @@ function getReviewStats(item) {
                     <button
                         v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
                         :key="s"
-                        @click="selectedStatus = s; applyFilter()"
+                        @click="filters.status = s; applyFilter()"
                         :class="[
                             'rounded-xl px-3 py-1.5 text-xs font-bold capitalize transition shadow-xs cursor-pointer',
-                            selectedStatus === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                            filters.status === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                         ]"
                     >
                         {{ s.replace('_', ' ') }}
@@ -234,13 +235,9 @@ function getReviewStats(item) {
                                 <td class="px-5 py-3.5">
                                     <span :class="[
                                         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border',
-                                        item.status === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                        item.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                                        item.status === 'revision_required' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                        item.status === 'under_review' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                        'bg-slate-100 text-slate-600 border-slate-200'
+                                        getBadgeClass(item.status)
                                     ]">
-                                        {{ item.status.replace('_', ' ') }}
+                                        {{ getStatusLabel(item.status) }}
                                     </span>
                                 </td>
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\{
     AbstractController,
     CategoryController,
+    CertificateController as AdminCertificateController,
     ConferenceController as AdminConferenceController,
     DashboardController as AdminDashboardController,
     PaymentController,
@@ -127,6 +128,7 @@ Route::prefix('admin')
         Route::post('registrations/{registration}/send-invoice', [AdminRegistrationController::class, 'sendInvoice'])->name('registrations.send-invoice');
         Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
+        Route::resource('certificates', AdminCertificateController::class)->only(['index', 'store', 'destroy']);
 
         // Abstract Reviews
         Route::get('abstracts', [AbstractController::class, 'index'])->name('abstracts.index');

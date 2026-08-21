@@ -59,10 +59,7 @@ function changeConference(e) {
                             <span class="text-[10px] font-bold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-full">All Regs</span>
                         </div>
                         <p class="text-2xl font-black text-purple-950 mt-2">
-                            Rp {{ Number(props.stats?.total_invoiced_idr || 0).toLocaleString() }}
-                        </p>
-                        <p v-if="props.stats?.total_invoiced_usd > 0" class="text-xs font-bold text-purple-800 mt-0.5">
-                            + USD ${{ Number(props.stats?.total_invoiced_usd).toLocaleString() }}
+                            {{ formatRupiah(props.stats?.total_invoiced_idr || 0) }}
                         </p>
                         <span class="text-[11px] font-semibold text-slate-500 mt-2 block">
                             Dari {{ props.stats?.total_registrations || 0 }} peserta mendaftar
@@ -78,9 +75,6 @@ function changeConference(e) {
                         <p class="text-2xl font-black text-emerald-950 mt-2">
                             {{ formatRupiah(props.stats?.verified_revenue_idr) }}
                         </p>
-                        <p v-if="props.stats?.verified_revenue_usd > 0" class="text-xs font-bold text-emerald-800 mt-0.5">
-                            + USD ${{ Number(props.stats?.verified_revenue_usd).toLocaleString() }}
-                        </p>
                         <span class="text-[11px] font-semibold text-emerald-700 mt-2 block">
                             {{ props.stats?.verified_payments || 0 }} transaksi telah lunas
                         </span>
@@ -94,9 +88,6 @@ function changeConference(e) {
                         </div>
                         <p class="text-2xl font-black text-amber-950 mt-2">
                             {{ formatRupiah(props.stats?.unpaid_revenue_idr) }}
-                        </p>
-                        <p v-if="props.stats?.unpaid_revenue_usd > 0" class="text-xs font-bold text-amber-800 mt-0.5">
-                            + USD ${{ Number(props.stats?.unpaid_revenue_usd).toLocaleString() }}
                         </p>
                         <span class="text-[11px] font-semibold text-amber-800 mt-1.5 block">
                             {{ props.stats?.pending_payments || 0 }} invoice belum diverifikasi

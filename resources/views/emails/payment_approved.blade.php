@@ -54,7 +54,7 @@
                     <tr>
                         <td style="color: #64748b; font-weight: 700; font-size: 14px;">Total Amount Paid</td>
                         <td style="font-weight: 900; font-size: 16px; text-align: right; color: #16a34a;">
-                            {{ $payment->currency }} {{ number_format($payment->amount) }}
+                            Rp {{ number_format($payment->amount, 0, ',', '.') }}
                         </td>
                     </tr>
                 </table>

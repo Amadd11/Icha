@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
+import { useClipboard } from '@/Composables/useClipboard';
 
 const props = defineProps({
     activeConference: Object,
@@ -10,6 +11,8 @@ const props = defineProps({
     registrationFees: Array,
     userProfile: Object,
 });
+
+const { copyItem, copiedKey } = useClipboard();
 
 // Modal state
 const isProofModalOpen = ref(false);
@@ -164,29 +167,13 @@ function isPdf(path) {
                             {{ regForm.errors.registration_fee_id }}
                         </p>
                     </div>
-
-                    <!-- Currency Selection -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Currency Preference <span class="text-red-500">*</span></label>
-                        <div class="flex gap-4 text-xs font-semibold text-slate-700">
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="radio" value="IDR" v-model="regForm.currency" class="text-purple-700 focus:ring-purple-700" />
-                                <span>Indonesian Rupiah (IDR)</span>
-                            </label>
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="radio" value="USD" v-model="regForm.currency" class="text-purple-700 focus:ring-purple-700" />
-                                <span>US Dollar (USD)</span>
-                            </label>
-                        </div>
-                    </div>
-
                     <div class="pt-3 border-t border-slate-100 flex justify-end">
                         <button
                             type="submit"
                             :disabled="regForm.processing || !regForm.registration_fee_id"
                             class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-6 py-2.5 transition cursor-pointer shadow-xs disabled:opacity-50"
                         >
-                            {{ regForm.processing ? 'Registering...' : 'Register & Generate Invoice →' }}
+                            {{ regForm.processing ? 'Registering...' : 'Register & Generate Invoice' }}
                         </button>
                     </div>
                 </form>
@@ -210,7 +197,7 @@ function isPdf(path) {
                             </span>
                         </div>
                         <span :class="[
-                            'rounded-full px-3 py-1 text-xs font-bold uppercase border',
+                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border',
                             payment?.status === 'verified' || existingRegistration.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                             payment?.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
                             payment?.status === 'pending' || existingRegistration.status === 'waiting_verification' ? 'bg-blue-50 text-blue-700 border-blue-200' :
@@ -231,9 +218,24 @@ function isPdf(path) {
 
                         <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 space-y-2 text-xs text-slate-700">
                             <p class="font-bold text-slate-900">Please transfer the exact amount to:</p>
-                            <div class="space-y-1.5 py-1 font-mono text-xs">
+                            <div class="space-y-1.5 py-1">
                                 <p><span class="text-slate-400 font-sans">Bank:</span> <strong>{{ activeConference?.bank_name || 'Bank Syariah Indonesia (BSI)' }}</strong></p>
-                                <p><span class="text-slate-400 font-sans">Account No:</span> <strong class="text-purple-900 text-sm tracking-wider">{{ activeConference?.bank_account_number || '7192837465' }}</strong></p>
+                                
+                                <div class="flex items-center gap-2">
+                                    <p><span class="text-slate-400 font-sans">Account No:</span> <strong class="text-purple-900 font-mono text-sm tracking-wider">{{ activeConference?.bank_account_number || '7192837465' }}</strong></p>
+                                    <button
+                                        type="button"
+                                        @click="copyItem('bank', activeConference?.bank_account_number || '7192837465')"
+                                        class="inline-flex items-center gap-1 text-slate-400 hover:text-purple-800 transition cursor-pointer p-0.5"
+                                        title="Copy Account Number"
+                                    >
+                                        <span class="material-symbols-outlined text-[16px] leading-none">
+                                            {{ copiedKey === 'bank' ? 'check' : 'content_copy' }}
+                                        </span>
+                                        <span v-if="copiedKey === 'bank'" class="text-emerald-600 font-bold text-[10px]">Copied!</span>
+                                    </button>
+                                </div>
+
                                 <p><span class="text-slate-400 font-sans">Account Name:</span> <strong>{{ activeConference?.bank_account_holder || 'PANITIA ICHA PIPMARSI' }}</strong></p>
                             </div>
                             <p v-if="activeConference?.bank_instructions" class="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
@@ -312,11 +314,26 @@ function isPdf(path) {
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method <span class="text-red-500">*</span></label>
-                                <select v-model="paymentForm.payment_method" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white focus:border-purple-600">
-                                    <option value="Bank Transfer (BSI)">Bank Transfer (BSI)</option>
-                                    <option value="Bank Transfer (Mandiri)">Bank Transfer (Mandiri)</option>
-                                    <option value="Bank Transfer (BCA)">Bank Transfer (BCA)</option>
-                                    <option value="Credit Card / Stripe">Credit Card / Stripe</option>
+                                <select v-model="paymentForm.payment_method" class="w-full text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white focus:border-purple-600">
+                                    <optgroup label="Bank Transfer (Indonesia)">
+                                        <option value="Bank Transfer (BSI)">Bank Syariah Indonesia (BSI)</option>
+                                        <option value="Bank Transfer (Mandiri)">Bank Mandiri</option>
+                                        <option value="Bank Transfer (BCA)">Bank Central Asia (BCA)</option>
+                                        <option value="Bank Transfer (BRI)">Bank Rakyat Indonesia (BRI)</option>
+                                        <option value="Bank Transfer (BNI)">Bank Negara Indonesia (BNI)</option>
+                                    </optgroup>
+                                    <optgroup label="E-Wallet & QRIS">
+                                        <option value="QRIS / E-Wallet (GoPay, OVO, Dana, ShopeePay)">QRIS / E-Wallet (GoPay, OVO, Dana, ShopeePay)</option>
+                                    </optgroup>
+                                    <optgroup label="Credit Card & International">
+                                        <option value="Credit Card / Debit Card (Visa / Mastercard)">Credit Card / Debit Card (Visa / Mastercard)</option>
+                                        <option value="International Wire / TT (SWIFT)">International Wire Transfer (SWIFT / Telegraphic Transfer)</option>
+                                        <option value="PayPal / Stripe">PayPal / Stripe</option>
+                                    </optgroup>
+                                    <optgroup label="Other">
+                                        <option value="Institutional Sponsorship / Invoice Billing">Institutional Sponsorship / Invoice Billing</option>
+                                        <option value="Other Payment Method">Other Payment Method</option>
+                                    </optgroup>
                                 </select>
                                 <p v-if="paymentForm.errors.payment_method" class="text-xs font-bold text-red-600 mt-1">
                                     {{ paymentForm.errors.payment_method }}

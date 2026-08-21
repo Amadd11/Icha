@@ -333,7 +333,7 @@
                         <tr>
                             <td class="label" style="font-weight: 800; font-size: 14px; color: #1e293b; padding-top: 14px;">Total Amount</td>
                             <td class="val" style="font-weight: 900; font-size: 18px; color: #3b0764; padding-top: 14px;">
-                                {{ $registration->currency }} {{ number_format($registration->amount) }}
+                                Rp {{ number_format($registration->amount, 0, ',', '.') }}
                             </td>
                         </tr>
                     </table>
@@ -402,7 +402,7 @@
                                     <span class="step-num">1</span>
                                 </td>
                                 <td style="font-size: 12px; color: #475569; padding-bottom: 8px;">
-                                    <strong>Complete Payment:</strong> Transfer the exact amount of <strong>{{ $registration->currency }} {{ number_format($registration->amount) }}</strong> to the bank account above.
+                                    <strong>Complete Payment:</strong> Transfer the exact amount of <strong>Rp {{ number_format($registration->amount, 0, ',', '.') }}</strong> to the bank account above.
                                 </td>
                             </tr>
                             <tr>
