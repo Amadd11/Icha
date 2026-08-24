@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import ParticipantProgress from '@/Components/Dashboard/ParticipantProgress.vue';
 import StatusCard from '@/Components/Dashboard/StatusCard.vue';
+import { formatDateTime } from '@/Utils/formatters';
 
 const props = defineProps({
     user: Object,
@@ -76,39 +77,68 @@ const props = defineProps({
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <StatusCard
+                        class="table-row-stagger"
+                        style="animation-delay: 150ms"
                         title="Registration Category"
                         :status="props.activeRegistration ? 'Registered' : 'Not Registered'"
-                        :description="props.activeRegistration ? ('Category: ' + (props.activeRegistration.registration_type?.name || 'Standard')) : 'Please complete conference registration.'"
+                        :description="props.activeRegistration ? ('Category: ' + (props.activeRegistration.registrationFee?.name || props.activeRegistration.registration_fee?.name || 'Standard')) : 'Please complete conference registration.'"
                         :variant="props.activeRegistration ? 'success' : 'default'"
                     />
                     <StatusCard
+                        class="table-row-stagger"
+                        style="animation-delay: 280ms"
                         title="Payment Receipt"
                         :status="props.paymentStatus || 'unpaid'"
-                        :description="props.paymentStatus === 'verified' ? 'Payment verified & confirmed by Admin' : (props.paymentStatus === 'pending' ? 'Verification in progress by Admin' : 'Upload payment receipt to verify')"
+                        :description="props.paymentStatus === 'verified' ? ('Approved: ' + (props.payment?.verified_at ? formatDateTime(props.payment.verified_at) : 'Confirmed')) : (props.paymentStatus === 'pending' ? ('Submitted: ' + formatDateTime(props.payment?.paid_at || props.payment?.created_at)) : 'Upload payment receipt to verify')"
                         :variant="props.paymentStatus === 'verified' ? 'success' : (props.paymentStatus === 'pending' ? 'warning' : 'default')"
                     />
+
+                    <!-- Presenter Only Cards -->
+                    <template v-if="$page.props.auth?.user?.is_presenter">
+                        <StatusCard
+                            class="table-row-stagger"
+                            style="animation-delay: 410ms"
+                            title="Abstract Submission"
+                            :status="props.abstract ? props.abstract.status.replace('_', ' ') : 'not submitted'"
+                            :description="props.abstract ? ('Code: ' + props.abstract.abstract_code) : 'Call for Abstract is open'"
+                            :variant="props.abstract?.status === 'accepted' ? 'success' : (props.abstract ? 'warning' : 'default')"
+                        />
+                        <StatusCard
+                            class="table-row-stagger"
+                            style="animation-delay: 540ms"
+                            title="Full Paper"
+                            :status="props.fullPaper ? props.fullPaper.status.replace('_', ' ') : 'not submitted'"
+                            :description="props.fullPaper ? ('Code: ' + props.fullPaper.paper_code) : (props.abstract?.status === 'accepted' ? 'Ready to submit full paper' : 'Requires accepted abstract')"
+                            :variant="props.fullPaper?.status === 'accepted' ? 'success' : (props.fullPaper ? 'warning' : 'default')"
+                        />
+                        <StatusCard
+                            class="table-row-stagger"
+                            style="animation-delay: 670ms"
+                            title="Presentation Status"
+                            :status="props.abstract?.status === 'accepted' ? 'eligible' : 'pending'"
+                            :description="props.abstract?.status === 'accepted' ? 'Author Presentation Eligible' : 'Schedule to be announced post abstract acceptance'"
+                            :variant="props.abstract?.status === 'accepted' ? 'success' : 'default'"
+                        />
+                    </template>
+
+                    <!-- Non-Presenter Attendance Card -->
+                    <template v-else>
+                        <StatusCard
+                            class="table-row-stagger"
+                            style="animation-delay: 410ms"
+                            title="Conference Pass"
+                            :status="props.paymentStatus === 'verified' ? 'confirmed' : 'pending'"
+                            :description="props.paymentStatus === 'verified' ? 'Attendance Confirmed for Conference' : 'Available upon payment verification'"
+                            :variant="props.paymentStatus === 'verified' ? 'success' : 'default'"
+                        />
+                    </template>
+
                     <StatusCard
-                        title="Abstract Submission"
-                        :status="props.abstract ? props.abstract.status.replace('_', ' ') : 'not submitted'"
-                        :description="props.abstract ? ('Code: ' + props.abstract.abstract_code) : 'Call for Abstract is open'"
-                        :variant="props.abstract?.status === 'accepted' ? 'success' : (props.abstract ? 'warning' : 'default')"
-                    />
-                    <StatusCard
-                        title="Full Paper"
-                        :status="props.fullPaper ? props.fullPaper.status.replace('_', ' ') : 'not submitted'"
-                        :description="props.fullPaper ? ('Code: ' + props.fullPaper.paper_code) : (props.abstract?.status === 'accepted' ? 'Ready to submit full paper' : 'Requires accepted abstract')"
-                        :variant="props.fullPaper?.status === 'accepted' ? 'success' : (props.fullPaper ? 'warning' : 'default')"
-                    />
-                    <StatusCard
-                        title="Presentation Status"
-                        :status="props.abstract?.status === 'accepted' ? 'eligible' : 'pending'"
-                        :description="props.abstract?.status === 'accepted' ? 'Author Presentation Eligible' : 'Schedule to be announced post abstract acceptance'"
-                        :variant="props.abstract?.status === 'accepted' ? 'success' : 'default'"
-                    />
-                    <StatusCard
+                        class="table-row-stagger"
+                        style="animation-delay: 800ms"
                         title="E-Certificate"
                         :status="props.hasCertificate ? 'issued' : 'locked'"
-                        :description="props.hasCertificate ? 'Verified E-Certificate Ready to Download' : 'Available post-payment or presentation'"
+                        :description="props.hasCertificate ? 'Verified E-Certificate Ready to Download' : 'Available post-conference'"
                         :variant="props.hasCertificate ? 'success' : 'default'"
                     />
                 </div>

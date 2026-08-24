@@ -70,11 +70,12 @@ const props = defineProps({
             <!-- Certificates Grid -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div
-                    v-for="cert in props.certificates"
+                    v-for="(cert, index) in props.certificates"
                     :key="cert.id"
-                    class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between space-y-6 relative overflow-hidden group hover:shadow-xl transition-all"
+                    class="table-row-stagger bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between space-y-6 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 hover:border-amber-200 transition-all duration-300"
+                    :style="{ animationDelay: `${index * 150 + 150}ms` }"
                 >
-                    <div class="absolute -right-8 -top-8 w-28 h-28 bg-purple-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                    <div class="absolute -right-8 -top-8 w-28 h-28 bg-amber-50/50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
 
                     <div class="relative z-10 space-y-3">
                         <div class="flex items-center justify-between">
@@ -84,7 +85,7 @@ const props = defineProps({
                             <span class="font-mono text-[11px] font-bold text-slate-400">{{ cert.certificate_number }}</span>
                         </div>
 
-                        <h3 class="text-base font-black text-slate-900 leading-snug">{{ cert.role_title }}</h3>
+                        <h3 class="text-base font-black text-slate-900 leading-snug group-hover:text-purple-900 transition-colors">{{ cert.role_title }}</h3>
                         <p class="text-xs text-slate-500">{{ cert.conference?.title || 'ICHA 2026 Conference' }}</p>
                     </div>
 
@@ -99,7 +100,7 @@ const props = defineProps({
                             :href="cert.file_url"
                             target="_blank"
                             download
-                            class="inline-flex items-center gap-1.5 bg-gold hover:bg-gold-dark text-slate-950 font-black text-xs py-2.5 px-4 rounded-xl shadow-md transition cursor-pointer"
+                            class="btn-shimmer inline-flex items-center gap-1.5 bg-gold hover:bg-amber-400 text-slate-950 font-black text-xs py-2.5 px-4 rounded-xl shadow-md transition cursor-pointer"
                         >
                             <span>📥</span>
                             Download Official PDF
@@ -110,7 +111,7 @@ const props = defineProps({
                             v-else
                             :href="route('certificate.download', cert.id)"
                             target="_blank"
-                            class="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-xs py-2 px-4 rounded-xl shadow-sm transition cursor-pointer"
+                            class="btn-shimmer inline-flex items-center gap-1.5 bg-primary hover:bg-purple-900 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-sm transition cursor-pointer"
                         >
                             <span>🖨️</span>
                             View E-Certificate

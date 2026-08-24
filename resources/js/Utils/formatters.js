@@ -40,3 +40,25 @@ export function formatDate(date, options = { year: 'numeric', month: 'short', da
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleDateString('id-ID', options);
 }
+
+/**
+ * Format ISO date string to human-readable date & time in English (e.g. 24 Aug 2026, 14:30).
+ *
+ * @param {string|Date} date
+ * @returns {string}
+ */
+export function formatDateTime(date) {
+    if (!date) return '-';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    
+    return d.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    }) + ', ' + d.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+}

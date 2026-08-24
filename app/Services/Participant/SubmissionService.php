@@ -118,8 +118,14 @@ class SubmissionService
             ->latest()
             ->first();
 
-        if ($existingAbstract && $existingAbstract->status === 'revision_required') {
-            // Update existing abstract for Resubmission
+        if ($existingAbstract) {
+            if ($existingAbstract->status === 'accepted') {
+                abort(403, 'Abstrak Anda telah dinyatakan Diterima (Accepted) dan naskah telah terkunci untuk prosiding.');
+            }
+
+            $isRevision = ($existingAbstract->status === 'revision_required');
+
+            // Update existing abstract for Resubmission / Replacement
             $existingAbstract->update([
                 'title'             => $data['title'],
                 'category_id'       => $data['category_id'],
@@ -130,43 +136,64 @@ class SubmissionService
                 'status'            => 'under_review',
             ]);
 
-            // Create New Review Round (Round 2)
-            $latestRound = ReviewRound::where('submission_type', 'abstract')
-                ->where('submission_id', $existingAbstract->id)
-                ->orderByDesc('id')
-                ->first();
+            if ($isRevision) {
+                // Create New Review Round (Round 2)
+                $latestRound = ReviewRound::where('submission_type', 'abstract')
+                    ->where('submission_id', $existingAbstract->id)
+                    ->with(['assignments.review'])
+                    ->orderByDesc('id')
+                    ->first();
 
-            $newRoundNumber = ($latestRound?->round_number ?? 1) + 1;
+                $newRoundNumber = ($latestRound?->round_number ?? 1) + 1;
 
-            $newRound = ReviewRound::create([
-                'submission_type' => 'abstract',
-                'submission_id'   => $existingAbstract->id,
-                'round_number'    => $newRoundNumber,
-                'status'          => 'pending',
-            ]);
-
-            // Re-assign reviewers for the new round
-            $matchingReviewers = User::where('role', 'reviewer')
-                ->whereHas('categories', function ($q) use ($data) {
-                    $q->where('categories.id', $data['category_id']);
-                })
-                ->take(3)
-                ->get();
-
-            foreach ($matchingReviewers as $rev) {
-                ReviewAssignment::create([
-                    'review_round_id' => $newRound->id,
-                    'reviewer_id'     => $rev->id,
-                    'status'          => 'assigned',
+                $newRound = ReviewRound::create([
+                    'submission_type' => 'abstract',
+                    'submission_id'   => $existingAbstract->id,
+                    'round_number'    => $newRoundNumber,
+                    'status'          => 'pending',
                 ]);
+
+                // Assign ONLY the reviewers who requested revision (or haven't completed)
+                $revisingReviewerIds = [];
+                if ($latestRound && $latestRound->assignments->isNotEmpty()) {
+                    foreach ($latestRound->assignments as $assignment) {
+                        $recommendation = strtolower($assignment->review?->recommendation ?? '');
+                        // Exclude reviewers who already accepted (oral, poster, accepted)
+                        $alreadyAccepted = in_array($recommendation, ['oral', 'poster', 'accepted']);
+                        if (!$alreadyAccepted) {
+                            $revisingReviewerIds[] = $assignment->reviewer_id;
+                        }
+                    }
+                }
+
+                // Fallback: If no specific revision reviewer was found, fallback to previous round reviewers or track reviewers
+                if (empty($revisingReviewerIds) && $latestRound && $latestRound->assignments->isNotEmpty()) {
+                    $revisingReviewerIds = $latestRound->assignments->pluck('reviewer_id')->toArray();
+                }
+
+                if (empty($revisingReviewerIds)) {
+                    $revisingReviewerIds = User::where('role', 'reviewer')
+                        ->whereHas('categories', fn($q) => $q->where('categories.id', $data['category_id']))
+                        ->take(3)
+                        ->pluck('id')
+                        ->toArray();
+                }
+
+                foreach (array_unique($revisingReviewerIds) as $revId) {
+                    ReviewAssignment::create([
+                        'review_round_id' => $newRound->id,
+                        'reviewer_id'     => $revId,
+                        'status'          => 'assigned',
+                    ]);
+                }
             }
 
             return $existingAbstract;
         }
 
-        // Create New Abstract Submission
-        $abstractCount = AbstractSubmission::count() + 1;
-        $abstractCode = 'ABS-' . str_pad($abstractCount, 3, '0', STR_PAD_LEFT);
+        // Create New Abstract Submission (Collision-proof Code)
+        $abstractMaxId = (AbstractSubmission::withTrashed()->max('id') ?? 0) + 1;
+        $abstractCode = 'ABS-' . str_pad($abstractMaxId, 3, '0', STR_PAD_LEFT);
 
         $abstract = AbstractSubmission::create([
             'user_id'           => $user->id,
@@ -178,7 +205,7 @@ class SubmissionService
             'keywords'          => $data['keywords'] ?? null,
             'presentation_type' => $data['presentation_type'] ?? 'oral',
             'file_path'         => $filePath,
-            'status'            => 'pending',
+            'status'            => 'under_review',
         ]);
 
         // Auto-assign to reviewers matching category (Max 3 Reviewers)
@@ -246,8 +273,68 @@ class SubmissionService
             $filePath = $file->store('papers', 'public');
         }
 
-        $paperCount = FullPaper::count() + 1;
-        $paperCode = 'FP-' . str_pad($paperCount, 3, '0', STR_PAD_LEFT);
+        // Check for existing paper for this abstract (e.g. revision / update)
+        $existingPaper = FullPaper::where('abstract_id', $abstract->id)->first();
+        if ($existingPaper) {
+            $isRevision = ($existingPaper->status === 'revision_required');
+
+            $existingPaper->update([
+                'title'     => $data['title'],
+                'file_path' => $filePath ?? $existingPaper->file_path,
+                'status'    => 'under_review',
+            ]);
+
+            if ($isRevision) {
+                $latestRound = ReviewRound::where('submission_type', 'full_paper')
+                    ->where('submission_id', $existingPaper->id)
+                    ->with(['assignments.review'])
+                    ->orderByDesc('id')
+                    ->first();
+
+                $newRound = ReviewRound::create([
+                    'submission_type' => 'full_paper',
+                    'submission_id'   => $existingPaper->id,
+                    'round_number'    => ($latestRound?->round_number ?? 1) + 1,
+                    'status'          => 'pending',
+                ]);
+
+                $revisingReviewerIds = [];
+                if ($latestRound && $latestRound->assignments->isNotEmpty()) {
+                    foreach ($latestRound->assignments as $assignment) {
+                        $recommendation = strtolower($assignment->review?->recommendation ?? '');
+                        $alreadyAccepted = in_array($recommendation, ['oral', 'poster', 'accepted']);
+                        if (!$alreadyAccepted) {
+                            $revisingReviewerIds[] = $assignment->reviewer_id;
+                        }
+                    }
+                }
+
+                if (empty($revisingReviewerIds) && $latestRound && $latestRound->assignments->isNotEmpty()) {
+                    $revisingReviewerIds = $latestRound->assignments->pluck('reviewer_id')->toArray();
+                }
+
+                if (empty($revisingReviewerIds)) {
+                    $revisingReviewerIds = User::where('role', 'reviewer')
+                        ->whereHas('categories', fn($q) => $q->where('categories.id', $abstract->category_id))
+                        ->take(3)
+                        ->pluck('id')
+                        ->toArray();
+                }
+
+                foreach (array_unique($revisingReviewerIds) as $revId) {
+                    ReviewAssignment::create([
+                        'review_round_id' => $newRound->id,
+                        'reviewer_id'     => $revId,
+                        'status'          => 'assigned',
+                    ]);
+                }
+            }
+
+            return $existingPaper;
+        }
+
+        $paperMaxId = (FullPaper::withTrashed()->max('id') ?? 0) + 1;
+        $paperCode = 'FP-' . str_pad($paperMaxId, 3, '0', STR_PAD_LEFT);
 
         return FullPaper::create([
             'user_id'       => $user->id,
@@ -256,7 +343,7 @@ class SubmissionService
             'paper_code'    => $paperCode,
             'title'         => $data['title'],
             'file_path'     => $filePath,
-            'status'        => 'pending',
+            'status'        => 'under_review',
         ]);
     }
 }

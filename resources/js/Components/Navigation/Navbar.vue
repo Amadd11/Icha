@@ -283,8 +283,36 @@ function logout() {
                     {{ link.label }}
                 </Link>
             </li>
-            <li class="pt-2 border-t border-white/10 flex flex-col gap-2">
-                <Link :href="route('login')" class="text-sm font-medium text-white/80 hover:text-gold">Login</Link>
+            <li class="pt-3 border-t border-white/10 flex flex-col gap-2">
+                <template v-if="$page.props.auth?.user">
+                    <div class="px-2 py-1 text-xs text-gold font-bold flex items-center gap-2">
+                        <span>👤 {{ $page.props.auth.user.name }}</span>
+                    </div>
+                    <Link
+                        :href="route('dashboard')"
+                        class="text-sm font-semibold text-white hover:text-gold flex items-center gap-2 px-2 py-1"
+                        @click="emit('close-menu')"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">dashboard</span>
+                        Dashboard
+                    </Link>
+                    <button
+                        @click="logout"
+                        class="text-sm font-semibold text-rose-300 hover:text-rose-400 flex items-center gap-2 px-2 py-1 cursor-pointer text-left"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">logout</span>
+                        Logout
+                    </button>
+                </template>
+                <template v-else>
+                    <Link
+                        :href="route('login')"
+                        class="text-sm font-medium text-white/80 hover:text-gold px-2 py-1"
+                        @click="emit('close-menu')"
+                    >
+                        Login
+                    </Link>
+                </template>
             </li>
         </ul>
     </div>

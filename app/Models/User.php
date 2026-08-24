@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->hasMany(ReviewAssignment::class, 'reviewer_id');
     }
 
+    public function certificates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
     // ─── Role Helpers ───────────────────────────────────────────────
 
     public function isSuperAdmin(): bool

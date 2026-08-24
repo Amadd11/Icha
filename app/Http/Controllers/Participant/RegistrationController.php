@@ -59,7 +59,7 @@ class RegistrationController extends Controller
         return redirect()->route('participant.registration.create');
     }
 
-    public function submitPayment(PaymentProofRequest $request)
+    public function submitPayment(PaymentProofRequest $request): RedirectResponse
     {
         $user = $request->user();
         $activeConference = Conference::active()->first() ?? Conference::latest()->first();

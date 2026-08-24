@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PaymentVerificationRequest;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,7 +37,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function verify(PaymentVerificationRequest $request, Payment $payment)
+    public function verify(PaymentVerificationRequest $request, Payment $payment): RedirectResponse
     {
         $this->paymentService->verifyPayment(
             $payment,

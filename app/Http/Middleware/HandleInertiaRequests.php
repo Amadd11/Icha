@@ -55,14 +55,34 @@ class HandleInertiaRequests extends Middleware
             $availableConferences = [];
         }
 
+        $user = $request->user();
+        $isPresenter = false;
+        $isPaidPresenter = false;
+
+        if ($user && $user->role === 'participant') {
+            $activeConfId = $activeConference?->id;
+            $reg = \App\Models\Registration::with(['registrationFee', 'payment'])
+                ->where('user_id', $user->id)
+                ->when($activeConfId, fn($q) => $q->where('conference_id', $activeConfId))
+                ->latest()
+                ->first();
+
+            if ($reg && $reg->registrationFee) {
+                $isPresenter = ($reg->registrationFee->type === 'presenter');
+                $isPaid = ($reg->status === 'paid' || $reg->payment?->status === 'verified');
+                $isPaidPresenter = ($isPresenter && $isPaid);
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user() ? [
-                    'id'    => $request->user()->id,
-                    'name'  => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'role'  => $request->user()->role,
+                'user' => $user ? [
+                    'id'           => $user->id,
+                    'name'         => $user->name,
+                    'email'        => $user->email,
+                    'role'         => $user->role,
+                    'is_presenter' => $isPaidPresenter,
                 ] : null,
             ],
             'activeConference' => $activeConference,

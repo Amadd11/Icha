@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreRegistrationFeeRequest;
 use App\Http\Requests\Admin\UpdateRegistrationFeeRequest;
 use App\Models\Conference;
 use App\Models\RegistrationFee;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -51,7 +52,7 @@ class RegistrationFeeController extends Controller
         return redirect()->route('admin.registration-fees.index');
     }
 
-    public function update(UpdateRegistrationFeeRequest $request, RegistrationFee $registrationFee)
+    public function update(UpdateRegistrationFeeRequest $request, RegistrationFee $registrationFee): RedirectResponse
     {
         $registrationFee->update($request->validated());
 
@@ -59,7 +60,7 @@ class RegistrationFeeController extends Controller
             ->with('success', 'Registration fee updated successfully.');
     }
 
-    public function destroy(RegistrationFee $registrationFee)
+    public function destroy(RegistrationFee $registrationFee): RedirectResponse
     {
         $registrationFee->delete();
 

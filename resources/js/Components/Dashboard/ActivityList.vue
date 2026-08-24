@@ -19,7 +19,7 @@ defineProps({
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-slate-800">{{ item.user?.name || 'Participant' }}</p>
-                        <p class="text-xs text-slate-500">{{ item.registration_type?.name || 'Registration' }}</p>
+                        <p class="text-xs text-slate-500">{{ item.registration_fee?.name || item.registrationFee?.name || 'Registration' }}</p>
                     </div>
                 </div>
                 <div class="text-right">

@@ -12,7 +12,7 @@ defineProps({
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-6">Conference Journey Progress</h3>
 
         <!-- Horizontal Step Tracker for Desktop, Stacked for Mobile -->
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div :class="stages.length <= 4 ? 'grid grid-cols-2 gap-3 sm:grid-cols-4' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6'">
             <div
                 v-for="(stage, index) in stages"
                 :key="stage.key"

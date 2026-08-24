@@ -32,7 +32,7 @@ const props = defineProps({
 
             <!-- Horizontal Continuous Timeline -->
             <div class="mt-20 relative overflow-x-auto pb-8 scrollbar-thin scrollbar-thumb-primary/30">
-                <div class="min-w-237.5elative pt-8">
+                <div class="min-w-[950px] relative pt-8">
                     <!-- Horizontal Connecting Line -->
                     <div class="absolute top-12 left-10 right-10 h-2 bg-linear-to-r from-primary via-gold to-primary rounded-full opacity-70 shadow-sm"></div>
 

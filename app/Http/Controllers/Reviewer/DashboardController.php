@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Reviewer\DashboardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
@@ -13,7 +14,7 @@ class DashboardController extends Controller
         private DashboardService $dashboardService
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $assignments = $this->dashboardService->getAssignments();
 

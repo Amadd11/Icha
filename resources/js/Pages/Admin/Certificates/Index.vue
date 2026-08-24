@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { useTableFilter } from '@/Composables/useTableFilter';
 import { useStatusBadge } from '@/Composables/useStatusBadge';
 import { useModal } from '@/Composables/useModal';
@@ -10,9 +11,14 @@ const props = defineProps({
     conferences: Array,
     selectedConferenceId: Number,
     selectedConference: Object,
-    participants: Array,
+    participants: Object,
     filters: Object,
     stats: Object,
+});
+
+const participantsList = computed(() => {
+    if (Array.isArray(props.participants)) return props.participants;
+    return props.participants?.data || [];
 });
 
 const { filters, applyFilter } = useTableFilter('admin.certificates.index', {
@@ -83,7 +89,7 @@ function deleteCertificate(certId) {
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-slate-900">Participant Certificates</h1>
-                    <p class="text-xs text-slate-500 mt-0.5">Upload and manage official E-Certificate PDF documents for conference participants.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Upload and manage official E-Certificate PDF documents for paid & verified conference participants.</p>
                 </div>
 
                 <!-- Conference Switcher -->
@@ -104,7 +110,7 @@ function deleteCertificate(certId) {
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Registered</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Paid Participants</span>
                     <p class="text-2xl font-black text-slate-900 mt-1">{{ stats.total_participants }}</p>
                 </div>
 
@@ -172,13 +178,13 @@ function deleteCertificate(certId) {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-medium">
-                        <tr v-if="participants.length === 0">
+                        <tr v-if="participantsList.length === 0">
                             <td colspan="4" class="px-5 py-8 text-center text-slate-400">
-                                No participants found for this conference.
+                                No paid participants found for this conference.
                             </td>
                         </tr>
                         <tr
-                            v-for="p in participants"
+                            v-for="p in participantsList"
                             :key="p.user_id"
                             class="hover:bg-slate-50/70 transition"
                         >
@@ -245,6 +251,13 @@ function deleteCertificate(certId) {
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <Pagination
+                v-if="participants && participants.links"
+                :links="participants.links"
+                class="mt-4"
+            />
         </div>
 
         <!-- Upload Certificate Modal -->

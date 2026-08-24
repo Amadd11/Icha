@@ -56,7 +56,7 @@ class SponsorController extends Controller
         return redirect()->route('admin.sponsors.index');
     }
 
-    public function update(UpdateSponsorRequest $request, Sponsor $sponsor)
+    public function update(UpdateSponsorRequest $request, Sponsor $sponsor): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -74,7 +74,7 @@ class SponsorController extends Controller
             ->with('success', 'Sponsor updated successfully.');
     }
 
-    public function destroy(Sponsor $sponsor)
+    public function destroy(Sponsor $sponsor): RedirectResponse
     {
         if ($sponsor->logo) {
             Storage::disk('public')->delete($sponsor->logo);

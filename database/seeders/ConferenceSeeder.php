@@ -26,7 +26,7 @@ class ConferenceSeeder extends Seeder
                 'city'        => 'Surabaya',
                 'country'     => 'Indonesia',
                 'theme'       => 'Healthcare Administration for a Sustainable Future',
-                'email'               => 'info@icha2026.id',
+                'email'               => 'conference.icha10@gmail.com',
                 'bank_name'           => 'Bank Syariah Indonesia (BSI)',
                 'bank_account_number' => '7192837465',
                 'bank_account_holder' => 'PANITIA ICHA PIPMARSI',

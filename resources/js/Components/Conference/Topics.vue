@@ -37,6 +37,7 @@ const props = defineProps({
                     :key="item.title"
                     class="fade-in rounded-3xl p-7 border-2 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between group relative overflow-hidden"
                     :class="[
+                        `stagger-${(index % 4) + 1}`,
                         index % 2 === 0
                             ? 'bg-white text-slate-900 border-slate-100 hover:border-primary/40'
                             : 'bg-primary text-white border-primary-dark shadow-purple-950/20 hover:border-gold'

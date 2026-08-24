@@ -4,6 +4,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import ToastNotification from '@/Components/ToastNotification.vue';
 
 const isMobileOpen = ref(false);
+const isLogoutModalOpen = ref(false);
 const page = usePage();
 
 const navigationGroups = [
@@ -22,7 +23,12 @@ const navigationGroups = [
     }
 ];
 
-function logout() {
+function confirmLogout() {
+    isLogoutModalOpen.value = true;
+}
+
+function performLogout() {
+    isLogoutModalOpen.value = false;
     router.post(route('logout'));
 }
 </script>
@@ -66,11 +72,14 @@ function logout() {
                             v-for="item in group.items"
                             :key="item.name"
                             :href="route(item.routeName) + (item.hash || '')"
-                            class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
+                            class="group flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 hover:translate-x-1"
                             :class="route().current(item.routeName) && (!item.hash || $page.url.includes(item.hash)) ? 'bg-gold text-slate-950 font-bold shadow-md' : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'"
                         >
-                            <span class="material-symbols-outlined text-[20px]">{{ item.icon }}</span>
-                            <span>{{ item.name }}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-[20px] transition-transform duration-200 group-hover:scale-110">{{ item.icon }}</span>
+                                <span class="transition-transform duration-200 group-hover:translate-x-0.5">{{ item.name }}</span>
+                            </div>
+                            <span v-if="route().current(item.routeName) && (!item.hash || $page.url.includes(item.hash))" class="text-xs text-slate-950 font-black shrink-0">●</span>
                         </Link>
                     </div>
                 </div>
@@ -84,7 +93,7 @@ function logout() {
                         <p class="text-sm font-bold text-white truncate">{{ $page.props.auth.user.name }}</p>
                         <p class="text-xs text-purple-200 truncate">{{ $page.props.auth.user.email }}</p>
                     </div>
-                    <button @click="logout" class="text-sm font-bold text-gold hover:text-yellow-300 transition shrink-0 cursor-pointer">Logout</button>
+                    <button @click="confirmLogout" class="text-sm font-bold text-gold hover:text-yellow-300 transition shrink-0 cursor-pointer">Logout</button>
                 </div>
             </div>
         </aside>
@@ -119,7 +128,7 @@ function logout() {
                             </Link>
                         </div>
                     </div>
-                <button @click="logout" class="block rounded-xl px-4 py-3 font-semibold text-left text-red-400 hover:bg-red-500/10">
+                <button @click="confirmLogout" class="block rounded-xl px-4 py-3 font-semibold text-left text-red-400 hover:bg-red-500/10 cursor-pointer">
                     Logout
                 </button>
             </nav>
@@ -134,6 +143,44 @@ function logout() {
                 <slot />
             </div>
         </main>
+
+        <!-- Minimalist Logout Confirmation Modal -->
+        <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 transition-all">
+            <div class="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4 animate-fade-in-scale">
+                <div class="flex items-center gap-3.5">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Sign Out Confirmation</h3>
+                        <p class="text-xs text-slate-500">Are you sure you want to log out?</p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    You will be signed out of your reviewer portal session. Any active evaluations can be resumed upon signing back in.
+                </p>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="isLogoutModalOpen = false"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="performLogout"
+                        class="rounded-xl bg-primary hover:bg-purple-900 text-white px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+                    >
+                        Yes, Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <ToastNotification />
     </div>

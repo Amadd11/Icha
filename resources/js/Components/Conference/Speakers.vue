@@ -101,10 +101,11 @@ function formatStorageUrl(path) {
             <template v-if="displaySpeakers && displaySpeakers.length">
                 <div class="flex flex-wrap justify-center gap-x-8 gap-y-12 lg:gap-x-12 mt-6">
                     <div
-                        v-for="speaker in displaySpeakers"
+                        v-for="(speaker, index) in displaySpeakers"
                         :key="speaker.id"
                         @click="openSpeakerModal(speaker)"
-                        class="group cursor-pointer flex w-56 sm:w-60 flex-col items-center text-center p-5 rounded-3xl transition-all duration-300 hover:bg-white hover:shadow-xl hover:shadow-purple-950/10 hover:-translate-y-2 border border-transparent hover:border-purple-100 bg-white/50"
+                        class="fade-in group cursor-pointer flex w-56 sm:w-60 flex-col items-center text-center p-5 rounded-3xl transition-all duration-300 hover:bg-white hover:shadow-xl hover:shadow-purple-950/10 hover:-translate-y-2 border border-transparent hover:border-purple-100 bg-white/50"
+                        :class="`stagger-${(index % 4) + 1}`"
                     >
                         <!-- Circular Photo with Ring -->
                         <div class="relative mb-7">

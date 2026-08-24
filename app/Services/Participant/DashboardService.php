@@ -3,39 +3,42 @@
 namespace App\Services\Participant;
 
 use App\Models\AbstractSubmission;
+use App\Models\Certificate;
 use App\Models\Conference;
 use App\Models\FullPaper;
+use App\Models\Payment;
+use App\Models\Registration;
 use App\Models\Timeline;
 use App\Models\User;
 
 class DashboardService
 {
     /**
-     * Get participant progress and status data.
+     * Get aggregated participant dashboard data.
      */
     public function getDashboardData(User $user): array
     {
-        $user->load([
+        // 1. Eager load user relationships cleanly
+        $user->loadMissing([
             'profile',
-            'registrations' => function ($q) {
-                $q->with(['conference', 'registrationFee', 'payment']);
-            },
+            'registrations' => fn ($q) => $q->with(['conference', 'registrationFee', 'payment']),
         ]);
 
+        // 2. Resolve Active Conference
         $activeConference = Conference::active()->first() ?? Conference::latest()->first();
         
+        // 3. Resolve Current Conference Registration & Payment
+        /** @var Registration|null $activeRegistration */
         $activeRegistration = $user->registrations
             ->where('conference_id', $activeConference?->id)
             ->first();
 
         $payment = $activeRegistration?->payment;
-
-        // Stages Evaluation
         $isRegistered = (bool) $activeRegistration;
         $isPaid = $payment && $payment->status === 'verified';
-        $paymentStatus = $payment ? $payment->status : 'unpaid';
+        $paymentStatus = $this->resolvePaymentStatus($payment);
 
-        // Abstract & Paper real status
+        // 4. Resolve Abstract & Full Paper Submission Status
         $abstract = AbstractSubmission::where('user_id', $user->id)
             ->where('conference_id', $activeConference?->id)
             ->latest()
@@ -49,126 +52,269 @@ class DashboardService
         $abstractStatus = $abstract ? $abstract->status : 'not_submitted';
         $fullPaperStatus = $fullPaper ? $fullPaper->status : 'not_submitted';
 
-        // Certificate status (Ready if admin uploaded certificate file)
-        $hasCertificate = \App\Models\Certificate::where('user_id', $user->id)
+        // 5. Resolve Certificate Availability
+        $hasCertificate = Certificate::where('user_id', $user->id)
             ->where('conference_id', $activeConference?->id)
             ->whereNotNull('file_path')
             ->exists();
 
-        // Determine Next Action
-        $nextAction = [
-            'title' => 'Register for Conference',
-            'description' => 'You have not registered for ' . ($activeConference?->title ?? 'the active conference') . '.',
-            'button_label' => 'Register Now',
-            'url' => route('participant.registration.create'),
-        ];
+        // 6. Evaluate Presenter vs General Participant Track
+        $isPresenterPackage = $activeRegistration?->registrationFee?->type === 'presenter';
+        $isPaidPresenter = $isPresenterPackage && $isPaid;
 
+        // 7. Assemble Actionable Guidance and Stages
+        $nextAction = $this->resolveNextAction(
+            activeConference: $activeConference,
+            isRegistered: $isRegistered,
+            paymentStatus: $paymentStatus,
+            isPaidPresenter: $isPaidPresenter,
+            hasCertificate: $hasCertificate,
+            abstractStatus: $abstractStatus,
+            fullPaperStatus: $fullPaperStatus
+        );
+
+        $stages = $isPaidPresenter
+            ? $this->buildPresenterStages($isRegistered, $isPaid, $paymentStatus, $abstract, $abstractStatus, $fullPaper, $fullPaperStatus, $hasCertificate)
+            : $this->buildGeneralStages($isRegistered, $isPaid, $paymentStatus, $hasCertificate);
+
+        $nearestDeadline = $this->resolveNearestDeadline($activeConference);
+
+        return [
+            'user'               => $user,
+            'activeConference'   => $activeConference,
+            'activeRegistration' => $activeRegistration,
+            'payment'            => $payment,
+            'paymentStatus'      => $paymentStatus,
+            'abstract'           => $abstract,
+            'fullPaper'          => $fullPaper,
+            'hasCertificate'     => $hasCertificate,
+            'stages'             => $stages,
+            'nextAction'         => $nextAction,
+            'nearestDeadline'    => $nearestDeadline,
+        ];
+    }
+
+    /**
+     * Resolve normalized payment status key for UI components.
+     */
+    private function resolvePaymentStatus(?Payment $payment): string
+    {
+        if (!$payment) {
+            return 'unpaid';
+        }
+
+        return match ($payment->status) {
+            'pending'  => 'waiting_verification',
+            'verified' => 'paid',
+            default    => $payment->status,
+        };
+    }
+
+    /**
+     * Determine the singular next priority action for the participant.
+     */
+    private function resolveNextAction(
+        ?Conference $activeConference,
+        bool $isRegistered,
+        string $paymentStatus,
+        bool $isPaidPresenter,
+        bool $hasCertificate,
+        string $abstractStatus,
+        string $fullPaperStatus
+    ): array {
         if (!$isRegistered) {
-            $nextAction = [
-                'title' => 'Complete Registration',
-                'description' => 'Choose your category to register for ' . ($activeConference?->title ?? 'the conference') . '.',
+            return [
+                'title'        => 'Complete Registration',
+                'description'  => 'Choose your category to register for ' . ($activeConference?->title ?? 'the conference') . '.',
                 'button_label' => 'Register Now',
-                'url' => route('participant.registration.create'),
-            ];
-        } elseif ($paymentStatus === 'unpaid') {
-            $nextAction = [
-                'title' => 'Complete Payment',
-                'description' => 'Upload your payment receipt to complete registration.',
-                'button_label' => 'Upload Payment Receipt',
-                'url' => route('participant.payment.index'),
-            ];
-        } elseif ($paymentStatus === 'pending') {
-            $nextAction = [
-                'title' => 'Payment Verification Pending',
-                'description' => 'Your payment receipt has been submitted and is currently being verified by admin.',
-                'button_label' => 'View Payment Status',
-                'url' => route('participant.payment.index'),
-            ];
-        } elseif ($abstractStatus === 'not_submitted') {
-            $nextAction = [
-                'title' => 'Submit Abstract',
-                'description' => 'Submit your abstract before the upcoming submission deadline.',
-                'button_label' => 'Submit Abstract',
-                'url' => route('participant.submission.index'),
-            ];
-        } elseif ($fullPaperStatus === 'not_submitted' && $abstractStatus === 'accepted') {
-            $nextAction = [
-                'title' => 'Submit Full Paper',
-                'description' => 'Your abstract has been accepted! Submit your full paper.',
-                'button_label' => 'Submit Full Paper',
-                'url' => route('participant.submission.index'),
-            ];
-        } elseif ($hasCertificate) {
-            $nextAction = [
-                'title' => 'Download E-Certificate',
-                'description' => 'Your official verified E-Certificate is issued and ready for download!',
-                'button_label' => 'Get Certificate',
-                'url' => route('participant.certificate.index'),
+                'url'          => route('participant.registration.create'),
             ];
         }
 
-        // Timeline / Stages array
-        $stages = [
+        if ($paymentStatus === 'unpaid') {
+            return [
+                'title'        => 'Complete Payment',
+                'description'  => 'Upload your payment receipt to complete registration.',
+                'button_label' => 'Upload Payment Receipt',
+                'url'          => route('participant.registration.create'),
+            ];
+        }
+
+        if ($paymentStatus === 'waiting_verification') {
+            return [
+                'title'        => 'Payment Verification Pending',
+                'description'  => 'Your payment receipt has been submitted and is currently being verified by admin.',
+                'button_label' => 'View Payment Status',
+                'url'          => route('participant.registration.create'),
+            ];
+        }
+
+        if ($paymentStatus === 'rejected') {
+            return [
+                'title'        => 'Payment Receipt Rejected',
+                'description'  => 'Your payment receipt was rejected by admin. Please re-upload a valid proof file.',
+                'button_label' => 'Re-upload Receipt',
+                'url'          => route('participant.registration.create'),
+            ];
+        }
+
+        // Non-Presenter / Unverified Flow
+        if (!$isPaidPresenter) {
+            if ($hasCertificate) {
+                return [
+                    'title'        => 'Download E-Certificate',
+                    'description'  => 'Your official verified E-Certificate is issued and ready for download!',
+                    'button_label' => 'Get Certificate',
+                    'url'          => route('participant.certificate.index'),
+                ];
+            }
+
+            return [
+                'title'        => 'Registration Confirmed',
+                'description'  => 'Your conference registration is confirmed and verified. We look forward to seeing you!',
+                'button_label' => 'View My Profile',
+                'url'          => route('participant.profile.edit'),
+            ];
+        }
+
+        // Paid Presenter Scientific Track Flow
+        if ($abstractStatus === 'not_submitted') {
+            return [
+                'title'        => 'Submit Abstract',
+                'description'  => 'Submit your abstract before the upcoming submission deadline.',
+                'button_label' => 'Submit Abstract',
+                'url'          => route('participant.submission.index'),
+            ];
+        }
+
+        if ($fullPaperStatus === 'not_submitted' && $abstractStatus === 'accepted') {
+            return [
+                'title'        => 'Submit Full Paper',
+                'description'  => 'Your abstract has been accepted! Submit your full paper.',
+                'button_label' => 'Submit Full Paper',
+                'url'          => route('participant.submission.index'),
+            ];
+        }
+
+        if ($hasCertificate) {
+            return [
+                'title'        => 'Download E-Certificate',
+                'description'  => 'Your official verified E-Certificate is issued and ready for download!',
+                'button_label' => 'Get Certificate',
+                'url'          => route('participant.certificate.index'),
+            ];
+        }
+
+        return [
+            'title'        => 'Submission Under Review',
+            'description'  => 'Your paper submission is currently being reviewed by peer reviewers.',
+            'button_label' => 'View Submission Status',
+            'url'          => route('participant.submission.index'),
+        ];
+    }
+
+    /**
+     * Build standard 4-stage journey for new / general participants.
+     */
+    private function buildGeneralStages(
+        bool $isRegistered,
+        bool $isPaid,
+        string $paymentStatus,
+        bool $hasCertificate
+    ): array {
+        return [
             [
-                'key' => 'registration',
-                'label' => 'Registration',
+                'key'    => 'registration',
+                'label'  => 'Registration',
                 'status' => $isRegistered ? 'completed' : 'current',
-                'desc' => $isRegistered ? 'Registered' : 'Pending',
+                'desc'   => $isRegistered ? 'Registered' : 'Not Registered',
             ],
             [
-                'key' => 'payment',
-                'label' => 'Payment',
+                'key'    => 'payment',
+                'label'  => 'Payment',
                 'status' => $isPaid ? 'completed' : ($isRegistered ? 'current' : 'pending'),
-                'desc' => ucfirst($paymentStatus),
+                'desc'   => $isPaid ? 'Paid' : ($paymentStatus === 'waiting_verification' ? 'Waiting Verification' : ($paymentStatus === 'rejected' ? 'Rejected' : 'Unpaid')),
             ],
             [
-                'key' => 'abstract',
-                'label' => 'Abstract',
-                'status' => $abstract ? ($abstractStatus === 'accepted' ? 'completed' : 'current') : 'pending',
-                'desc' => $abstract ? ucfirst(str_replace('_', ' ', $abstractStatus)) : 'Not Submitted',
+                'key'    => 'attendance',
+                'label'  => 'Conference Pass',
+                'status' => $isPaid ? 'completed' : 'pending',
+                'desc'   => $isPaid ? 'Confirmed' : 'Pending Payment',
             ],
             [
-                'key' => 'full_paper',
-                'label' => 'Full Paper',
-                'status' => $fullPaper ? ($fullPaperStatus === 'accepted' ? 'completed' : 'current') : 'pending',
-                'desc' => $fullPaper ? ucfirst(str_replace('_', ' ', $fullPaperStatus)) : 'Not Submitted',
-            ],
-            [
-                'key' => 'presentation',
-                'label' => 'Presentation',
-                'status' => $abstractStatus === 'accepted' ? 'current' : 'pending',
-                'desc' => $abstractStatus === 'accepted' ? 'Ready' : 'Pending',
-            ],
-            [
-                'key' => 'certificate',
-                'label' => 'Certificate',
+                'key'    => 'certificate',
+                'label'  => 'E-Certificate',
                 'status' => $hasCertificate ? 'completed' : 'pending',
-                'desc' => $hasCertificate ? 'Issued' : 'Not Issued',
+                'desc'   => $hasCertificate ? 'Issued' : 'Not Issued',
             ],
         ];
+    }
 
-        // Dynamic Nearest Deadline from Timeline model
+    /**
+     * Build complete 6-stage journey for verified paid presenters.
+     */
+    private function buildPresenterStages(
+        bool $isRegistered,
+        bool $isPaid,
+        string $paymentStatus,
+        ?AbstractSubmission $abstract,
+        string $abstractStatus,
+        ?FullPaper $fullPaper,
+        string $fullPaperStatus,
+        bool $hasCertificate
+    ): array {
+        return [
+            [
+                'key'    => 'registration',
+                'label'  => 'Registration',
+                'status' => $isRegistered ? 'completed' : 'current',
+                'desc'   => $isRegistered ? 'Registered' : 'Not Registered',
+            ],
+            [
+                'key'    => 'payment',
+                'label'  => 'Payment',
+                'status' => $isPaid ? 'completed' : ($isRegistered ? 'current' : 'pending'),
+                'desc'   => $isPaid ? 'Paid' : ($paymentStatus === 'waiting_verification' ? 'Waiting Verification' : ($paymentStatus === 'rejected' ? 'Rejected' : 'Unpaid')),
+            ],
+            [
+                'key'    => 'abstract',
+                'label'  => 'Abstract',
+                'status' => $abstract ? ($abstractStatus === 'accepted' ? 'completed' : 'current') : 'pending',
+                'desc'   => $abstract ? ucfirst(str_replace('_', ' ', $abstractStatus)) : 'Not Submitted',
+            ],
+            [
+                'key'    => 'full_paper',
+                'label'  => 'Full Paper',
+                'status' => $fullPaper ? ($fullPaperStatus === 'accepted' ? 'completed' : 'current') : 'pending',
+                'desc'   => $fullPaper ? ucfirst(str_replace('_', ' ', $fullPaperStatus)) : 'Not Submitted',
+            ],
+            [
+                'key'    => 'presentation',
+                'label'  => 'Presentation',
+                'status' => $abstractStatus === 'accepted' ? 'current' : 'pending',
+                'desc'   => $abstractStatus === 'accepted' ? 'Ready' : 'Pending',
+            ],
+            [
+                'key'    => 'certificate',
+                'label'  => 'Certificate',
+                'status' => $hasCertificate ? 'completed' : 'pending',
+                'desc'   => $hasCertificate ? 'Issued' : 'Not Issued',
+            ],
+        ];
+    }
+
+    /**
+     * Resolve the upcoming conference timeline deadline.
+     */
+    private function resolveNearestDeadline(?Conference $activeConference): array
+    {
         $nextTimeline = $activeConference
             ? Timeline::where('conference_id', $activeConference->id)->orderBy('order')->first()
             : null;
 
-        $nearestDeadline = [
-            'title' => $nextTimeline?->title ?? 'Abstract Submission Deadline',
-            'date' => $nextTimeline?->period ?? '03 October 2026',
-        ];
-
         return [
-            'user' => $user,
-            'activeConference' => $activeConference,
-            'activeRegistration' => $activeRegistration,
-            'payment' => $payment,
-            'paymentStatus' => $paymentStatus,
-            'abstract' => $abstract,
-            'fullPaper' => $fullPaper,
-            'hasCertificate' => $hasCertificate,
-            'stages' => $stages,
-            'nextAction' => $nextAction,
-            'nearestDeadline' => $nearestDeadline,
+            'title' => $nextTimeline?->title ?? 'Registration & Abstract Deadline',
+            'date'  => $nextTimeline?->period ?? 'October 2026',
         ];
     }
 }

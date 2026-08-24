@@ -3,7 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Pagination from '@/Components/Pagination.vue';
-import { formatStorageUrl } from '@/Utils/formatters';
+import { formatStorageUrl, formatDateTime } from '@/Utils/formatters';
 import { formatRupiah } from '@/Composables/useFormatRupiah';
 import { useTableFilter } from '@/Composables/useTableFilter';
 import { useStatusBadge } from '@/Composables/useStatusBadge';
@@ -87,17 +87,21 @@ function isPdf(path) {
         <!-- Filter Tabs -->
         <div class="mb-5 flex gap-2 overflow-x-auto pb-1">
             <button
-                v-for="s in ['pending', 'verified', 'rejected']"
-                :key="s"
-                @click="filterStatus(s)"
+                v-for="s in [
+                    { key: 'pending', label: 'Waiting Verification' },
+                    { key: 'verified', label: 'Paid' },
+                    { key: 'rejected', label: 'Rejected' },
+                ]"
+                :key="s.key"
+                @click="filterStatus(s.key)"
                 :class="[
                     'rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition cursor-pointer',
-                    currentFilter === s
-                        ? 'bg-gold text-slate-950 shadow-xs'
-                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-amber-100 hover:text-slate-950'
+                    currentFilter === s.key
+                        ? 'bg-primary text-white shadow-xs'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 ]"
             >
-                {{ s }}
+                {{ s.label }}
             </button>
         </div>
 
@@ -108,16 +112,17 @@ function isPdf(path) {
                     <thead class="border-b border-slate-100 bg-slate-50 uppercase text-[11px] font-bold text-slate-500">
                         <tr>
                             <th scope="col" class="px-5 py-3">Invoice / Participant</th>
-                            <th scope="col" class="px-5 py-3">Amount Paid</th>
+                            <th scope="col" class="px-5 py-3">Amount</th>
                             <th scope="col" class="px-5 py-3">Proof Document</th>
+                            <th scope="col" class="px-5 py-3">Submitted At</th>
                             <th scope="col" class="px-5 py-3">Status</th>
                             <th scope="col" class="px-5 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <tr v-if="payments.data.length === 0">
-                            <td colspan="5" class="px-5 py-8 text-center text-xs text-slate-400">
-                                No payment records found in the "{{ currentFilter }}" queue.
+                            <td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">
+                                No payment records found in the "{{ currentFilter === 'pending' ? 'waiting verification' : (currentFilter === 'verified' ? 'paid' : currentFilter) }}" queue.
                             </td>
                         </tr>
                         <tr
@@ -147,13 +152,31 @@ function isPdf(path) {
                                 </button>
                             </td>
 
+                            <!-- Submitted At & Verified At -->
+                            <td class="px-5 py-3.5 text-xs">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-1.5 text-slate-700">
+                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">SUBMITTED</span>
+                                        <span class="font-medium text-slate-800">{{ formatDateTime(p.paid_at || p.created_at) }}</span>
+                                    </div>
+                                    <div v-if="p.status === 'verified'" class="flex items-center gap-1.5 text-emerald-700">
+                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">APPROVED</span>
+                                        <span class="font-bold">{{ formatDateTime(p.verified_at) }}</span>
+                                    </div>
+                                    <div v-else-if="p.status === 'rejected'" class="flex items-center gap-1.5 text-red-700">
+                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-red-100 text-red-800">REJECTED</span>
+                                        <span class="font-bold">{{ formatDateTime(p.verified_at) }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
                             <!-- Status -->
                             <td class="px-5 py-3.5">
                                 <span :class="[
                                     'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold capitalize border',
-                                    getBadgeClass(p.status)
+                                    getBadgeClass(p.status === 'pending' ? 'waiting_verification' : (p.status === 'verified' ? 'paid' : p.status))
                                 ]">
-                                    {{ getStatusLabel(p.status) }}
+                                    {{ p.status === 'pending' ? 'Waiting Verification' : (p.status === 'verified' ? 'Paid ✓' : 'Rejected') }}
                                 </span>
                             </td>
 
@@ -254,13 +277,24 @@ function isPdf(path) {
                                     <span class="font-bold text-slate-800 uppercase">{{ proofModal.activeItem.value.payment_method || 'Bank Transfer' }}</span>
                                 </div>
                                 <div>
+                                    <span class="text-slate-400 font-medium block">Submitted At</span>
+                                    <span class="font-semibold text-slate-800">{{ formatDateTime(proofModal.activeItem.value.paid_at || proofModal.activeItem.value.created_at) }}</span>
+                                </div>
+                                <div v-if="proofModal.activeItem.value.verified_at">
+                                    <span class="text-slate-400 font-medium block">Approved At</span>
+                                    <span class="font-bold text-emerald-700">{{ formatDateTime(proofModal.activeItem.value.verified_at) }}</span>
+                                </div>
+                                <div v-if="proofModal.activeItem.value.verifier">
+                                    <span class="text-slate-400 font-medium block">Verified By</span>
+                                    <span class="font-semibold text-slate-800">{{ proofModal.activeItem.value.verifier.name }}</span>
+                                </div>
+                                <div>
                                     <span class="text-slate-400 font-medium block">Status</span>
                                     <span :class="[
-                                        'inline-flex items-center rounded px-2 py-0.5 text-xs font-bold capitalize mt-0.5 border',
-                                        proofModal.activeItem.value.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                        proofModal.activeItem.value.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold capitalize mt-0.5 border',
+                                        getBadgeClass(proofModal.activeItem.value.status === 'pending' ? 'waiting_verification' : (proofModal.activeItem.value.status === 'verified' ? 'paid' : proofModal.activeItem.value.status))
                                     ]">
-                                        {{ proofModal.activeItem.value.status }}
+                                        {{ proofModal.activeItem.value.status === 'pending' ? 'Waiting Verification' : (proofModal.activeItem.value.status === 'verified' ? 'Paid ✓' : 'Rejected') }}
                                     </span>
                                 </div>
 

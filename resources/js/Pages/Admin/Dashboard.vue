@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { formatStorageUrl } from '@/Utils/formatters';
 import { formatRupiah } from '@/Composables/useFormatRupiah';
+import AnimatedCounter from '@/Components/UI/AnimatedCounter.vue';
 
 const props = defineProps({
     selectedConference: Object,
@@ -53,44 +54,47 @@ function changeConference(e) {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
                     <!-- Total Invoiced Amount (Seluruh Peserta Mendaftar) -->
-                    <div class="rounded-2xl border border-purple-200/80 bg-purple-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-purple-300">
+                    <div class="animate-fade-in-up animation-delay-100 rounded-2xl border border-purple-200/80 bg-purple-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-purple-300">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Total Tagihan Peserta Mendaftar</span>
                             <span class="text-[10px] font-bold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-full">All Regs</span>
                         </div>
                         <p class="text-2xl font-black text-purple-950 mt-2">
-                            {{ formatRupiah(props.stats?.total_invoiced_idr || 0) }}
+                            <AnimatedCounter :value="props.stats?.total_invoiced_idr || 0" prefix="Rp " />
                         </p>
                         <span class="text-[11px] font-semibold text-slate-500 mt-2 block">
-                            Dari {{ props.stats?.total_registrations || 0 }} peserta mendaftar
+                            Dari <strong class="text-slate-700">{{ props.stats?.total_registrations || 0 }}</strong> peserta mendaftar
                         </span>
                     </div>
 
                     <!-- Verified Received Money (Sudah Lunas) -->
-                    <div class="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-emerald-300">
+                    <div class="animate-fade-in-up animation-delay-200 rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-emerald-300">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Uang Masuk (Lunas & Terverifikasi)</span>
                             <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">Verified</span>
                         </div>
                         <p class="text-2xl font-black text-emerald-950 mt-2">
-                            {{ formatRupiah(props.stats?.verified_revenue_idr) }}
+                            <AnimatedCounter :value="props.stats?.verified_revenue_idr || 0" prefix="Rp " />
                         </p>
                         <span class="text-[11px] font-semibold text-emerald-700 mt-2 block">
-                            {{ props.stats?.verified_payments || 0 }} transaksi telah lunas
+                            <strong class="text-emerald-800">{{ props.stats?.verified_payments || 0 }}</strong> transaksi telah lunas
                         </span>
                     </div>
 
                     <!-- Unpaid / Pending Balance (Belum Dibayar / Verifikasi) -->
-                    <div class="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-300">
+                    <div class="animate-fade-in-up animation-delay-300 rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-300">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Sisa Tagihan (Belum Lunas)</span>
-                            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">Pending</span>
+                            <span class="relative flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                                <span>Pending</span>
+                            </span>
                         </div>
                         <p class="text-2xl font-black text-amber-950 mt-2">
-                            {{ formatRupiah(props.stats?.unpaid_revenue_idr) }}
+                            <AnimatedCounter :value="props.stats?.unpaid_revenue_idr || 0" prefix="Rp " />
                         </p>
                         <span class="text-[11px] font-semibold text-amber-800 mt-1.5 block">
-                            {{ props.stats?.pending_payments || 0 }} invoice belum diverifikasi
+                            <strong class="text-amber-900">{{ props.stats?.pending_payments || 0 }}</strong> invoice belum diverifikasi
                         </span>
                     </div>
                 </div>
@@ -99,49 +103,57 @@ function changeConference(e) {
             <!-- Submissions & Participants Metrics Grid (4 Cards) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Card 1: Participants -->
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+                <div class="animate-fade-in-up animation-delay-100 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-purple-200">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Participants</span>
                         <span class="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-100">Users</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold text-slate-900">{{ props.stats?.total_participants || 0 }}</span>
+                        <span class="text-xl font-bold text-slate-900">
+                            <AnimatedCounter :value="props.stats?.total_participants || 0" />
+                        </span>
                         <span class="text-xs text-slate-500 font-semibold">{{ props.stats?.total_registrations || 0 }} Regs</span>
                     </div>
                 </div>
 
                 <!-- Card 2: Abstract Submissions -->
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+                <div class="animate-fade-in-up animation-delay-200 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-indigo-200">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Abstracts</span>
                         <span class="rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 border border-indigo-100">Phase 1</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold text-slate-900">{{ props.stats?.total_abstracts || 0 }}</span>
+                        <span class="text-xl font-bold text-slate-900">
+                            <AnimatedCounter :value="props.stats?.total_abstracts || 0" />
+                        </span>
                         <span class="text-xs font-bold text-emerald-700">{{ props.stats?.accepted_abstracts || 0 }} Accepted</span>
                     </div>
                 </div>
 
                 <!-- Card 3: Full Papers -->
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+                <div class="animate-fade-in-up animation-delay-300 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-200">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Full Papers</span>
                         <span class="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-100">Phase 2</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold text-slate-900">{{ props.stats?.total_full_papers || 0 }}</span>
+                        <span class="text-xl font-bold text-slate-900">
+                            <AnimatedCounter :value="props.stats?.total_full_papers || 0" />
+                        </span>
                         <span class="text-xs font-bold text-emerald-700">{{ props.stats?.accepted_papers || 0 }} Accepted</span>
                     </div>
                 </div>
 
                 <!-- Card 4: Active Scientific Tracks -->
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-2">
+                <div class="animate-fade-in-up animation-delay-400 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-amber-200">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Scientific Tracks</span>
                         <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">Topics</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold text-slate-900">{{ props.trackCategories ? props.trackCategories.length : 0 }}</span>
+                        <span class="text-xl font-bold text-slate-900">
+                            <AnimatedCounter :value="props.trackCategories ? props.trackCategories.length : 0" />
+                        </span>
                         <span class="text-xs text-slate-500 font-semibold">Active Categories</span>
                     </div>
                 </div>
@@ -175,7 +187,12 @@ function changeConference(e) {
                                         No recent registration invoices found.
                                     </td>
                                 </tr>
-                                <tr v-for="reg in props.recentRegistrations" :key="reg.id" class="hover:bg-slate-50/50 transition">
+                                <tr
+                                    v-for="(reg, index) in props.recentRegistrations"
+                                    :key="reg.id"
+                                    class="table-row-stagger hover:bg-slate-50/50 transition"
+                                    :style="{ animationDelay: `${Math.min(index * 90 + 200, 900)}ms` }"
+                                >
                                     <td class="px-5 py-3.5">
                                         <p class="font-bold text-purple-900 text-xs">{{ reg.invoice_number }}</p>
                                     </td>
@@ -184,20 +201,21 @@ function changeConference(e) {
                                         <p class="text-[11px] text-slate-400">{{ reg.user?.email }}</p>
                                     </td>
                                     <td class="px-5 py-3.5 text-xs font-semibold text-slate-700">
-                                        {{ reg.registration_type?.name }}
+                                        {{ reg.registration_fee?.name || reg.registrationFee?.name || 'Standard Registration' }}
                                     </td>
                                     <td class="px-5 py-3.5 text-xs font-bold text-slate-900">
                                         {{ reg.currency }} {{ Number(reg.amount).toLocaleString() }}
                                     </td>
                                     <td class="px-5 py-3.5 text-right">
                                         <span :class="[
-                                            'inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border',
-                                            reg.payment?.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                            reg.payment?.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                                            'bg-amber-50 text-amber-700 border-amber-200'
-                                        ]">
-                                            {{ reg.payment?.status || 'Unpaid' }}
-                                        </span>
+                                             'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border',
+                                             reg.payment?.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                             reg.payment?.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                                             'bg-amber-50 text-amber-700 border-amber-200'
+                                         ]">
+                                             <span v-if="reg.payment?.status !== 'verified' && reg.payment?.status !== 'rejected'" class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                                             <span>{{ reg.payment?.status || 'Unpaid' }}</span>
+                                         </span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -220,9 +238,10 @@ function changeConference(e) {
                         </div>
 
                         <div
-                            v-for="track in props.trackCategories"
+                            v-for="(track, index) in props.trackCategories"
                             :key="track.id"
-                            class="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition"
+                            class="table-row-stagger flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition hover:-translate-y-0.5 shadow-2xs"
+                            :style="{ animationDelay: `${Math.min(index * 110 + 250, 900)}ms` }"
                         >
                             <div>
                                 <span class="inline-block rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-800 mb-0.5">

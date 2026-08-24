@@ -351,7 +351,7 @@
                     <!-- CTA Button -->
                     <div class="btn-container">
                         <a href="{{ url('/my/registration') }}" class="btn btn-green">
-                            View Registration & Portal →
+                            View Registration & Portal 
                         </a>
                     </div>
                 @elseif($status === 'under_review')
@@ -427,7 +427,7 @@
                     <!-- CTA Button -->
                     <div class="btn-container">
                         <a href="{{ url('/my/registration') }}" class="btn">
-                            Upload Payment Proof & View Invoice →
+                            Upload Payment Proof & View Invoice 
                         </a>
                     </div>
                 @endif

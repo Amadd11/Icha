@@ -19,9 +19,31 @@ class SubmissionController extends Controller
         protected SubmissionService $submissionService
     ) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
-        $data = $this->submissionService->getSubmissionData($request->user());
+        $user = $request->user();
+        $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
+        
+        $registration = \App\Models\Registration::with(['registrationFee', 'payment'])
+            ->where('user_id', $user->id)
+            ->where('conference_id', $activeConference?->id)
+            ->latest()
+            ->first();
+
+        if (!$registration) {
+            return redirect()->route('participant.registration.create')->with('error', 'Please complete your conference registration with a Presenter package to access the Submission portal.');
+        }
+
+        if ($registration->registrationFee && $registration->registrationFee->type === 'non_presenter') {
+            return redirect()->route('dashboard')->with('error', 'The Call for Papers / Submission portal is exclusively available for Presenter ticket holders.');
+        }
+
+        $isPaid = ($registration->status === 'paid' || $registration->payment?->status === 'verified');
+        if (!$isPaid) {
+            return redirect()->route('participant.registration.create')->with('error', 'Please complete and verify your Presenter registration payment to access the Submission portal.');
+        }
+
+        $data = $this->submissionService->getSubmissionData($user);
 
         return Inertia::render('Participant/Submission/Index', $data);
     }

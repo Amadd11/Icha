@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\{
 use App\Http\Controllers\Participant\{
     CertificateController,
     DashboardController,
+    ProfileController as ParticipantProfileController,
     RegistrationController,
     SubmissionController,
 };
@@ -67,14 +68,14 @@ Route::get('/sitemap.xml', function () {
 })->name('sitemap');
 
 // Authenticated participant routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
     Route::prefix('my')->name('participant.')->group(function () {
-        Route::get('/profile', [ProfileController::class, 'edit'])
+        Route::get('/profile', [ParticipantProfileController::class, 'edit'])
             ->name('profile.edit');
-        Route::put('/profile', [ProfileController::class, 'update'])
+        Route::put('/profile', [ParticipantProfileController::class, 'update'])
             ->name('profile.update');
 
         Route::get('/registration', [RegistrationController::class, 'create'])

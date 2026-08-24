@@ -13,7 +13,7 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Card 1: Email Support -->
-                <div class="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-xs hover:shadow-md transition text-center space-y-4">
+                <div class="fade-in stagger-1 rounded-3xl border border-slate-200/80 bg-white p-7 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-purple-200 transition-all duration-300 text-center space-y-4">
                     <div class="w-12 h-12 rounded-2xl bg-purple-50 text-primary flex items-center justify-center mx-auto font-bold">
                         <span class="material-symbols-outlined text-[24px]">mail</span>
                     </div>
@@ -27,7 +27,7 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
                 </div>
 
                 <!-- Card 2: WhatsApp Hotline -->
-                <div class="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-xs hover:shadow-md transition text-center space-y-4">
+                <div class="fade-in stagger-2 rounded-3xl border border-slate-200/80 bg-white p-7 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-emerald-200 transition-all duration-300 text-center space-y-4">
                     <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto font-bold">
                         <span class="material-symbols-outlined text-[24px]">chat</span>
                     </div>
@@ -44,7 +44,7 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
                 </div>
 
                 <!-- Card 3: Organizer & Host -->
-                <div class="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-xs hover:shadow-md transition text-center space-y-4">
+                <div class="fade-in stagger-3 rounded-3xl border border-slate-200/80 bg-white p-7 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-amber-200 transition-all duration-300 text-center space-y-4">
                     <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto font-bold">
                         <span class="material-symbols-outlined text-[24px]">account_balance</span>
                     </div>

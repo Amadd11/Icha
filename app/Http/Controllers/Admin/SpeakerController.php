@@ -36,7 +36,7 @@ class SpeakerController extends Controller
         return redirect()->route('admin.speakers.index');
     }
 
-    public function store(StoreSpeakerRequest $request)
+    public function store(StoreSpeakerRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -56,7 +56,7 @@ class SpeakerController extends Controller
         return redirect()->route('admin.speakers.index');
     }
 
-    public function update(UpdateSpeakerRequest $request, Speaker $speaker)
+    public function update(UpdateSpeakerRequest $request, Speaker $speaker): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -74,7 +74,7 @@ class SpeakerController extends Controller
             ->with('success', 'Speaker updated successfully.');
     }
 
-    public function destroy(Speaker $speaker)
+    public function destroy(Speaker $speaker): RedirectResponse
     {
         if ($speaker->photo) {
             Storage::disk('public')->delete($speaker->photo);

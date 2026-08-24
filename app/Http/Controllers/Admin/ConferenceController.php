@@ -34,7 +34,7 @@ class ConferenceController extends Controller
         ]);
     }
 
-    public function store(StoreConferenceRequest $request)
+    public function store(StoreConferenceRequest $request): RedirectResponse
     {
         if ($request->user()->role !== 'super_admin') {
             abort(403, 'Only Super Admin can create new conference editions.');
@@ -94,7 +94,7 @@ class ConferenceController extends Controller
         ]);
     }
 
-    public function update(UpdateConferenceRequest $request, Conference $conference)
+    public function update(UpdateConferenceRequest $request, Conference $conference): RedirectResponse
     {
         $data = $request->validated();
 
@@ -197,7 +197,7 @@ class ConferenceController extends Controller
             ->with('success', 'Conference updated successfully.');
     }
 
-    public function destroy(Request $request, Conference $conference)
+    public function destroy(Request $request, Conference $conference): RedirectResponse
     {
         if ($request->user()->role !== 'super_admin') {
             abort(403, 'Only Super Admin can delete conference editions.');

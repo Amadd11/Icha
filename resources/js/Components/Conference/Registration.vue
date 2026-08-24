@@ -70,7 +70,8 @@ const pricingData = computed(() => {
                 <div 
                     v-for="(group, index) in pricingData" 
                     :key="index"
-                    class="overflow-hidden rounded-3xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between"
+                    class="fade-in overflow-hidden rounded-3xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:border-gold/50"
+                    :class="`stagger-${index + 1}`"
                 >
                     <!-- Card Header -->
                     <div :class="['bg-gradient-to-r p-6 text-white flex items-center justify-between', group.colorClass]">
@@ -114,7 +115,7 @@ const pricingData = computed(() => {
             <div class="mt-14 text-center">
                 <a
                     href="/register"
-                    class="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold to-gold-dark px-8 py-4 text-sm font-bold uppercase tracking-widest text-sidebar shadow-lg shadow-gold/30 transition-transform hover:scale-105"
+                    class="btn-shimmer inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold to-gold-dark px-8 py-4 text-sm font-bold uppercase tracking-widest text-sidebar shadow-lg shadow-gold/30 transition-transform hover:scale-105"
                 >
                     Register Account Now
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>

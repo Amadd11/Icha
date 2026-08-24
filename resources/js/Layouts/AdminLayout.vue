@@ -17,6 +17,16 @@ const props = defineProps({
 const page = usePage();
 const isMobileMenuOpen = ref(false);
 const isDesktopSidebarOpen = ref(true);
+const isLogoutModalOpen = ref(false);
+
+function confirmLogout() {
+    isLogoutModalOpen.value = true;
+}
+
+function performLogout() {
+    isLogoutModalOpen.value = false;
+    router.post(route('logout'));
+}
 
 const activeConf = computed(
     () => props.selectedConference || page.props.activeConference,
@@ -137,14 +147,15 @@ function logout() {
                                 v-for="item in group.items.filter(i => !i.role || i.role === $page.props.auth.user?.role)"
                                 :key="item.name"
                                 :href="item.routeName ? route(item.routeName) : '#'"
-                                class="flex items-center rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200"
+                                class="group flex items-center justify-between rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-300 hover:translate-x-1"
                                 :class="
                                     item.routeName && route().current(item.routeName)
                                         ? 'bg-gold text-slate-950 font-bold shadow-md'
                                         : 'text-purple-100/90 hover:bg-purple-800/60 hover:text-gold'
                                 "
                             >
-                                <span class="truncate">{{ item.name }}</span>
+                                <span class="truncate transition-transform duration-200 group-hover:translate-x-0.5">{{ item.name }}</span>
+                                <span v-if="item.routeName && route().current(item.routeName)" class="text-xs text-slate-950 font-black shrink-0">●</span>
                             </Link>
                         </div>
                     </div>
@@ -163,7 +174,7 @@ function logout() {
                         </p>
                     </div>
                     <button
-                        @click="logout"
+                        @click="confirmLogout"
                         class="text-sm font-bold text-gold hover:text-yellow-300 transition shrink-0 cursor-pointer"
                     >
                         Logout
@@ -188,7 +199,7 @@ function logout() {
                     >
                     <button
                         @click="isMobileMenuOpen = false"
-                        class="text-purple-200 hover:text-white"
+                        class="text-purple-200 hover:text-white cursor-pointer"
                     >
                         ✕
                     </button>
@@ -216,6 +227,12 @@ function logout() {
                         </div>
                     </div>
                 </nav>
+                <button
+                    @click="confirmLogout"
+                    class="mt-auto block w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-gold hover:bg-purple-900/40 cursor-pointer"
+                >
+                    Logout
+                </button>
             </div>
         </div>
 
@@ -229,14 +246,14 @@ function logout() {
                     <!-- Mobile Hamburger -->
                     <button
                         @click="isMobileMenuOpen = true"
-                        class="md:hidden text-slate-700 font-bold text-lg hover:text-purple-600 transition"
+                        class="md:hidden text-slate-700 font-bold text-lg hover:text-purple-600 transition cursor-pointer"
                     >
                         ☰
                     </button>
                     <!-- Desktop Sidebar Toggle -->
                     <button
                         @click="isDesktopSidebarOpen = !isDesktopSidebarOpen"
-                        class="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-purple-600 transition"
+                        class="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-purple-600 transition cursor-pointer"
                         title="Toggle Sidebar"
                     >
                         <svg v-if="isDesktopSidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -284,6 +301,44 @@ function logout() {
             <main class="flex-1 p-6">
                 <slot />
             </main>
+        </div>
+
+        <!-- Minimalist Logout Confirmation Modal -->
+        <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 transition-all">
+            <div class="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4 animate-fade-in-scale">
+                <div class="flex items-center gap-3.5">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Sign Out Confirmation</h3>
+                        <p class="text-xs text-slate-500">Are you sure you want to log out?</p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    You will be signed out of your administrator panel session.
+                </p>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                        type="button"
+                        @click="isLogoutModalOpen = false"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="performLogout"
+                        class="rounded-xl bg-primary hover:bg-purple-900 text-white px-4 py-2 text-xs font-bold transition cursor-pointer shadow-xs"
+                    >
+                        Yes, Log Out
+                    </button>
+                </div>
+            </div>
         </div>
 
         <ToastNotification />

@@ -39,6 +39,15 @@ const abstractList = computed(() => {
 const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
 const isAssignModalOpen = ref(false);
+const activeDropdownId = ref(null);
+
+function toggleDropdown(id) {
+    activeDropdownId.value = activeDropdownId.value === id ? null : id;
+}
+
+function closeDropdown() {
+    activeDropdownId.value = null;
+}
 
 const reviewForm = useForm({
     status: 'accepted',
@@ -121,11 +130,15 @@ function deleteAbstract(item) {
 
 function getReviewStats(item) {
     let completedAssignments = [];
+    let totalAssignments = 0;
+    let roundNumber = 1;
 
     if (item.review_rounds && item.review_rounds.length > 0) {
         // Look at the latest round
         const latestRound = item.review_rounds[item.review_rounds.length - 1];
+        roundNumber = latestRound.round_number || item.review_rounds.length;
         if (latestRound && latestRound.assignments) {
+            totalAssignments = latestRound.assignments.length;
             latestRound.assignments.forEach(a => {
                 if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
                     completedAssignments.push(a);
@@ -135,8 +148,9 @@ function getReviewStats(item) {
     }
 
     return {
+        roundNumber: roundNumber,
         completedCount: completedAssignments.length,
-        totalCount: 3, // Exactly 3 reviewers required per abstract workflow
+        totalCount: totalAssignments > 0 ? totalAssignments : 3,
         reviews: completedAssignments,
     };
 }
@@ -146,7 +160,7 @@ function getReviewStats(item) {
     <Head title="Abstract Submissions - Admin" />
 
     <AdminLayout>
-        <div class="space-y-6">
+        <div class="space-y-6" @click="closeDropdown">
             
             <!-- Header Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -158,7 +172,7 @@ function getReviewStats(item) {
                 <!-- Status Filter Pills -->
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                     <button
-                        v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
+                        v-for="s in ['all', 'under_review', 'revision_required', 'accepted', 'rejected']"
                         :key="s"
                         @click="filters.status = s; applyFilter()"
                         :class="[
@@ -182,7 +196,7 @@ function getReviewStats(item) {
                                 <th scope="col" class="px-5 py-3">Track</th>
                                 <th scope="col" class="px-5 py-3">Review Progress</th>
                                 <th scope="col" class="px-5 py-3">Status</th>
-                                <th scope="col" class="px-5 py-3 text-right">Actions</th>
+                                <th scope="col" class="px-5 py-3 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -218,13 +232,18 @@ function getReviewStats(item) {
                                 <!-- Review Progress Column -->
                                 <td class="px-5 py-3.5">
                                     <div class="space-y-1">
-                                        <span :class="[
-                                            'inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold border',
-                                            getReviewStats(item).completedCount >= getReviewStats(item).totalCount && getReviewStats(item).completedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                            getReviewStats(item).completedCount > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                                        ]">
-                                            {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).totalCount }} Reviewed
-                                        </span>
+                                        <div class="flex items-center gap-1.5">
+                                            <span :class="[
+                                                'inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold border',
+                                                getReviewStats(item).completedCount >= getReviewStats(item).totalCount && getReviewStats(item).completedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                getReviewStats(item).completedCount > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+                                            ]">
+                                                {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).totalCount }} Reviewed
+                                            </span>
+                                            <span v-if="getReviewStats(item).roundNumber > 1" class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-1.5 py-0.5">
+                                                R{{ getReviewStats(item).roundNumber }} (Revision)
+                                            </span>
+                                        </div>
                                         <p class="text-[10px] text-slate-400">
                                             Assigned Reviewers: {{ getReviewStats(item).totalCount }}
                                         </p>
@@ -241,37 +260,57 @@ function getReviewStats(item) {
                                     </span>
                                 </td>
 
-                                <!-- Actions -->
-                                <td class="px-5 py-3.5 text-right">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <a
-                                            v-if="item.file_path"
-                                            :href="formatStorageUrl(item.file_path)"
-                                            target="_blank"
-                                            class="inline-flex items-center px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold text-xs hover:bg-slate-50 transition"
-                                        >
-                                            File
-                                        </a>
-                                        <button
-                                            @click="openAssignModal(item)"
-                                            class="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-xs transition cursor-pointer"
-                                            title="Assign Reviewers"
-                                        >
-                                            Assign
-                                        </button>
+                                <!-- Simplified Action Column -->
+                                <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                    <div class="relative inline-flex items-center justify-end gap-1.5" @click.stop>
+                                        <!-- Primary Decision Button -->
                                         <button
                                             @click="openReviewModal(item)"
-                                            class="px-3 py-1 rounded-lg bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer"
+                                            class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 font-bold text-xs transition cursor-pointer shadow-2xs"
                                         >
                                             Decision
                                         </button>
+
+                                        <!-- More Actions Dropdown Toggle -->
                                         <button
-                                            @click="deleteAbstract(item)"
-                                            class="px-2 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs transition cursor-pointer"
-                                            title="Delete Abstract"
+                                            @click="toggleDropdown(item.id)"
+                                            class="inline-flex items-center justify-center h-7 w-7 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer shadow-2xs"
+                                            title="More Actions"
                                         >
-                                            <span class="material-symbols-outlined text-[14px] block">delete</span>
+                                            <span class="material-symbols-outlined text-[18px]">more_vert</span>
                                         </button>
+
+                                        <!-- Dropdown Menu -->
+                                        <div
+                                            v-if="activeDropdownId === item.id"
+                                            class="absolute right-0 top-9 z-40 w-44 rounded-2xl bg-white p-1.5 shadow-xl border border-slate-200 text-left text-xs space-y-1 animate-fade-in-scale"
+                                        >
+                                            <button
+                                                @click="openAssignModal(item); closeDropdown();"
+                                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 font-semibold cursor-pointer"
+                                            >
+                                                <span>👥 Assign Reviewers</span>
+                                            </button>
+
+                                            <a
+                                                v-if="item.file_path"
+                                                :href="formatStorageUrl(item.file_path)"
+                                                target="_blank"
+                                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 font-semibold cursor-pointer"
+                                                @click="closeDropdown"
+                                            >
+                                                <span>📄 View PDF File</span>
+                                            </a>
+
+                                            <div class="border-t border-slate-100 my-1"></div>
+
+                                            <button
+                                                @click="deleteAbstract(item); closeDropdown();"
+                                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 font-semibold cursor-pointer"
+                                            >
+                                                <span>🗑️ Delete Abstract</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

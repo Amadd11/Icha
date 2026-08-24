@@ -35,12 +35,13 @@ const props = defineProps({
             <div v-if="props.sponsors && props.sponsors.length" class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 <component
                     :is="sponsor.website ? 'a' : 'div'"
-                    v-for="sponsor in props.sponsors"
+                    v-for="(sponsor, index) in props.sponsors"
                     :key="sponsor.id"
                     :href="sponsor.website || undefined"
                     :target="sponsor.website ? '_blank' : undefined"
                     :rel="sponsor.website ? 'noopener noreferrer' : undefined"
-                    class="group flex items-center gap-5 rounded-3xl border border-slate-200/90 bg-white p-5 md:p-6 shadow-xs transition duration-200 hover:-translate-y-1 hover:border-gold hover:shadow-xl"
+                    class="fade-in group flex items-center gap-5 rounded-3xl border border-slate-200/90 bg-white p-5 md:p-6 shadow-xs transition duration-200 hover:-translate-y-1 hover:border-gold hover:shadow-xl"
+                    :class="`stagger-${(index % 3) + 1}`"
                 >
                     <!-- Large Logo Box -->
                     <div class="h-20 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-50 border border-slate-100 p-2.5 flex items-center justify-center shadow-2xs">

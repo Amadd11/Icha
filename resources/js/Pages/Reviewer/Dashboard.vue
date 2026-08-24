@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import ReviewerLayout from '@/Layouts/ReviewerLayout.vue';
 import { formatStorageUrl } from '@/Utils/formatters';
+import AnimatedCounter from '@/Components/UI/AnimatedCounter.vue';
 
 const props = defineProps({
     stats: Object,
@@ -75,31 +76,43 @@ function submitReview() {
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 animate-fade-in-scale">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
             
             <!-- Total Assigned -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-purple-300">
+            <div class="animate-fade-in-up animation-delay-100 bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-purple-300">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Assigned</span>
                 <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-black text-slate-900">{{ stats?.total_assigned ?? 0 }}</span>
+                    <span class="text-3xl font-black text-slate-900">
+                        <AnimatedCounter :value="stats?.total_assigned ?? 0" />
+                    </span>
                     <span class="text-xs font-bold text-primary">Submissions</span>
                 </div>
             </div>
 
             <!-- Pending -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-amber-300">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Review</span>
+            <div class="animate-fade-in-up animation-delay-200 bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-amber-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Review</span>
+                    <span v-if="(stats?.pending_reviews ?? 0) > 0" class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                    </span>
+                </div>
                 <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-black text-amber-600">{{ stats?.pending_reviews ?? 0 }}</span>
+                    <span class="text-3xl font-black text-amber-600">
+                        <AnimatedCounter :value="stats?.pending_reviews ?? 0" />
+                    </span>
                     <span class="text-xs font-bold text-amber-600">Requires Action</span>
                 </div>
             </div>
 
             <!-- Completed -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300">
+            <div class="animate-fade-in-up animation-delay-300 bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Completed</span>
                 <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-extrabold text-emerald-600">{{ stats?.completed_reviews ?? 0 }}</span>
+                    <span class="text-3xl font-extrabold text-emerald-600">
+                        <AnimatedCounter :value="stats?.completed_reviews ?? 0" />
+                    </span>
                     <span class="text-xs font-semibold text-emerald-600">Scored</span>
                 </div>
             </div>
@@ -134,7 +147,12 @@ function submitReview() {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <tr v-for="assignment in assignmentList" :key="assignment.id" class="hover:bg-slate-50/50 transition">
+                        <tr
+                            v-for="(assignment, index) in assignmentList"
+                            :key="assignment.id"
+                            class="table-row-stagger hover:bg-slate-50/50 transition"
+                            :style="{ animationDelay: `${Math.min(index * 90 + 200, 900)}ms` }"
+                        >
                             <td class="px-5 py-3.5">
                                 <div class="font-mono text-xs font-bold text-purple-900">{{ getSubmission(assignment).abstract_code }}</div>
                                 <div class="text-[10px] text-purple-600 font-semibold mt-0.5">{{ getSubmission(assignment).category?.name || 'Scientific Track' }}</div>

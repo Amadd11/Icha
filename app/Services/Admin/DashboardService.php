@@ -111,7 +111,11 @@ class DashboardService
 
         // Recent Registrations
         $recentRegistrations = (clone $registrationQuery)
-            ->with(['user:id,name,email', 'registrationFee:id,name', 'payment:id,registration_id,status,amount,currency'])
+            ->with([
+                'user:id,name,email',
+                'registrationFee:id,name',
+                'payment:id,registration_id,status,amount,currency,paid_at,verified_at,created_at'
+            ])
             ->latest()
             ->take(6)
             ->get();
@@ -128,7 +132,7 @@ class DashboardService
 
         $deadlines = $timelineRecords->map(fn($t) => [
             'label'  => $t->title,
-            'date'   => $t->period || $t->date,
+            'date'   => $t->period ?? $t->date,
             'status' => $t->is_completed ? 'Completed' : 'Active',
         ]);
 

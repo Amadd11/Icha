@@ -27,10 +27,23 @@ class CertificateController extends Controller
         $search = $request->input('search');
         $statusFilter = $request->input('status'); // 'all', 'uploaded', 'not_uploaded'
 
-        // Retrieve participants registered for this conference
-        $registrationsQuery = Registration::with(['user.profile', 'registrationFee', 'payment'])
-            ->where('conference_id', $selectedConferenceId);
+        // Base Query: ONLY paid/verified participants for this conference
+        $baseQuery = Registration::with(['user.profile', 'registrationFee', 'payment'])
+            ->where('conference_id', $selectedConferenceId)
+            ->where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhereHas('payment', fn($pq) => $pq->where('status', 'verified'));
+            });
 
+        // Compute global stats for this conference (independent of pagination & search)
+        $totalPaid = (clone $baseQuery)->count();
+        $uploadedCount = (clone $baseQuery)
+            ->whereHas('user.certificates', fn($cq) => $cq->where('conference_id', $selectedConferenceId)->whereNotNull('file_path'))
+            ->count();
+        $pendingCount = max(0, $totalPaid - $uploadedCount);
+
+        // Apply search
+        $registrationsQuery = clone $baseQuery;
         if ($search) {
             $registrationsQuery->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -38,27 +51,33 @@ class CertificateController extends Controller
             });
         }
 
-        $registrations = $registrationsQuery->latest()->get();
+        // Apply status filter
+        if ($statusFilter === 'uploaded') {
+            $registrationsQuery->whereHas('user.certificates', fn($cq) => $cq->where('conference_id', $selectedConferenceId)->whereNotNull('file_path'));
+        } elseif ($statusFilter === 'not_uploaded') {
+            $registrationsQuery->whereDoesntHave('user.certificates', fn($cq) => $cq->where('conference_id', $selectedConferenceId)->whereNotNull('file_path'));
+        }
 
-        // Retrieve existing certificates for this conference
-        $certificates = Certificate::with('user')
-            ->where('conference_id', $selectedConferenceId)
+        $registrations = $registrationsQuery->latest()->paginate(15)->withQueryString();
+
+        // Retrieve existing certificates for the current page users
+        $userIds = $registrations->pluck('user_id')->filter()->unique();
+        $certificates = Certificate::where('conference_id', $selectedConferenceId)
+            ->whereIn('user_id', $userIds)
             ->get()
             ->groupBy('user_id');
 
-        // Combine into unified participant rows
-        $participantsList = $registrations->map(function ($reg) use ($certificates) {
-            if (!$reg->user) return null;
-
-            $userId = $reg->user->id;
+        // Transform paginated items
+        $participants = $registrations->through(function ($reg) use ($certificates) {
+            $userId = $reg->user_id;
             $userCerts = $certificates->get($userId, collect());
             $cert = $userCerts->first();
 
             return [
                 'user_id'              => $userId,
-                'name'                 => $reg->user->name,
-                'email'                => $reg->user->email,
-                'institution'          => $reg->user->profile?->institution ?? '-',
+                'name'                 => $reg->user?->name ?? 'Participant',
+                'email'                => $reg->user?->email ?? '-',
+                'institution'          => $reg->user?->profile?->institution ?? '-',
                 'registration_id'      => $reg->id,
                 'invoice_number'       => $reg->invoice_number,
                 'registration_package' => $reg->registrationFee?->name ?? 'Participant',
@@ -72,39 +91,22 @@ class CertificateController extends Controller
                     'issued_at'          => $cert->issued_at?->format('d M Y H:i'),
                 ] : null,
             ];
-        })->filter()->values();
-
-        // Apply status filters
-        if ($statusFilter === 'uploaded') {
-            $participantsList = $participantsList->filter(function ($p) {
-                return !empty($p['certificate']['file_path']);
-            })->values();
-        } elseif ($statusFilter === 'not_uploaded') {
-            $participantsList = $participantsList->filter(function ($p) {
-                return empty($p['certificate']['file_path']);
-            })->values();
-        }
+        });
 
         return Inertia::render('Admin/Certificates/Index', [
             'conferences'          => $conferences,
             'selectedConferenceId' => (int) $selectedConferenceId,
             'selectedConference'   => $selectedConference,
-            'participants'         => $participantsList,
+            'participants'         => $participants,
             'filters'              => [
                 'search'        => $search,
                 'status'        => $statusFilter ?? 'all',
                 'conference_id' => (int) $selectedConferenceId,
             ],
             'stats' => [
-                'total_participants' => $registrations->count(),
-                'uploaded_count'     => $registrations->filter(function ($r) use ($certificates) {
-                    $userCerts = $certificates->get($r->user_id);
-                    return $userCerts && !empty($userCerts->first()?->file_path);
-                })->count(),
-                'pending_count'      => $registrations->filter(function ($r) use ($certificates) {
-                    $userCerts = $certificates->get($r->user_id);
-                    return !$userCerts || empty($userCerts->first()?->file_path);
-                })->count(),
+                'total_participants' => $totalPaid,
+                'uploaded_count'     => $uploadedCount,
+                'pending_count'      => $pendingCount,
             ]
         ]);
     }

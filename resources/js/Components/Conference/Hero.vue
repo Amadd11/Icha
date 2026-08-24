@@ -68,10 +68,10 @@ onUnmounted(() => {
         <!-- Clean Layered Gradient Background -->
         <div class="absolute inset-0 bg-gradient-to-b from-[#160c2d] via-[#241747] to-[#160c2d] pointer-events-none"></div>
 
-        <!-- Premium Subtle Micro-Dot Matrix with Radial Vignette Fade -->
+        <!-- Enhanced Distinct Micro-Dot Matrix Pattern -->
         <div 
-            class="absolute inset-0 pointer-events-none opacity-20"
-            style="background-image: radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px); background-size: 28px 28px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 80%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 80%);"
+            class="absolute inset-0 pointer-events-none opacity-45"
+            style="background-image: radial-gradient(rgba(255, 255, 255, 0.45) 1.5px, transparent 1.5px); background-size: 24px 24px; mask-image: radial-gradient(ellipse 85% 75% at 50% 40%, #000 40%, transparent 95%); -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 40%, #000 40%, transparent 95%);"
         ></div>
 
         <!-- Refined Soft Atmospheric Lightings -->
@@ -79,34 +79,34 @@ onUnmounted(() => {
         <div class="pointer-events-none absolute top-1/3 left-10 h-[300px] w-[300px] rounded-full bg-amber-400/10 blur-[90px]"></div>
         <div class="pointer-events-none absolute bottom-10 right-10 h-[350px] w-[350px] rounded-full bg-indigo-500/10 blur-[100px]"></div>
 
-        <!-- Left Column (Content) -->
+        <!-- Left Column (Content) with Staggered Fade-in Animation -->
         <div class="relative z-10 flex w-full lg:w-1/2 flex-col justify-center px-6 py-6 md:px-12 lg:px-16 xl:px-24">
             
-            <!-- Badge & Subtitle -->
-            <div class="mb-4 flex flex-col items-start gap-2">
+            <!-- Badge & Subtitle (Fade In 1) -->
+            <div class="mb-4 flex flex-col items-start gap-2 animate-fade-in-up delay-100 opacity-0">
                 <p class="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-gold">
                     {{ conference?.title ? '' : 'International Conference on Healthcare Administration' }}
                 </p>
             </div>
 
-            <!-- Main Title -->
-            <h1 class="mb-4 font-sans text-5xl font-extrabold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-xs">
+            <!-- Main Title (Fade In 2) -->
+            <h1 class="mb-4 font-sans text-5xl font-extrabold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-xs animate-fade-in-up delay-200 opacity-0">
                 <span class="text-gold">
                     {{ conference?.title || 'ICHA 2026' }}
                 </span>
             </h1>
 
-            <!-- Description -->
-            <p class="mb-6 text-base md:text-lg leading-relaxed text-purple-100/90 max-w-xl font-medium">
+            <!-- Description (Fade In 3) -->
+            <p class="mb-6 text-base md:text-lg leading-relaxed text-purple-100/90 max-w-xl font-medium animate-fade-in-up delay-300 opacity-0">
                 <strong class="font-bold text-white">{{ conference?.tagline || 'Musyawarah Nasional PIPMARSI' }}</strong><br />
                 <em class="not-italic opacity-90">{{ conference?.theme || 'Leading the Future of Healthcare Administration' }}</em>
             </p>
 
-            <!-- Call To Actions -->
-            <div class="mb-8 flex flex-wrap items-center gap-4">
+            <!-- Call To Actions (Fade In 4) -->
+            <div class="mb-8 flex flex-wrap items-center gap-4 animate-fade-in-up delay-450 opacity-0">
                 <a
                     href="#abstract"
-                    class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gold hover:bg-amber-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-md shadow-amber-500/15 transition-all hover:scale-103 cursor-pointer"
+                    class="btn-shimmer group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gold hover:bg-amber-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-md shadow-amber-500/15 transition-all hover:scale-103 cursor-pointer"
                 >
                     <span class="relative z-10">Submit Your Abstract</span>
                     <svg class="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -121,8 +121,8 @@ onUnmounted(() => {
                 </a>
             </div>
 
-            <!-- Info & Countdown Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-y border-purple-800/50 py-5 mb-6">
+            <!-- Info & Countdown Grid (Fade In 5) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 border-y border-purple-800/50 py-5 mb-6 animate-fade-in-up delay-600 opacity-0">
                 <!-- Quick Info -->
                 <div class="flex flex-col gap-4">
                     <div class="flex items-center gap-3">
@@ -162,8 +162,8 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- Hosted By -->
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mt-2">
+            <!-- Hosted By (Fade In 6) -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mt-2 animate-fade-in-up delay-750 opacity-0">
                 <span class="text-xs font-bold uppercase tracking-[0.2em] text-purple-300/80">Hosted by</span>
                 <div class="flex flex-wrap items-center gap-5 sm:gap-6">
                     <img src="/assets/logo/logo-pipmarsi.png" alt="PIPMARSI" class="h-10 md:h-12 lg:h-14 w-auto object-contain drop-shadow-md transition-transform hover:scale-105" />
@@ -174,8 +174,8 @@ onUnmounted(() => {
 
         </div>
 
-        <!-- Right Column (Image Carousel) -->
-        <div class="relative w-full lg:w-1/2 p-6 md:p-8 lg:p-10 flex items-center justify-center">
+        <!-- Right Column (Image Carousel) with Fade In Right Animation -->
+        <div class="relative w-full lg:w-1/2 p-6 md:p-8 lg:p-10 flex items-center justify-center animate-fade-in-right delay-200 opacity-0">
             
             <!-- Modern Large Rounded Carousel Container -->
             <div class="relative w-full max-w-xl lg:max-w-2xl xl:max-w-3xl h-[380px] sm:h-[460px] md:h-[540px] lg:h-[600px] xl:h-[650px] overflow-hidden rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border border-purple-500/30 bg-slate-900">
@@ -211,6 +211,45 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Staggered Smooth Fade In Up Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(25px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-right {
+    animation: fadeInRight 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered Timing Delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 320ms; }
+.delay-450 { animation-delay: 460ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-750 { animation-delay: 750ms; }
+
 /* Smooth fade for carousel images */
 .carousel-fade-enter-active,
 .carousel-fade-leave-active {

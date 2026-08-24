@@ -1,6 +1,6 @@
 export function useStatusBadge() {
     const badgeStyles = {
-        // Success states
+        // Success states (Green / Emerald)
         paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         verified: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -9,21 +9,22 @@ export function useStatusBadge() {
         completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         active: 'bg-emerald-100 text-emerald-800 border-emerald-200',
 
-        // Pending / Info states
-        pending: 'bg-blue-100 text-blue-800 border-blue-200',
+        // Waiting Verification / Review states (Blue)
         waiting_verification: 'bg-blue-100 text-blue-800 border-blue-200',
+        waiting: 'bg-blue-100 text-blue-800 border-blue-200',
         under_review: 'bg-blue-100 text-blue-800 border-blue-200',
         in_review: 'bg-blue-100 text-blue-800 border-blue-200',
         submitted: 'bg-blue-100 text-blue-800 border-blue-200',
 
-        // Warning / Revision states
+        // Warning / Unpaid / Revision states (Amber)
         unpaid: 'bg-amber-100 text-amber-800 border-amber-200',
+        pending: 'bg-amber-100 text-amber-800 border-amber-200',
         minor_revision: 'bg-amber-100 text-amber-800 border-amber-200',
         major_revision: 'bg-amber-100 text-amber-800 border-amber-200',
         revision_required: 'bg-amber-100 text-amber-800 border-amber-200',
         draft: 'bg-slate-100 text-slate-700 border-slate-200',
 
-        // Danger / Rejected states
+        // Danger / Rejected states (Rose)
         rejected: 'bg-rose-100 text-rose-800 border-rose-200',
         declined: 'bg-rose-100 text-rose-800 border-rose-200',
         cancelled: 'bg-rose-100 text-rose-800 border-rose-200',
@@ -38,9 +39,11 @@ export function useStatusBadge() {
 
     const statusLabels = {
         paid: 'Paid ✓',
-        verified: 'Verified ✓',
+        verified: 'Paid ✓',
         waiting_verification: 'Waiting Verification',
+        waiting: 'Waiting Verification',
         unpaid: 'Unpaid',
+        pending: 'Pending',
         under_review: 'Under Review',
         accepted: 'Accepted',
         rejected: 'Rejected',

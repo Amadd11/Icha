@@ -2,6 +2,8 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { formatDateTime } from '@/Utils/formatters';
+import { formatRupiah } from '@/Composables/useFormatRupiah';
 
 const props = defineProps({
     registration: Object,
@@ -20,6 +22,10 @@ function sendInvoiceEmail() {
             }
         });
     }
+}
+
+function printInvoice() {
+    window.print();
 }
 
 function formatStorageUrl(path) {
@@ -43,7 +49,18 @@ function isPdf(path) {
                 <h1 class="text-xl font-bold text-slate-900">Registration Detail</h1>
                 <p class="text-xs text-slate-500">Invoice: {{ registration.invoice_number }}</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Print Invoice Button -->
+                <button
+                    type="button"
+                    @click="printInvoice"
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 transition cursor-pointer shadow-2xs"
+                >
+                    <span>🖨️</span>
+                    <span>Print Invoice</span>
+                </button>
+
+                <!-- Send Email Button -->
                 <button
                     @click="sendInvoiceEmail"
                     :disabled="sendingInvoice"
@@ -52,6 +69,7 @@ function isPdf(path) {
                     <span>📧</span>
                     <span>{{ sendingInvoice ? 'Sending...' : 'Send / Resend Invoice Email' }}</span>
                 </button>
+
                 <Link
                     :href="route('admin.registrations.index')"
                     class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
@@ -67,11 +85,11 @@ function isPdf(path) {
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                     <div>
                         <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Invoice</span>
-                        <h2 class="text-lg font-bold text-primary">{{ registration.invoice_number }}</h2>
+                        <h2 class="text-lg font-bold text-primary font-mono">{{ registration.invoice_number }}</h2>
                     </div>
                     <span :class="[
                         'rounded-full px-3 py-1 text-xs font-bold uppercase',
-                        registration.status === 'verified' ? 'bg-green-100 text-green-700' :
+                        registration.status === 'verified' || registration.status === 'paid' ? 'bg-green-100 text-green-700' :
                         registration.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                     ]">
                         {{ registration.status }}
@@ -84,23 +102,25 @@ function isPdf(path) {
                         <p class="font-bold text-slate-800">{{ registration.user?.name }}</p>
                         <p class="text-slate-500">{{ registration.user?.email }}</p>
                         <p class="text-slate-500">Institution: {{ registration.user?.profile?.institution ?? '—' }}</p>
+                        <p class="text-slate-400 text-xs mt-2">Registered At: <span class="font-mono text-slate-700">{{ formatDateTime(registration.created_at) }}</span></p>
                     </div>
                     <div>
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Registration Fee Package</h3>
                         <p class="font-bold text-slate-800">{{ registration.registration_fee?.name || registration.registration_type?.name }}</p>
-                        <p class="text-slate-500">Rate: {{ registration.is_early_bird ? 'Early Bird' : 'Regular' }}</p>
-                        <p class="mt-2 text-lg font-extrabold text-primary">{{ registration.currency }} {{ Number(registration.amount).toLocaleString() }}</p>
+                        <p class="mt-2 text-lg font-extrabold text-primary">{{ formatRupiah(registration.amount) }}</p>
                     </div>
                 </div>
             </div>
 
             <!-- Payment Proof Info Card -->
             <div v-if="registration.payment" class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Payment Proof</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Payment & Verification Details</h3>
                 <div class="flex flex-wrap items-center justify-between gap-4">
-                    <div>
+                    <div class="space-y-1 text-xs">
                         <p class="text-sm font-semibold text-slate-800">Method: {{ registration.payment.payment_method || 'Bank Transfer' }}</p>
-                        <p class="text-xs text-slate-400">Paid at: {{ registration.payment.paid_at ?? '—' }}</p>
+                        <p class="text-slate-600">Submitted at: <span class="font-mono font-bold">{{ formatDateTime(registration.payment.paid_at || registration.payment.created_at) }}</span></p>
+                        <p v-if="registration.payment.verified_at" class="text-emerald-700 font-bold">Approved at: <span class="font-mono">{{ formatDateTime(registration.payment.verified_at) }}</span></p>
+                        <p v-if="registration.payment.verifier" class="text-emerald-800 text-[11px]">Verified by: <strong>{{ registration.payment.verifier.name }}</strong></p>
                     </div>
                     <button
                         @click="proofModalOpen = true"
@@ -120,7 +140,7 @@ function isPdf(path) {
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="text-base font-black text-slate-900">Payment Proof Inspection</h3>
-                            <span class="rounded-md bg-purple-100 px-2 py-0.5 text-xs font-extrabold text-purple-800">
+                            <span class="rounded-md bg-purple-100 px-2 py-0.5 text-xs font-extrabold text-purple-800 font-mono">
                                 {{ registration.invoice_number }}
                             </span>
                         </div>
@@ -150,33 +170,41 @@ function isPdf(path) {
                         </template>
                     </div>
 
-                    <!-- Right: Info Details (1 col) -->
+                    <!-- Right: Info Details & Actions (1 col) -->
                     <div class="md:col-span-1 flex flex-col justify-between space-y-4">
                         <div class="space-y-4">
                             <div class="rounded-2xl bg-purple-50/60 border border-purple-100 p-4">
                                 <p class="text-[10px] font-black uppercase tracking-wider text-purple-900/70">Total Amount</p>
-                                <p class="text-2xl font-black text-purple-950 mt-1">{{ registration.currency }} {{ Number(registration.amount).toLocaleString() }}</p>
+                                <p class="text-xl font-black text-purple-950 mt-1">{{ formatRupiah(registration.amount) }}</p>
                             </div>
 
                             <div class="space-y-2 text-xs">
                                 <div>
                                     <span class="text-slate-400 font-medium block">Registration Type</span>
-                                    <span class="font-extrabold text-slate-800">{{ registration.registration_type?.name }}</span>
+                                    <span class="font-extrabold text-slate-800">{{ registration.registration_fee?.name || registration.registrationFee?.name || 'Standard Registration' }}</span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 font-medium block">Payment Method</span>
                                     <span class="font-extrabold text-slate-800 uppercase">{{ registration.payment.payment_method || 'Bank Transfer' }}</span>
                                 </div>
                                 <div>
-                                    <span class="text-slate-400 font-medium block">Paid At</span>
-                                    <span class="font-extrabold text-slate-800">{{ registration.payment.paid_at ?? '—' }}</span>
+                                    <span class="text-slate-400 font-medium block">Submitted At</span>
+                                    <span class="font-semibold text-slate-800">{{ formatDateTime(registration.payment.paid_at || registration.payment.created_at) }}</span>
+                                </div>
+                                <div v-if="registration.payment.verified_at">
+                                    <span class="text-slate-400 font-medium block">Approved At</span>
+                                    <span class="font-bold text-emerald-700">{{ formatDateTime(registration.payment.verified_at) }}</span>
+                                </div>
+                                <div v-if="registration.payment.verifier">
+                                    <span class="text-slate-400 font-medium block">Verified By</span>
+                                    <span class="font-semibold text-slate-800">{{ registration.payment.verifier.name }}</span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 font-medium block">Current Status</span>
                                     <span :class="[
-                                        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold capitalize mt-0.5',
-                                        registration.payment.status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
-                                        registration.payment.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                                        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold capitalize mt-0.5 border',
+                                        registration.payment.status === 'verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                        registration.payment.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                                     ]">
                                         {{ registration.payment.status }}
                                     </span>

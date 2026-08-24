@@ -18,9 +18,15 @@ class RegistrationController extends Controller
         $status = $request->query('status');
         $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
 
-        $registrations = Registration::with(['user.profile', 'registrationFee', 'payment'])
+        $registrations = Registration::with(['user.profile', 'registrationFee', 'payment.verifier', 'conference'])
             ->when($confId, fn($q) => $q->where('conference_id', $confId))
-            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($status, function ($q, $status) {
+                if ($status === 'unpaid' || $status === 'pending') {
+                    $q->whereIn('status', ['pending', 'unpaid']);
+                } else {
+                    $q->where('status', $status);
+                }
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -33,7 +39,7 @@ class RegistrationController extends Controller
 
     public function show(Registration $registration): Response
     {
-        $registration->load(['user.profile', 'registrationFee', 'payment.verifier']);
+        $registration->load(['user.profile', 'registrationFee', 'payment.verifier', 'conference']);
 
         return Inertia::render('Admin/Registrations/Show', [
             'registration' => $registration,

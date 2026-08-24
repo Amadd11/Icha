@@ -47,7 +47,7 @@ class TimelineController extends Controller
         return redirect()->route('admin.timelines.index');
     }
 
-    public function update(UpdateTimelineRequest $request, Timeline $timeline)
+    public function update(UpdateTimelineRequest $request, Timeline $timeline): RedirectResponse
     {
         $timeline->update($request->validated());
 
@@ -55,7 +55,7 @@ class TimelineController extends Controller
             ->with('success', 'Timeline item updated successfully.');
     }
 
-    public function destroy(Timeline $timeline)
+    public function destroy(Timeline $timeline): RedirectResponse
     {
         $timeline->delete();
 

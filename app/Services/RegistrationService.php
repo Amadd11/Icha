@@ -20,18 +20,35 @@ class RegistrationService
         $registration = DB::transaction(function () use ($user, $data) {
             $fee = RegistrationFee::findOrFail($data['registration_fee_id']);
             $conference = Conference::active()->first() ?? Conference::first();
+            $confId = $conference?->id ?? 1;
 
             $amount = $fee->price;
 
-            // Generate Short Invoice Number (INV-001, INV-002, ...)
-            $nextInvNum = Registration::count() + 1;
-            $invoiceNumber = 'INV-' . str_pad($nextInvNum, 3, '0', STR_PAD_LEFT);
+            // Check if user already registered for this conference (idempotent / double-submit guard)
+            $existing = Registration::where('user_id', $user->id)
+                ->where('conference_id', $confId)
+                ->first();
+
+            if ($existing) {
+                if ($existing->status === 'pending' || $existing->status === 'unpaid') {
+                    $existing->update([
+                        'registration_fee_id' => $fee->id,
+                        'amount'              => $amount,
+                        'notes'               => $data['notes'] ?? $existing->notes,
+                    ]);
+                }
+                return $existing;
+            }
+
+            // Generate Short Collision-Proof Invoice Number (INV-001, INV-002, ...)
+            $maxId = (Registration::withTrashed()->max('id') ?? 0) + 1;
+            $invoiceNumber = 'INV-' . str_pad($maxId, 3, '0', STR_PAD_LEFT);
 
             // Create Registration Record
             return Registration::create([
                 'invoice_number'      => $invoiceNumber,
                 'user_id'             => $user->id,
-                'conference_id'       => $conference?->id ?? 1,
+                'conference_id'       => $confId,
                 'registration_fee_id' => $fee->id,
                 'is_early_bird'       => false,
                 'currency'            => 'IDR',

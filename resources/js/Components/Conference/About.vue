@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import SectionHeading from "@/Components/UI/SectionHeading.vue";
+import AnimatedCounter from "@/Components/UI/AnimatedCounter.vue";
 
 const props = defineProps({
     conference: {
@@ -102,12 +103,13 @@ const posterUrl = computed(() => {
                     <!-- Display Stats Grid -->
                     <div v-if="displayStats && displayStats.length > 0" class="pt-2 grid grid-cols-2 gap-5 sm:grid-cols-3">
                         <div
-                            v-for="item in displayStats"
+                            v-for="(item, idx) in displayStats"
                             :key="item.label"
-                            class="fade-in rounded-2xl bg-white p-5 text-center shadow-xs border border-slate-200/80"
+                            class="fade-in rounded-2xl bg-white p-5 text-center shadow-xs border border-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gold/60"
+                            :class="`stagger-${idx + 1}`"
                         >
                             <div class="text-3xl font-black text-primary">
-                                {{ item.value }}
+                                <AnimatedCounter :value="item.value" />
                             </div>
                             <div class="mt-1 text-xs font-semibold text-slate-500">
                                 {{ item.label }}

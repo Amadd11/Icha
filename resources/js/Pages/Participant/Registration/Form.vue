@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import { useClipboard } from '@/Composables/useClipboard';
+import { formatDateTime } from '@/Utils/formatters';
 
 const props = defineProps({
     activeConference: Object,
@@ -25,9 +26,6 @@ const regForm = useForm({
     notes:               '',
 });
 
-const selectedFee = computed(() => {
-    return props.registrationFees?.find(t => t.id === regForm.registration_fee_id);
-});
 
 function submitRegistration() {
     regForm.post(route('participant.registration.store'), {
@@ -134,10 +132,10 @@ function isPdf(path) {
                                 v-for="fee in registrationFees"
                                 :key="fee.id"
                                 :class="[
-                                    'relative flex cursor-pointer flex-col rounded-xl border p-4 transition',
+                                    'relative flex cursor-pointer flex-col rounded-xl border p-4 transition-all duration-300 transform',
                                     regForm.registration_fee_id === fee.id
-                                        ? 'border-purple-600 bg-purple-50/60 ring-2 ring-purple-600/20'
-                                        : 'border-slate-200 bg-white hover:bg-slate-50/50'
+                                        ? 'border-purple-600 bg-purple-50/70 shadow-md ring-2 ring-purple-600/30 scale-[1.02] -translate-y-0.5'
+                                        : 'border-slate-200 bg-white hover:bg-slate-50/80 hover:border-purple-200 hover:-translate-y-0.5'
                                 ]"
                             >
                                 <input
@@ -149,52 +147,82 @@ function isPdf(path) {
                                 />
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs font-bold text-slate-900">{{ fee.name }}</span>
-                                    <span
-                                        :class="[
-                                            'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-                                            fee.mode === 'offline' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
-                                        ]"
-                                    >
-                                        {{ fee.mode }}
-                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span
+                                            :class="[
+                                                'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+                                                fee.mode === 'offline' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
+                                            ]"
+                                        >
+                                            {{ fee.mode }}
+                                        </span>
+                                        <span v-if="regForm.registration_fee_id === fee.id" class="rounded-full bg-purple-700 text-gold text-[10px] font-black px-1.5 py-0.2 animate-fade-in-scale">
+                                            ✓
+                                        </span>
+                                    </div>
                                 </div>
                                 <p class="text-sm font-black text-slate-900 mt-2">
                                     Rp {{ Number(fee.price).toLocaleString('id-ID') }}
                                 </p>
+                                <p v-if="fee.description" class="text-xs text-slate-500 leading-relaxed mt-1">
+                                    {{ fee.description }}
+                                </p>
                             </label>
                         </div>
-                        <p v-if="regForm.errors.registration_fee_id" class="text-xs font-bold text-red-600 mt-1">
+
+                        <p v-if="regForm.errors.registration_fee_id" class="text-xs text-red-600 font-semibold mt-1">
                             {{ regForm.errors.registration_fee_id }}
                         </p>
                     </div>
-                    <div class="pt-3 border-t border-slate-100 flex justify-end">
-                        <button
-                            type="submit"
-                            :disabled="regForm.processing || !regForm.registration_fee_id"
-                            class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs px-6 py-2.5 transition cursor-pointer shadow-xs disabled:opacity-50"
-                        >
-                            {{ regForm.processing ? 'Registering...' : 'Register & Generate Invoice' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
 
-            <!-- STEP 2: INVOICE & PAYMENT PROOF UPLOAD (If registered) -->
+                        <!-- Notes (Optional) -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Additional Notes (Optional)</label>
+                            <textarea
+                                v-model="regForm.notes"
+                                rows="2"
+                                placeholder="Dietary requirements, special accessibility needs, or invoice notes..."
+                                class="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-3 focus:bg-white focus:border-purple-600 focus:outline-none"
+                            ></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="flex items-center justify-end pt-2">
+                            <button
+                                type="submit"
+                                :disabled="regForm.processing || !regForm.registration_fee_id"
+                                class="inline-flex items-center gap-2 rounded-2xl bg-gold hover:bg-gold-dark px-8 py-3.5 text-xs font-black text-slate-950 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span>{{ regForm.processing ? 'Generating Invoice...' : 'Generate Invoice & Continue to Payment' }}</span>
+                                <span>→</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            <!-- ========================================== -->
+            <!-- STEP 2: INVOICE & PAYMENT PROOF UPLOAD     -->
+            <!-- ========================================== -->
             <div v-else class="space-y-6">
-                <!-- Registration Summary Header Bar -->
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Invoice Number</span>
-                        <h2 class="text-xl font-black text-purple-950">{{ existingRegistration.invoice_number }}</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Package: <strong>{{ existingRegistration.registration_fee?.name || existingRegistration.registration_type?.name }}</strong></p>
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        <div class="text-right">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Payable</span>
-                            <span class="text-lg font-black text-slate-900">
-                                {{ existingRegistration.currency }} {{ Number(existingRegistration.amount).toLocaleString() }}
-                            </span>
+                <!-- Registration & Invoice Status Card -->
+                <div class="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">INVOICE NUMBER</span>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <h2 class="text-xl font-black text-purple-900 font-mono">{{ existingRegistration.invoice_number }}</h2>
+                                <button
+                                    type="button"
+                                    @click="copyItem('invoice', existingRegistration.invoice_number)"
+                                    class="inline-flex items-center gap-1 text-slate-400 hover:text-purple-800 transition cursor-pointer p-0.5"
+                                    title="Copy Invoice Number"
+                                >
+                                    <span class="material-symbols-outlined text-[16px] leading-none">
+                                        {{ copiedKey === 'invoice' ? 'check' : 'content_copy' }}
+                                    </span>
+                                    <span v-if="copiedKey === 'invoice'" class="text-emerald-600 font-bold text-[10px]">Copied!</span>
+                                </button>
+                            </div>
                         </div>
                         <span :class="[
                             'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border',
@@ -211,7 +239,7 @@ function isPdf(path) {
                 <!-- Two-Column Payment Details & Receipt Upload -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Left: Bank Transfer Details Card -->
-                    <div class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+                    <div class="rounded-3xl border border-slate-200/80 bg-white p-6 space-y-4">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3">
                             Bank Transfer Instructions
                         </h3>
@@ -245,24 +273,26 @@ function isPdf(path) {
                                 Include Invoice Number <strong>{{ existingRegistration.invoice_number }}</strong> in transfer description.
                             </p>
                         </div>
-
-                        <div class="rounded-xl bg-purple-50/50 p-3 border border-purple-100 text-[11px] text-purple-900 space-y-1">
-                            <p class="font-bold">ℹ️ Need Help?</p>
-                            <p>For payment confirmation issues, contact secretariat at <strong>{{ activeConference?.email || 'conference.icha10@gmail.com' }}</strong>.</p>
-                        </div>
                     </div>
 
                     <!-- Right: Payment Proof Upload Form -->
-                    <div class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+                    <div class="rounded-3xl border border-slate-200/80 bg-white p-6 space-y-4">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3">
                             Payment Receipt
                         </h3>
 
                         <!-- If verified -->
-                        <div v-if="payment?.status === 'verified'" class="rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-center text-xs text-emerald-800 space-y-2">
+                        <div v-if="payment?.status === 'verified'" class="rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-center text-xs text-emerald-800 space-y-2.5">
                             <div class="text-2xl">✅</div>
                             <p class="font-black text-sm text-emerald-950">Payment Verified & Approved</p>
-                            <p>Your registration is confirmed. You can now submit your abstract and attend the event.</p>
+                            
+                            <!-- Verified At Timestamp -->
+                            <div v-if="payment?.verified_at" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/90 text-emerald-900 font-bold text-[11px] border border-emerald-200">
+                                <span>🕒 Approved on:</span>
+                                <span>{{ formatDateTime(payment.verified_at) }}</span>
+                            </div>
+
+                            <p class="pt-1 text-slate-600">Your registration is confirmed. You can now submit your abstract and attend the event.</p>
                             <div v-if="payment?.proof_file" class="pt-2">
                                 <button
                                     @click="isProofModalOpen = true"
@@ -274,10 +304,17 @@ function isPdf(path) {
                         </div>
 
                         <!-- If waiting verification (already uploaded) -->
-                        <div v-else-if="(payment?.status === 'pending' || existingRegistration.status === 'waiting_verification') && !showReuploadForm" class="rounded-xl bg-blue-50 border border-blue-200 p-5 text-center text-xs text-blue-900 space-y-3">
+                        <div v-else-if="(payment?.status === 'pending' || existingRegistration.status === 'waiting_verification') && !showReuploadForm" class="rounded-xl bg-blue-50 border border-blue-200 p-5 text-center text-xs text-blue-900 space-y-2.5">
                             <div class="text-2xl">⏳</div>
                             <p class="font-black text-sm text-blue-950">Payment Proof Submitted</p>
-                            <p class="text-blue-800">
+                            
+                            <!-- Submitted At Timestamp -->
+                            <div v-if="payment?.paid_at || payment?.created_at" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/90 text-blue-900 font-bold text-[11px] border border-blue-200">
+                                <span>🕒 Submitted on:</span>
+                                <span>{{ formatDateTime(payment.paid_at || payment.created_at) }}</span>
+                            </div>
+
+                            <p class="text-blue-800 pt-1">
                                 Your payment proof is currently being verified by the committee (takes 1-2 business days).
                             </p>
                             <div class="flex items-center justify-center gap-3 pt-1">
