@@ -2,29 +2,33 @@
 
 namespace App\Helpers;
 
-use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class CodeGenerator
 {
     /**
-     * Generate sequential, collision-free code (e.g. ABS-001, FP-001, INV-001).
+     * Calculate the next sequential code, and optionally execute a creator callback while holding the atomic lock.
      * Fully compatible with MySQL, MariaDB, PostgreSQL, and SQLite.
      * Protected by atomic cache lock, SQL-injection whitelist, and database uniqueness check.
      *
-     * @param string $modelClass Eloquent Model class (e.g. AbstractSubmission::class)
+     * @template T of Model
+     * @param class-string<T> $modelClass Eloquent Model class (e.g. AbstractSubmission::class)
      * @param string $column Database column name (e.g. 'abstract_code')
      * @param string $prefix Prefix string (e.g. 'ABS', 'FP', 'INV')
      * @param int $digits Minimum number of digits (default: 3)
-     * @return string
+     * @param (callable(string): mixed)|null $callback Optional callback to execute (e.g. Model::create) while the lock is held
+     * @return mixed Returns the result of $callback if provided, otherwise the generated string code
      */
     public static function next(
         string $modelClass,
         string $column,
         string $prefix,
-        int $digits = 3
-    ): string {
+        int $digits = 3,
+        ?callable $callback = null
+    ): mixed {
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
             throw new InvalidArgumentException('Invalid column name.');
         }
@@ -39,7 +43,8 @@ class CodeGenerator
             $modelClass,
             $column,
             $prefix,
-            $digits
+            $digits,
+            $callback
         ) {
             $wrapped = DB::getQueryGrammar()->wrap($column);
             $driver = DB::getDriverName();
@@ -81,7 +86,43 @@ class CodeGenerator
                 $next++;
             } while ($checkQuery->where($column, $code)->exists());
 
+            // If a callback is provided (e.g. Model::create), execute it INSIDE the lock
+            if ($callback !== null) {
+                return $callback($code);
+            }
+
             return $code;
         });
+    }
+
+    /**
+     * Atomically generate the code AND insert the model record inside the lock.
+     * Eliminates the Time-of-Check to Time-of-Use (TOCTOU) race condition completely.
+     *
+     * @template T of Model
+     * @param class-string<T> $modelClass
+     * @param string $column
+     * @param string $prefix
+     * @param array<string, mixed> $attributes
+     * @param int $digits
+     * @return T
+     */
+    public static function create(
+        string $modelClass,
+        string $column,
+        string $prefix,
+        array $attributes,
+        int $digits = 3
+    ): Model {
+        return self::next(
+            $modelClass,
+            $column,
+            $prefix,
+            $digits,
+            function (string $code) use ($modelClass, $column, $attributes) {
+                $attributes[$column] = $code;
+                return $modelClass::create($attributes);
+            }
+        );
     }
 }

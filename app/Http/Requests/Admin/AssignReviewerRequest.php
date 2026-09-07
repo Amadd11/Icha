@@ -14,8 +14,8 @@ class AssignReviewerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reviewer_ids' => 'required|array|min:1|max:3',
-            'reviewer_ids.*' => 'exists:users,id',
+            'reviewer_ids' => 'required|array|size:3',
+            'reviewer_ids.*' => 'distinct|exists:users,id',
         ];
     }
 }

@@ -61,4 +61,21 @@ class Registration extends Model
     {
         return $this->hasOne(Payment::class);
     }
+
+    public function transitionTo(string $status): void
+    {
+        $allowed = [
+            'pending'              => ['waiting_verification', 'rejected', 'expired'],
+            'waiting_verification' => ['paid', 'rejected'],
+            'rejected'             => ['waiting_verification'],
+            'paid'                 => [],
+            'expired'              => [],
+        ];
+
+        if ($this->status !== $status && !in_array($status, $allowed[$this->status] ?? [], true)) {
+            throw new \DomainException("Invalid registration transition: {$this->status} -> {$status}");
+        }
+
+        $this->update(['status' => $status]);
+    }
 }

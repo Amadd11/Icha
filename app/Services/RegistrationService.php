@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SubmissionException;
 use App\Helpers\CodeGenerator;
 use App\Mail\InvoiceMail;
 use App\Models\Conference;
@@ -21,7 +22,17 @@ class RegistrationService
     public function createRegistration(User $user, array $data): Registration
     {
         $fee = RegistrationFee::findOrFail($data['registration_fee_id']);
-        $confId = $fee->conference_id ?: (Conference::where('is_active', true)->value('id') ?? 1);
+        $activeConference = Conference::where('is_active', true)->first();
+
+        if (!$activeConference) {
+            throw new SubmissionException('Belum ada konferensi aktif.', 422);
+        }
+
+        if (!$fee->is_active || (int) $fee->conference_id !== (int) $activeConference->id) {
+            throw new SubmissionException('Paket pendaftaran tidak valid untuk konferensi yang sedang aktif.', 422);
+        }
+
+        $confId = $activeConference->id;
 
         // Atomic lock per user per conference prevents duplicate registrations on double-click
         $registration = Cache::lock("create_registration_{$user->id}_{$confId}", 10)->block(5, function () use ($user, $data, $fee, $confId) {
@@ -48,11 +59,8 @@ class RegistrationService
                 }
 
                 // Generate sequential collision-proof Invoice Number (INV-001, INV-002, ...)
-                $invoiceNumber = CodeGenerator::next(Registration::class, 'invoice_number', 'INV');
-
-                // Create Registration Record
-                return Registration::create([
-                    'invoice_number'      => $invoiceNumber,
+                // Atomic creation inside lock eliminates TOCTOU race conditions.
+                return CodeGenerator::create(Registration::class, 'invoice_number', 'INV', [
                     'user_id'             => $user->id,
                     'conference_id'       => $confId,
                     'registration_fee_id' => $fee->id,

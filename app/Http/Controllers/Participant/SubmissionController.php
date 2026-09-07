@@ -51,24 +51,32 @@ class SubmissionController extends Controller
 
     public function storeAbstract(StoreAbstractRequest $request): RedirectResponse
     {
-        $this->submissionService->submitAbstract(
-            $request->user(),
-            $request->validated(),
-            $request->file('file')
-        );
+        try {
+            $this->submissionService->submitAbstract(
+                $request->user(),
+                $request->validated(),
+                $request->file('file')
+            );
 
-        return redirect()->back()->with('success', 'Abstract submitted successfully!');
+            return redirect()->back()->with('success', 'Abstract submitted successfully!');
+        } catch (\App\Exceptions\SubmissionException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     public function storePaper(StorePaperRequest $request): RedirectResponse
     {
-        $this->submissionService->submitPaper(
-            $request->user(),
-            $request->validated(),
-            $request->file('file')
-        );
+        try {
+            $this->submissionService->submitPaper(
+                $request->user(),
+                $request->validated(),
+                $request->file('file')
+            );
 
-        return redirect()->back()->with('success', 'Full Paper submitted successfully!');
+            return redirect()->back()->with('success', 'Full Paper submitted successfully!');
+        } catch (\App\Exceptions\SubmissionException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     public function downloadTemplate(Conference $conference, string $type)

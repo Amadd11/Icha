@@ -4,13 +4,14 @@
 ```text
 Submit Abstract
  → Admin Checking
- → Reviewer Assignment
- → 3 Reviewers
+ → Reviewer Assignment (Exact 3 Reviewers)
  → Blinded Review
- → 3 Reviews Submitted
- → Abstract Locked
- → Calculate Result
- → ORAL / POSTER
+ → Score Criteria (C1 + C2)
+ → Server-Side Recommendation (Total >= 5 Oral, < 5 Poster)
+ → 3 Reviews Completed
+ → Review Round Locked
+ → Admin Final Decision (Accepted Oral/Poster, Revision Required, Rejected)
+ → Review Round Completed
  → Notify Author
 ```
 

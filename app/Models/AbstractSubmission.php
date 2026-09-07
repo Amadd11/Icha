@@ -55,6 +55,23 @@ class AbstractSubmission extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function transitionTo(string $status): void
+    {
+        $allowed = [
+            'pending' => ['under_review'],
+            'under_review' => ['revision_required', 'accepted', 'rejected'],
+            'revision_required' => ['under_review', 'accepted', 'rejected'],
+            'accepted' => [],
+            'rejected' => [],
+        ];
+
+        if ($this->status !== $status && !in_array($status, $allowed[$this->status] ?? [], true)) {
+            throw new \DomainException("Invalid abstract transition: {$this->status} -> {$status}");
+        }
+
+        $this->update(['status' => $status]);
+    }
+
     public function fullPaper(): HasOne
     {
         return $this->hasOne(FullPaper::class, 'abstract_id');
@@ -75,7 +92,7 @@ class AbstractSubmission extends Model
                 $round->assignments()->delete();
                 $round->delete();
             });
-            
+
             if ($abstract->fullPaper) {
                 $abstract->fullPaper->delete();
             }

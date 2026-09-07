@@ -37,13 +37,13 @@ Do not use `submissions.reviewer_id`.
 One abstract review round requires three distinct reviewers.
 
 ## Review Submission
-Validate assignment ownership, profile completion, two criteria, scores 1–5, then calculate total and ORAL/POSTER on the server. Save review, update assignment and lock the round after 3 submissions inside one transaction.
+Validate assignment ownership, profile completion, two criteria, scores 1–5, then calculate total and ORAL/POSTER on the server. Save review, update assignment and lock the round after exactly 3 completed reviews inside one atomic transaction.
 
-## Blinding
-Do not send author identity to reviewer Vue pages. Backend must enforce this.
+## Admin Decision & Finalization
+Admin cannot make final decision before review round is locked with 3 completed reviews. Reviewer recommendation is advisory; Admin retains discretion to choose `accepted` (allocating Oral or Poster), `revision_required`, or `rejected`. Round transitions to `completed` upon decision.
 
-## Status
-Use `admin_checking` for admin checking and `under_review` for academic review.
+## Payment & Registration Integrity
+Verified payments are permanently frozen (immutable) against re-upload, editing, rejection, or deletion. File uploads must be checked before storage. Registrations must strictly obey `transitionTo()` state machine rules (`pending` → `waiting_verification` → `paid` / `rejected`).
 
 ## Full Paper
 Reuse the generic review architecture, but do not invent criteria until confirmed.

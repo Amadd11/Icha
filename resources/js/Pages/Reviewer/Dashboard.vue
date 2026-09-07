@@ -21,6 +21,19 @@ const form = useForm({
     summary: '',
 });
 
+const computedTotalScore = computed(() => {
+    const s1 = parseInt(form.score_criteria_1) || 0;
+    const s2 = parseInt(form.score_criteria_2) || 0;
+    return s1 + s2;
+});
+
+const computedRecommendation = computed(() => {
+    if (!form.score_criteria_1 || !form.score_criteria_2) {
+        return null;
+    }
+    return computedTotalScore.value >= 5 ? 'ORAL' : 'POSTER';
+});
+
 const assignmentList = computed(() => {
     if (Array.isArray(props.assignments)) {
         return props.assignments;
@@ -57,6 +70,10 @@ function openReviewModal(assignment) {
 function submitReview() {
     if (!activeAssignment.value) return;
     
+    if (computedRecommendation.value) {
+        form.recommendation = computedRecommendation.value;
+    }
+
     form.post(route('reviewer.assignments.review', activeAssignment.value.id), {
         preserveScroll: true,
         onSuccess: () => {
@@ -292,13 +309,19 @@ function submitReview() {
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Recommendation <span class="text-red-500">*</span></label>
-                                <select v-model="form.recommendation" class="w-full text-xs rounded-xl border border-slate-300 bg-white py-2 px-3 focus:ring-1 focus:ring-purple-700 font-bold" required :disabled="activeAssignment?.round?.status === 'locked'">
-                                    <option value="ORAL">Accept as Oral Presentation</option>
-                                    <option value="POSTER">Accept as Poster Presentation</option>
-                                    <option value="REVISION">Revision Required</option>
-                                    <option value="REJECT">Reject Submission</option>
-                                </select>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">System Recommendation (Auto-calculated)</label>
+                                <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
+                                    <div>
+                                        <div class="text-[11px] text-slate-600 font-medium">Total Score: <span class="font-bold text-slate-900">{{ computedTotalScore }}/10</span></div>
+                                        <div class="text-[10px] text-slate-400">Total &ge; 5 &rarr; Oral | Total &lt; 5 &rarr; Poster</div>
+                                    </div>
+                                    <div v-if="computedRecommendation" :class="computedRecommendation === 'ORAL' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-100 text-blue-700 border-blue-200'" class="px-3 py-1.5 rounded-lg border font-bold text-xs tracking-wider uppercase">
+                                        {{ computedRecommendation === 'ORAL' ? 'Oral Presentation' : 'Poster Presentation' }}
+                                    </div>
+                                    <div v-else class="text-xs text-slate-400 italic">
+                                        Pilih skor di atas
+                                    </div>
+                                </div>
                                 <p v-if="form.errors.recommendation" class="text-red-500 text-[10px] mt-1">{{ form.errors.recommendation }}</p>
                             </div>
 

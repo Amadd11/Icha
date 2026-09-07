@@ -28,4 +28,18 @@ class ReviewAssignment extends Model
     {
         return $this->hasOne(Review::class);
     }
+
+    public function transitionTo(string $status): void
+    {
+        $allowed = [
+            'assigned' => ['completed'],
+            'completed' => [],
+        ];
+
+        if ($this->status !== $status && !in_array($status, $allowed[$this->status] ?? [], true)) {
+            throw new \DomainException("Invalid review assignment transition: {$this->status} -> {$status}");
+        }
+
+        $this->update(['status' => $status]);
+    }
 }

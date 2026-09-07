@@ -227,19 +227,22 @@ Criteria:
 
 Jangan mengarang nama kriteria.
 
-`total_score` wajib dihitung backend:
+`total_score` dan `recommendation` wajib dihitung dan ditetapkan secara otoritatif oleh backend:
 
 ```text
-criteria_1_score + criteria_2_score
+total_score = score_criteria_1 + score_criteria_2
+
+Total >= 5  →  ORAL
+Total < 5   →  POSTER
 ```
 
-Reviewer dapat memberikan recommendation:
-```text
-oral
-poster
-```
-
-Recommendation reviewer hanya menjadi pertimbangan Admin.
+Aturan Penguncian & Keputusan Final:
+1. **Wajib tepat 3 Reviewer:** Review round hanya dapat dikunci (`locked`) jika seluruh 3 penugasan reviewer berstatus `completed`.
+2. **Keputusan Final Admin:** Admin dilarang mengambil keputusan sebelum round `locked` dengan 3 review lengkap.
+3. **Diskresi Admin:** Rekomendasi reviewer (`ORAL`/`POSTER`) bersifat saran ilmiah (advisory). Admin memegang wewenang penuh untuk memutuskan `accepted` (alokasi Oral/Poster), `revision_required`, atau `rejected`.
+4. **Penyelesaian Round:** Setelah keputusan final admin disimpan, status review round otomatis bertransisi ke `completed`.
+5. **Pembekuan Pembayaran:** Pembayaran yang berstatus `verified` dibekukan secara permanen (tidak dapat diubah, ditolak, ditimpa bukti baru, maupun dihapus).
+6. **State Machine Registrasi:** Status registrasi wajib mengikuti transisi yang sah (`pending` → `waiting_verification` → `paid` / `rejected`).
 
 ## 10. Blinded Review
 

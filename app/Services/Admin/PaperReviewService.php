@@ -5,7 +5,9 @@ namespace App\Services\Admin;
 use App\Models\Conference;
 use App\Models\FullPaper;
 use App\Models\User;
+use App\Models\ReviewRound;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 class PaperReviewService
 {
@@ -16,7 +18,14 @@ class PaperReviewService
     {
         $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
-        $query = FullPaper::with(['user', 'abstract.category', 'conference', 'reviewer'])
+        $query = FullPaper::with([
+            'user',
+            'abstract.category',
+            'conference',
+            'reviewer',
+            'reviewRounds.assignments.reviewer',
+            'reviewRounds.assignments.review',
+        ])
             ->when($confId, fn($q) => $q->where('conference_id', $confId))
             ->latest();
 
@@ -32,11 +41,43 @@ class PaperReviewService
      */
     public function reviewPaper(FullPaper $paper, User $reviewer, array $data): bool
     {
-        return $paper->update([
-            'status' => $data['status'],
+        $round = null;
+        if (in_array($data['status'], ['accepted', 'revision_required', 'rejected'], true)) {
+            $round = ReviewRound::where('submission_type', 'full_paper')
+                ->where('submission_id', $paper->id)
+                ->latest('round_number')
+                ->first();
+
+            if ($round) {
+                if (!in_array($round->status, ['locked', 'completed'], true)) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Final decision hanya dapat dibuat setelah review round selesai dan terkunci (locked).',
+                    ]);
+                }
+
+                $totalAssignments = $round->assignments()->count();
+                $completedAssignments = $round->assignments()->where('status', 'completed')->count();
+
+                if ($totalAssignments !== 3 || $completedAssignments !== 3) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
+                    ]);
+                }
+            }
+        }
+
+        $paper->transitionTo($data['status']);
+
+        $updated = $paper->update([
             'review_notes' => $data['review_notes'] ?? null,
             'reviewed_by' => $reviewer->id,
             'reviewed_at' => now(),
         ]);
+
+        if ($round && $round->status === 'locked') {
+            $round->transitionTo('completed');
+        }
+
+        return $updated;
     }
 }

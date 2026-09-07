@@ -22,6 +22,13 @@ class ReviewSubmissionController extends Controller
             abort(403, 'Unauthorized access to this assignment.');
         }
 
+        // Conflict of Interest: Author cannot review their own submission
+        $authorId = $assignment->round?->abstractSubmission?->user_id
+            ?? $assignment->round?->fullPaper?->user_id;
+        if ($authorId && $authorId === Auth::id()) {
+            abort(403, 'Conflict of interest: You cannot review your own submission.');
+        }
+
         // Check if round is already locked
         if ($assignment->round->status === 'locked' || $assignment->round->status === 'completed') {
             return redirect()->back()->withErrors(['error' => 'This review round is already locked.']);

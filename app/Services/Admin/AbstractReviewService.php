@@ -5,7 +5,9 @@ namespace App\Services\Admin;
 use App\Models\AbstractSubmission;
 use App\Models\Conference;
 use App\Models\User;
+use App\Models\ReviewRound;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 class AbstractReviewService
 {
@@ -38,6 +40,8 @@ class AbstractReviewService
      */
     public function reviewAbstract(AbstractSubmission $abstract, User $reviewer, array $data): bool
     {
+        $round = $this->assertFinalDecisionAllowed($abstract, $data['status'], $data['presentation_type'] ?? null);
+
         $updateData = [
             'status'       => $data['status'],
             'review_notes' => $data['review_notes'] ?? null,
@@ -45,10 +49,51 @@ class AbstractReviewService
             'reviewed_at'  => now(),
         ];
 
-        if ($data['status'] === 'accepted' && !empty($data['presentation_type'])) {
-            $updateData['presentation_type'] = $data['presentation_type'];
+        if ($data['status'] === 'accepted') {
+            $presentationType = !empty($data['presentation_type'])
+                ? strtolower($data['presentation_type'])
+                : ($round ? strtolower((string) $round->finalRecommendation()) : 'oral');
+            $updateData['presentation_type'] = in_array($presentationType, ['oral', 'poster'], true) ? $presentationType : 'oral';
         }
 
-        return $abstract->update($updateData);
+        $abstract->transitionTo($data['status']);
+        unset($updateData['status']);
+
+        $updated = $abstract->update($updateData);
+
+        if ($round && $round->status === 'locked') {
+            $round->transitionTo('completed');
+        }
+
+        return $updated;
+    }
+
+    private function assertFinalDecisionAllowed(AbstractSubmission $abstract, string $status, ?string $presentationType): ?ReviewRound
+    {
+        if (!in_array($status, ['accepted', 'revision_required', 'rejected'], true)) {
+            return null;
+        }
+
+        $round = ReviewRound::where('submission_type', 'abstract')
+            ->where('submission_id', $abstract->id)
+            ->latest('round_number')
+            ->first();
+
+        if (!$round || !in_array($round->status, ['locked', 'completed'], true)) {
+            throw ValidationException::withMessages([
+                'status' => 'Final decision hanya dapat dibuat setelah review round selesai dan terkunci (locked).',
+            ]);
+        }
+
+        $totalAssignments = $round->assignments()->count();
+        $completedAssignments = $round->assignments()->where('status', 'completed')->count();
+
+        if ($totalAssignments !== 3 || $completedAssignments !== 3) {
+            throw ValidationException::withMessages([
+                'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
+            ]);
+        }
+
+        return $round;
     }
 }

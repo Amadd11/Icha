@@ -443,10 +443,10 @@ function getReviewStats(item) {
                             </button>
                             <button
                                 type="submit"
-                                :disabled="assignForm.processing"
+                                :disabled="assignForm.processing || assignForm.reviewer_ids.length !== 3"
                                 class="rounded-xl bg-purple-900 hover:bg-purple-950 text-gold font-bold text-xs px-5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
                             >
-                                {{ assignForm.processing ? 'Saving...' : 'Save Assignments' }}
+                                {{ assignForm.processing ? 'Saving...' : (assignForm.reviewer_ids.length !== 3 ? 'Select exactly 3 reviewers' : 'Save Assignments') }}
                             </button>
                         </div>
                     </form>
@@ -515,9 +515,15 @@ function getReviewStats(item) {
 
                         <!-- Form -->
                         <form @submit.prevent="submitReview" class="space-y-3 border-t border-slate-100 pt-3">
+                            <!-- Warning Banner if not completed by 3 reviewers -->
+                            <div v-if="getReviewStats(activeAbstract).completedCount < 3" class="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-center gap-2">
+                                <span class="text-base">🔒</span>
+                                <span class="leading-relaxed"><strong>Decision Locked:</strong> Keputusan final hanya dapat dibuat setelah tepat 3 reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/3 review selesai).</span>
+                            </div>
+
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Decision Outcome <span class="text-red-500">*</span></label>
-                                <select v-model="reviewForm.status" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white font-bold" required>
+                                <select v-model="reviewForm.status" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white font-bold" required :disabled="getReviewStats(activeAbstract).completedCount < 3">
                                     <option value="accepted">Accepted</option>
                                     <option value="revision_required">Revision Required</option>
                                     <option value="rejected">Rejected</option>
@@ -529,11 +535,11 @@ function getReviewStats(item) {
                                 <label class="block text-xs font-bold text-purple-950">Presentation Type Allocation <span class="text-red-500">*</span></label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'oral' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
-                                        <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" />
+                                        <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="getReviewStats(activeAbstract).completedCount < 3" />
                                         <span class="text-xs">🎤 Oral Presentation</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'poster' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
-                                        <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" />
+                                        <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="getReviewStats(activeAbstract).completedCount < 3" />
                                         <span class="text-xs">🖼️ Poster Presentation</span>
                                     </label>
                                 </div>
@@ -541,7 +547,7 @@ function getReviewStats(item) {
 
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Decision Notes for Author</label>
-                                <textarea v-model="reviewForm.review_notes" rows="3" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white" placeholder="Feedback notes for the author..."></textarea>
+                                <textarea v-model="reviewForm.review_notes" rows="3" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white" placeholder="Feedback notes for the author..." :disabled="getReviewStats(activeAbstract).completedCount < 3"></textarea>
                             </div>
 
                             <div class="flex items-center justify-end gap-2 pt-2">
@@ -550,10 +556,10 @@ function getReviewStats(item) {
                                 </button>
                                 <button
                                     type="submit"
-                                    :disabled="reviewForm.processing"
+                                    :disabled="reviewForm.processing || getReviewStats(activeAbstract).completedCount < 3"
                                     class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 transition disabled:opacity-50 cursor-pointer"
                                 >
-                                    {{ reviewForm.processing ? 'Saving...' : 'Save Decision' }}
+                                    {{ reviewForm.processing ? 'Saving...' : (getReviewStats(activeAbstract).completedCount < 3 ? 'Awaiting 3 Reviews' : 'Save Decision') }}
                                 </button>
                             </div>
                         </form>

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateRegistrationFeeRequest extends FormRequest
 {
@@ -14,7 +15,10 @@ class UpdateRegistrationFeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'conference_id' => ['required', 'exists:conferences,id'],
+            'conference_id' => [
+                'required',
+                Rule::exists('conferences', 'id')->where(fn($query) => $query->where('is_active', true)),
+            ],
             'name'          => ['required', 'string', 'max:255'],
             'mode'          => ['required', 'in:offline,online'],
             'price'         => ['required', 'numeric', 'min:0'],

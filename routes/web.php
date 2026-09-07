@@ -29,12 +29,7 @@ use App\Http\Controllers\Public\ConferenceController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Reviewer\DashboardController as ReviewerDashboardController;
 use App\Http\Controllers\Reviewer\ReviewSubmissionController;
-use App\Mail\InvoiceMail;
-use App\Mail\PaymentApprovedMail;
-use App\Mail\PaymentRejectedMail;
 use App\Models\Conference;
-use App\Models\Payment;
-use App\Models\Registration;
 use Illuminate\Support\Facades\Route;
 
 
@@ -175,23 +170,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__ . '/auth.php';
-
-// Email preview routes for local testing
-Route::get('/preview-mail/invoice', function () {
-    $registration = Registration::with(['user.profile', 'conference', 'registrationFee'])->first();
-    if (!$registration) return 'No registration found in database to preview. Please seed or register a participant first.';
-    return new InvoiceMail($registration);
-});
-
-Route::get('/preview-mail/approved', function () {
-    $payment = Payment::with(['registration.user.profile', 'registration.conference', 'registration.registrationFee'])->first();
-    if (!$payment) return 'No payment found in database to preview. Please seed or register a participant first.';
-    return new PaymentApprovedMail($payment);
-});
-
-Route::get('/preview-mail/rejected', function () {
-    $payment = Payment::with(['registration.user.profile', 'registration.conference', 'registration.registrationFee'])->first();
-    if (!$payment) return 'No payment found in database to preview. Please seed or register a participant first.';
-    $payment->rejection_reason = 'Gambar bukti transfer kurang jelas / nominal transfer tidak sesuai invoice.';
-    return new PaymentRejectedMail($payment);
-});

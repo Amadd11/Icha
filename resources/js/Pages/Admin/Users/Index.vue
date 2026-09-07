@@ -5,6 +5,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
+import { useTableFilter } from '@/Composables/useTableFilter';
 import { getRoleBadgeClass as roleColor } from '@/Utils/badges';
 
 const props = defineProps({
@@ -12,6 +13,29 @@ const props = defineProps({
     filters: Object,
     roleCounts: Object,
 });
+
+const { filters, applyFilter, resetFilter, isFiltered } = useTableFilter('admin.users.index', {
+    search: props.filters?.search || '',
+    role: props.filters?.role || 'all',
+});
+
+let searchTimeout = null;
+function onSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilter();
+    }, 350);
+}
+
+function setRole(role) {
+    filters.role = role;
+    applyFilter();
+}
+
+function clearSearch() {
+    filters.search = '';
+    applyFilter();
+}
 
 const isModalOpen = ref(false);
 const editingUser = ref(null);
@@ -118,6 +142,90 @@ function formatDate(dateStr) {
                 </div>
             </div>
 
+            <!-- Role Filter Tabs -->
+            <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                <button
+                    v-for="tab in [
+                        { key: 'all', label: 'All Users', count: props.roleCounts?.all ?? 0 },
+                        { key: 'super_admin', label: 'Super Admin', count: props.roleCounts?.super_admin ?? 0 },
+                        { key: 'admin', label: 'Admin', count: props.roleCounts?.admin ?? 0 },
+                        { key: 'reviewer', label: 'Reviewer', count: props.roleCounts?.reviewer ?? 0 },
+                        { key: 'participant', label: 'Participant', count: props.roleCounts?.participant ?? 0 },
+                    ]"
+                    :key="tab.key"
+                    @click="setRole(tab.key)"
+                    :class="[
+                        'inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition cursor-pointer shrink-0',
+                        (filters.role === tab.key || (!filters.role && tab.key === 'all'))
+                            ? 'bg-primary text-white shadow-xs'
+                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ]"
+                >
+                    <span>{{ tab.label }}</span>
+                    <span
+                        :class="[
+                            'px-1.5 py-0.5 rounded-full text-[10px] font-extrabold',
+                            (filters.role === tab.key || (!filters.role && tab.key === 'all'))
+                                ? 'bg-white/20 text-white'
+                                : 'bg-slate-100 text-slate-600'
+                        ]"
+                    >
+                        {{ tab.count }}
+                    </span>
+                </button>
+            </div>
+
+            <!-- Search and Filter Control Bar -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200">
+                <div class="relative w-full sm:w-96 flex items-center">
+                    <span class="material-symbols-outlined absolute left-3.5 text-slate-400 text-[18px] pointer-events-none leading-none select-none">
+                        search
+                    </span>
+                    <input
+                        v-model="filters.search"
+                        @input="onSearchInput"
+                        @keyup.enter="applyFilter()"
+                        type="text"
+                        placeholder="Search by name, email, institution, or phone..."
+                        class="admin-input text-xs !pl-10 !pr-8 w-full"
+                    />
+                    <button
+                        v-if="filters.search"
+                        @click="clearSearch"
+                        type="button"
+                        class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                        title="Clear search"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <select
+                        v-model="filters.role"
+                        @change="applyFilter()"
+                        class="admin-input py-2 text-xs font-bold w-full sm:w-auto"
+                    >
+                        <option value="all">All Roles ({{ props.roleCounts?.all ?? 0 }})</option>
+                        <option value="super_admin">Super Admin ({{ props.roleCounts?.super_admin ?? 0 }})</option>
+                        <option value="admin">Admin ({{ props.roleCounts?.admin ?? 0 }})</option>
+                        <option value="reviewer">Reviewer ({{ props.roleCounts?.reviewer ?? 0 }})</option>
+                        <option value="participant">Participant ({{ props.roleCounts?.participant ?? 0 }})</option>
+                    </select>
+
+                    <button
+                        v-if="isFiltered"
+                        @click="resetFilter"
+                        type="button"
+                        class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer shrink-0 flex items-center gap-1"
+                        title="Reset all filters"
+                    >
+                        <span>↺</span>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Minimalist Table Card Container -->
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -138,8 +246,21 @@ function formatDate(dateStr) {
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="!props.users?.data || props.users.data.length === 0">
-                                <td colspan="5" class="px-5 py-8 text-center text-xs text-slate-400">
-                                    No users found. Click "+ Add New User" to create one.
+                                <td colspan="5" class="px-5 py-12 text-center text-xs text-slate-400">
+                                    <div class="max-w-xs mx-auto space-y-2">
+                                        <p class="font-bold text-slate-600 text-sm">No users found</p>
+                                        <p class="text-slate-400 text-xs">
+                                            {{ isFiltered ? 'No user accounts match your search query or role filter.' : 'Click "+ Add New User" to register a new account.' }}
+                                        </p>
+                                        <button
+                                            v-if="isFiltered"
+                                            @click="resetFilter"
+                                            type="button"
+                                            class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline pt-1 cursor-pointer"
+                                        >
+                                            Reset Filters
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             <tr

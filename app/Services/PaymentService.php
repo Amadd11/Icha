@@ -12,23 +12,25 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use App\Exceptions\SubmissionException;
 
 class PaymentService
 {
-    /**
-     * Submit payment proof by Registration ID.
-     */
-    public function submitProof(int $registrationId, string $paymentMethod, UploadedFile $proofFile, ?User $user = null): Payment
-    {
-        $registration = Registration::findOrFail($registrationId);
-        return $this->submitPaymentProof($registration, $paymentMethod, $proofFile);
-    }
-
     /**
      * Submit payment proof synchronously.
      */
     public function submitPaymentProof(Registration $registration, string $paymentMethod, UploadedFile $proofFile): Payment
     {
+        // Early check before uploading file to prevent orphan files on disk
+        if ($registration->status === 'paid') {
+            throw new SubmissionException('Pembayaran untuk pendaftaran ini sudah lunas dan terverifikasi.', 422);
+        }
+
+        $preCheck = Payment::where('registration_id', $registration->id)->first();
+        if ($preCheck && $preCheck->status === 'verified') {
+            throw new SubmissionException('Pembayaran yang sudah diverifikasi tidak dapat diubah.', 422);
+        }
+
         $path = null;
         try {
             return Cache::lock("submit_payment_proof_{$registration->id}", 10)->block(5, function () use ($registration, $paymentMethod, $proofFile, &$path) {
@@ -40,6 +42,10 @@ class PaymentService
                     $existingPayment = Payment::where('registration_id', $registration->id)->lockForUpdate()->first();
 
                     if ($existingPayment) {
+                        if ($existingPayment->status === 'verified') {
+                            throw new SubmissionException('Pembayaran yang sudah diverifikasi tidak dapat diubah.', 422);
+                        }
+
                         // Delete previous file from storage if replaced
                         if ($existingPayment->proof_file && $existingPayment->proof_file !== $path) {
                             Storage::disk('public')->delete($existingPayment->proof_file);
@@ -68,10 +74,8 @@ class PaymentService
                         ]);
                     }
 
-                    // Update registration status
-                    $registration->update([
-                        'status' => 'waiting_verification',
-                    ]);
+                    // Update registration status using explicit state transition
+                    $registration->transitionTo('waiting_verification');
 
                     return $payment;
                 });
@@ -98,6 +102,11 @@ class PaymentService
                 // Lock payment row to check current status
                 $lockedPayment = Payment::where('id', $payment->id)->lockForUpdate()->first();
 
+                // Verified payments are frozen and cannot be rejected or modified
+                if ($lockedPayment->status === 'verified' && $action !== 'approve') {
+                    throw new \DomainException('Pembayaran yang sudah diverifikasi dibekukan dan tidak dapat diubah atau ditolak.');
+                }
+
                 // Idempotent guard: if already in the target state, do not re-process or re-send email
                 if ($action === 'approve' && $lockedPayment->status === 'verified') {
                     $alreadyProcessed = true;
@@ -111,27 +120,23 @@ class PaymentService
                 $registration = $lockedPayment->registration;
 
                 if ($action === 'approve') {
+                    $lockedPayment->transitionTo('verified');
                     $lockedPayment->update([
-                        'status'           => 'verified',
                         'rejection_reason' => null,
                         'verified_at'      => now(),
                         'verified_by'      => $admin->id,
                     ]);
 
-                    $registration->update([
-                        'status' => 'paid',
-                    ]);
+                    $registration->transitionTo('paid');
                 } else {
+                    $lockedPayment->transitionTo('rejected');
                     $lockedPayment->update([
-                        'status'           => 'rejected',
                         'rejection_reason' => $rejectionReason,
                         'verified_at'      => now(),
                         'verified_by'      => $admin->id,
                     ]);
 
-                    $registration->update([
-                        'status' => 'rejected',
-                    ]);
+                    $registration->transitionTo('rejected');
                 }
 
                 return true;

@@ -35,6 +35,21 @@ class Payment extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Payment $payment) {
+            if ($payment->status === 'verified') {
+                throw new \DomainException('Verified payments cannot be deleted.');
+            }
+        });
+
+        static::updating(function (Payment $payment) {
+            if ($payment->getOriginal('status') === 'verified' && $payment->isDirty('status') && $payment->status !== 'verified') {
+                throw new \DomainException('Verified payment status is frozen and cannot be modified.');
+            }
+        });
+    }
+
     public function registration(): BelongsTo
     {
         return $this->belongsTo(Registration::class);
@@ -48,5 +63,20 @@ class Payment extends Model
     public function getProofUrlAttribute(): ?string
     {
         return $this->proof_file ? asset('storage/' . $this->proof_file) : null;
+    }
+
+    public function transitionTo(string $status): void
+    {
+        $allowed = [
+            'pending' => ['verified', 'rejected'],
+            'rejected' => ['pending'],
+            'verified' => [],
+        ];
+
+        if ($this->status !== $status && !in_array($status, $allowed[$this->status] ?? [], true)) {
+            throw new \DomainException("Invalid payment transition: {$this->status} -> {$status}");
+        }
+
+        $this->update(['status' => $status]);
     }
 }
