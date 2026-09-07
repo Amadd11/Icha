@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PaymentVerificationRequest;
+use App\Models\Conference;
 use App\Models\Payment;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,7 @@ class PaymentController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->query('status', 'pending');
-        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
+        $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
         $payments = Payment::with(['registration.user.profile', 'registration.registrationFee', 'verifier'])
             ->when($confId, function ($q) use ($confId) {

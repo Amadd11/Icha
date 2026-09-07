@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             ConferenceSeeder::class,
             RegistrationFeeSeeder::class,
             UserSeeder::class,
-            DummyDataSeeder::class,
         ]);
     }
 }

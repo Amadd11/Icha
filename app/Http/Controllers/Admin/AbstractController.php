@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Admin\AbstractReviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,7 +55,7 @@ class AbstractController extends Controller
     public function destroy(AbstractSubmission $abstract): RedirectResponse
     {
         if ($abstract->file_path) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($abstract->file_path);
+            Storage::disk('public')->delete($abstract->file_path);
         }
 
         $abstract->delete();

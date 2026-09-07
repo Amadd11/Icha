@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Models\Conference;
 use App\Models\FullPaper;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -13,7 +14,7 @@ class PaperReviewService
      */
     public function getPapers(?string $status = null, int $perPage = 15): LengthAwarePaginator
     {
-        $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
+        $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
         $query = FullPaper::with(['user', 'abstract.category', 'conference', 'reviewer'])
             ->when($confId, fn($q) => $q->where('conference_id', $confId))

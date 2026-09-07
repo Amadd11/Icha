@@ -248,6 +248,8 @@
         <div class="container">
             <!-- Header -->
             <div class="header">
+                <img src="{{ asset('assets/logo/logo-icha.png') }}" alt="ICHA 10th Logo" style="height: 56px; width: auto; margin-bottom: 12px; display: inline-block;">
+                <br>
                 <span class="header-badge">Official Conference Invoice</span>
                 <h1>{{ $conference->title ?? 'International Conference on Healthcare Administration (ICHA)' }}</h1>
                 <p>Registration Billing & Payment Summary</p>
@@ -376,10 +378,10 @@
                         <p style="font-size: 13px; color: #475569; margin: 0 0 10px 0;">Please transfer the exact total amount to our official committee account:</p>
                         
                         <div>
-                            <div class="bank-name">{{ $conference->bank_name ?? 'Bank Syariah Indonesia (BSI)' }}</div>
-                            <div class="acc-number">{{ $conference->bank_account_number ?? '7192837465' }}</div>
+                            <div class="bank-name">{{ $conference->bank_name ?? 'Bank JATIM' }}</div>
+                            <div class="acc-number">{{ $conference->bank_account_number ?? '0323300101' }}</div>
                             <p style="font-size: 12px; color: #475569; margin: 4px 0 0 0;">
-                                Account Name: <strong>{{ $conference->bank_account_holder ?? 'PANITIA ICHA PIPMARSI' }}</strong>
+                                Account Name: <strong>{{ $conference->bank_account_holder ?? 'MARS FK UMSURA' }}</strong>
                             </p>
                             @if(!empty($conference->bank_instructions))
                             <p style="font-size: 11px; color: #64748b; margin: 6px 0 0 0; font-style: italic;">

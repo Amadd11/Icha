@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\AbstractSubmission;
+use App\Models\Conference;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -13,7 +14,7 @@ class AbstractReviewService
      */
     public function getAbstracts(?string $status = null, int $perPage = 15): LengthAwarePaginator
     {
-        $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? \App\Models\Conference::where('is_active', true)->first()?->id;
+        $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
         $query = AbstractSubmission::with([
             'user.profile',

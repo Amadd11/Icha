@@ -7,6 +7,8 @@ use App\Models\Certificate;
 use App\Models\Conference;
 use App\Models\Registration;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class CertificateService
 {
@@ -71,24 +73,36 @@ class CertificateService
      */
     protected function issueIfNotExists(int $userId, int $conferenceId, string $type, string $roleTitle): Certificate
     {
-        $existing = Certificate::where('user_id', $userId)
-            ->where('conference_id', $conferenceId)
-            ->where('type', $type)
-            ->first();
+        return Cache::lock("issue_cert_{$userId}_{$conferenceId}_{$type}", 10)->block(5, function () use ($userId, $conferenceId, $type, $roleTitle) {
+            return DB::transaction(function () use ($userId, $conferenceId, $type, $roleTitle) {
+                $existing = Certificate::where('user_id', $userId)
+                    ->where('conference_id', $conferenceId)
+                    ->where('type', $type)
+                    ->lockForUpdate()
+                    ->first();
 
-        if ($existing) {
-            return $existing;
-        }
+                if ($existing) {
+                    return $existing;
+                }
 
-        $code = 'CERT-ICHA-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(3)));
+                $code = Cache::lock('generate_certificate_code_lock', 10)->block(5, function () use ($conferenceId) {
+                    $conf = Conference::find($conferenceId);
+                    $year = $conf?->year ?: date('Y');
+                    do {
+                        $c = "CERT-ICHA-{$year}-" . strtoupper(bin2hex(random_bytes(3)));
+                    } while (Certificate::withTrashed()->where('certificate_number', $c)->exists());
+                    return $c;
+                });
 
-        return Certificate::create([
-            'certificate_number' => $code,
-            'user_id' => $userId,
-            'conference_id' => $conferenceId,
-            'type' => $type,
-            'role_title' => $roleTitle,
-            'issued_at' => now(),
-        ]);
+                return Certificate::create([
+                    'certificate_number' => $code,
+                    'user_id'            => $userId,
+                    'conference_id'      => $conferenceId,
+                    'type'               => $type,
+                    'role_title'         => $roleTitle,
+                    'issued_at'          => now(),
+                ]);
+            });
+        });
     }
 }

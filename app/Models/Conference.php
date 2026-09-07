@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * @mixin \Illuminate\Database\Eloquent\Builder
+ */
 class Conference extends Model
 {
     use SoftDeletes;
@@ -42,7 +45,14 @@ class Conference extends Model
 
         static::saving(function ($conference) {
             if (empty($conference->slug)) {
-                $conference->slug = Str::slug($conference->title);
+                $baseSlug = Str::slug($conference->title);
+                $slug = $baseSlug;
+                $counter = 1;
+                while (static::where('slug', $slug)->where('id', '!=', $conference->id ?? 0)->exists()) {
+                    $slug = "{$baseSlug}-{$counter}";
+                    $counter++;
+                }
+                $conference->slug = $slug;
             }
 
             if ($conference->is_active) {

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Conference;
+use App\Models\Speaker;
 use App\Models\Sponsor;
 use App\Models\Timeline;
 use Illuminate\Database\Seeder;
@@ -27,9 +28,9 @@ class ConferenceSeeder extends Seeder
                 'country'     => 'Indonesia',
                 'theme'       => 'Healthcare Administration for a Sustainable Future',
                 'email'               => 'conference.icha10@gmail.com',
-                'bank_name'           => 'Bank Syariah Indonesia (BSI)',
-                'bank_account_number' => '7192837465',
-                'bank_account_holder' => 'PANITIA ICHA PIPMARSI',
+                'bank_name'           => 'Bank JATIM',
+                'bank_account_number' => '0323300101',
+                'bank_account_holder' => 'MARS FK UMSURA',
                 'bank_instructions'   => 'Mohon cantumkan Nomor Invoice pada berita/keterangan transfer saat melakukan pembayaran.',
                 'status'              => 'active',
                 'is_active'           => true,
@@ -144,7 +145,7 @@ class ConferenceSeeder extends Seeder
         ];
 
         foreach ($speakers as $sp) {
-            \App\Models\Speaker::updateOrCreate(
+            Speaker::updateOrCreate(
                 ['conference_id' => $conference->id, 'name' => $sp['name']],
                 array_merge($sp, ['conference_id' => $conference->id])
             );

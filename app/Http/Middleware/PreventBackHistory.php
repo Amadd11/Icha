@@ -11,7 +11,7 @@ class PreventBackHistory
     /**
      * Handle an incoming request to prevent browser caching of sensitive authenticated pages.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  \Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {

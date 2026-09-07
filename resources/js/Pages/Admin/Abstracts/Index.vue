@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -39,15 +39,62 @@ const abstractList = computed(() => {
 const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
 const isAssignModalOpen = ref(false);
-const activeDropdownId = ref(null);
+const lockedReviewerIds = ref([]);
+const activeDropdownItem = ref(null);
+const dropdownStyle = ref({});
 
-function toggleDropdown(id) {
-    activeDropdownId.value = activeDropdownId.value === id ? null : id;
+function toggleDropdown(item, event) {
+    if (activeDropdownItem.value?.id === item.id) {
+        closeDropdown();
+        return;
+    }
+
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    const dropdownHeight = 145;
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    
+    // Check if enough space below, otherwise open upward
+    const openUpward = spaceBelow < dropdownHeight && buttonRect.top > dropdownHeight;
+    
+    const top = openUpward 
+        ? buttonRect.top - dropdownHeight - 6 
+        : buttonRect.bottom + 6;
+        
+    const right = Math.max(16, window.innerWidth - buttonRect.right);
+
+    dropdownStyle.value = {
+        top: `${top}px`,
+        right: `${right}px`,
+        transformOrigin: openUpward ? 'bottom right' : 'top right',
+    };
+
+    activeDropdownItem.value = item;
 }
 
 function closeDropdown() {
-    activeDropdownId.value = null;
+    activeDropdownItem.value = null;
 }
+
+function isDocx(filePath) {
+    if (!filePath) return false;
+    return filePath.toLowerCase().endsWith('.docx') || filePath.toLowerCase().endsWith('.doc');
+}
+
+function handleScrollOrResize() {
+    if (activeDropdownItem.value) {
+        closeDropdown();
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScrollOrResize, true);
+    window.removeEventListener('resize', handleScrollOrResize);
+});
 
 const reviewForm = useForm({
     status: 'accepted',
@@ -69,31 +116,40 @@ function openReviewModal(item) {
 
 function openAssignModal(item) {
     activeAbstract.value = item;
+    assignForm.clearErrors();
     
-    // Find currently assigned reviewer IDs
+    // Find currently assigned reviewer IDs and locked (completed) reviewers from the latest round
     const assignedIds = [];
-    if (item.review_rounds) {
-        item.review_rounds.forEach(round => {
-            if (round.assignments) {
-                round.assignments.forEach(a => {
-                    if (a.reviewer_id) assignedIds.push(a.reviewer_id);
-                });
-            }
-        });
+    const lockedIds = [];
+    if (item.review_rounds && item.review_rounds.length > 0) {
+        const latestRound = item.review_rounds[item.review_rounds.length - 1];
+        if (latestRound && latestRound.assignments) {
+            latestRound.assignments.forEach(a => {
+                if (a.reviewer_id && !assignedIds.includes(a.reviewer_id) && assignedIds.length < 3) {
+                    assignedIds.push(a.reviewer_id);
+                    if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
+                        lockedIds.push(a.reviewer_id);
+                    }
+                }
+            });
+        }
     }
 
-    // Default to track reviewers if none assigned yet
-    if (assignedIds.length === 0 && props.reviewers) {
-        props.reviewers.forEach(r => {
-            if (r.categories?.some(c => c.id === item.category_id)) {
-                assignedIds.push(r.id);
-            }
-        });
-    }
-
+    // Notice: Admin has 100% manual control. Unassigned abstracts start with [] (0 reviewers).
+    lockedReviewerIds.value = lockedIds;
     assignForm.reviewer_ids = assignedIds;
     isAssignModalOpen.value = true;
 }
+
+const sortedReviewers = computed(() => {
+    if (!props.reviewers || !activeAbstract.value) return props.reviewers || [];
+    const catId = activeAbstract.value.category_id;
+    return [...props.reviewers].sort((a, b) => {
+        const aMatch = a.categories?.some(c => c.id === catId) ? 1 : 0;
+        const bMatch = b.categories?.some(c => c.id === catId) ? 1 : 0;
+        return bMatch - aMatch;
+    });
+});
 
 function submitReview() {
     if (!activeAbstract.value) return;
@@ -150,7 +206,7 @@ function getReviewStats(item) {
     return {
         roundNumber: roundNumber,
         completedCount: completedAssignments.length,
-        totalCount: totalAssignments > 0 ? totalAssignments : 3,
+        totalCount: totalAssignments,
         reviews: completedAssignments,
     };
 }
@@ -172,7 +228,7 @@ function getReviewStats(item) {
                 <!-- Status Filter Pills -->
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                     <button
-                        v-for="s in ['all', 'under_review', 'revision_required', 'accepted', 'rejected']"
+                        v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
                         :key="s"
                         @click="filters.status = s; applyFilter()"
                         :class="[
@@ -180,7 +236,7 @@ function getReviewStats(item) {
                             filters.status === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                         ]"
                     >
-                        {{ s.replace('_', ' ') }}
+                        {{ s === 'all' ? 'All' : s === 'pending' ? 'Pending (Unassigned)' : s.replace('_', ' ') }}
                     </button>
                 </div>
             </div>
@@ -232,7 +288,12 @@ function getReviewStats(item) {
                                 <!-- Review Progress Column -->
                                 <td class="px-5 py-3.5">
                                     <div class="space-y-1">
-                                        <div class="flex items-center gap-1.5">
+                                        <div v-if="getReviewStats(item).totalCount === 0" class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                Belum Ditugaskan (0/3)
+                                            </span>
+                                        </div>
+                                        <div v-else class="flex items-center gap-1.5">
                                             <span :class="[
                                                 'inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold border',
                                                 getReviewStats(item).completedCount >= getReviewStats(item).totalCount && getReviewStats(item).completedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -244,8 +305,11 @@ function getReviewStats(item) {
                                                 R{{ getReviewStats(item).roundNumber }} (Revision)
                                             </span>
                                         </div>
-                                        <p class="text-[10px] text-slate-400">
+                                        <p v-if="getReviewStats(item).totalCount > 0" class="text-[10px] text-slate-400">
                                             Assigned Reviewers: {{ getReviewStats(item).totalCount }}
+                                        </p>
+                                        <p v-else class="text-[10px] text-amber-600 font-medium">
+                                            Perlu ditunjuk oleh Admin
                                         </p>
                                     </div>
                                 </td>
@@ -263,8 +327,16 @@ function getReviewStats(item) {
                                 <!-- Simplified Action Column -->
                                 <td class="px-5 py-3.5 text-right whitespace-nowrap">
                                     <div class="relative inline-flex items-center justify-end gap-1.5" @click.stop>
-                                        <!-- Primary Decision Button -->
+                                        <!-- Primary Action: Assign Reviewers if unassigned, Decision if assigned -->
                                         <button
+                                            v-if="getReviewStats(item).totalCount === 0"
+                                            @click="openAssignModal(item)"
+                                            class="rounded-xl bg-purple-900 hover:bg-purple-950 text-gold px-3.5 py-1.5 font-bold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1"
+                                        >
+                                            <span>👥 Assign</span>
+                                        </button>
+                                        <button
+                                            v-else
                                             @click="openReviewModal(item)"
                                             class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 font-bold text-xs transition cursor-pointer shadow-2xs"
                                         >
@@ -273,44 +345,13 @@ function getReviewStats(item) {
 
                                         <!-- More Actions Dropdown Toggle -->
                                         <button
-                                            @click="toggleDropdown(item.id)"
+                                            @click.stop="toggleDropdown(item, $event)"
                                             class="inline-flex items-center justify-center h-7 w-7 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer shadow-2xs"
+                                            :class="{ 'bg-slate-100 text-slate-900 border-slate-300 ring-2 ring-purple-100': activeDropdownItem?.id === item.id }"
                                             title="More Actions"
                                         >
                                             <span class="material-symbols-outlined text-[18px]">more_vert</span>
                                         </button>
-
-                                        <!-- Dropdown Menu -->
-                                        <div
-                                            v-if="activeDropdownId === item.id"
-                                            class="absolute right-0 top-9 z-40 w-44 rounded-2xl bg-white p-1.5 shadow-xl border border-slate-200 text-left text-xs space-y-1 animate-fade-in-scale"
-                                        >
-                                            <button
-                                                @click="openAssignModal(item); closeDropdown();"
-                                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 font-semibold cursor-pointer"
-                                            >
-                                                <span>👥 Assign Reviewers</span>
-                                            </button>
-
-                                            <a
-                                                v-if="item.file_path"
-                                                :href="formatStorageUrl(item.file_path)"
-                                                target="_blank"
-                                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 font-semibold cursor-pointer"
-                                                @click="closeDropdown"
-                                            >
-                                                <span>📄 View PDF File</span>
-                                            </a>
-
-                                            <div class="border-t border-slate-100 my-1"></div>
-
-                                            <button
-                                                @click="deleteAbstract(item); closeDropdown();"
-                                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 font-semibold cursor-pointer"
-                                            >
-                                                <span>🗑️ Delete Abstract</span>
-                                            </button>
-                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -339,34 +380,59 @@ function getReviewStats(item) {
                     </div>
 
                     <form @submit.prevent="submitAssign" class="p-6 space-y-4">
+                        <!-- Error Alert if any -->
+                        <div v-if="assignForm.errors.reviewer_ids" class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
+                            <span class="mt-0.5">⚠️</span>
+                            <span class="font-medium leading-relaxed">{{ assignForm.errors.reviewer_ids }}</span>
+                        </div>
+
                         <div>
-                            <span class="text-xs font-bold text-slate-700 block mb-2">Select Reviewers for Track: <strong>{{ activeAbstract.category?.name || 'General' }}</strong></span>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-700 block">Select Reviewers for Track: <strong>{{ activeAbstract.category?.name || 'General' }}</strong></span>
+                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="assignForm.reviewer_ids.length >= 3 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-purple-100 text-purple-900 border border-purple-200'">
+                                    {{ assignForm.reviewer_ids.length }} / 3 Reviewer
+                                </span>
+                            </div>
                             
                             <div class="space-y-2 max-h-60 overflow-y-auto border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
                                 <label
-                                    v-for="rev in props.reviewers"
+                                    v-for="rev in sortedReviewers"
                                     :key="rev.id"
-                                    class="flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer"
-                                    :class="assignForm.reviewer_ids.includes(rev.id) ? 'bg-purple-50 border-purple-300 ring-1 ring-purple-400' : 'bg-white border-slate-200 hover:bg-slate-50'"
+                                    class="flex items-center justify-between p-2.5 rounded-xl border transition"
+                                    :class="[
+                                        lockedReviewerIds.includes(rev.id) ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-300 cursor-not-allowed' :
+                                        assignForm.reviewer_ids.includes(rev.id) ? 'bg-purple-50 border-purple-300 ring-1 ring-purple-400 cursor-pointer' : 
+                                        assignForm.reviewer_ids.length >= 3 ? 'bg-slate-100/60 border-slate-200 opacity-60 cursor-not-allowed' :
+                                        'bg-white border-slate-200 hover:bg-slate-50 cursor-pointer'
+                                    ]"
                                 >
                                     <div class="flex items-center gap-3">
                                         <input
                                             type="checkbox"
                                             :value="rev.id"
                                             v-model="assignForm.reviewer_ids"
-                                            class="rounded text-purple-700 focus:ring-purple-700"
+                                            :disabled="lockedReviewerIds.includes(rev.id) || (!assignForm.reviewer_ids.includes(rev.id) && assignForm.reviewer_ids.length >= 3)"
+                                            class="rounded text-purple-700 focus:ring-purple-700 disabled:opacity-50"
                                         />
                                         <div>
                                             <span class="text-xs font-bold text-slate-900 block">{{ rev.name }}</span>
                                             <span class="text-[10px] text-slate-400">{{ rev.email }}</span>
                                         </div>
                                     </div>
-                                    <span
-                                        v-if="rev.categories?.some(c => c.id === activeAbstract.category_id)"
-                                        class="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5"
-                                    >
-                                        Matched Track
-                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span
+                                            v-if="lockedReviewerIds.includes(rev.id)"
+                                            class="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 border border-emerald-200 flex items-center gap-1"
+                                        >
+                                            ✓ Review Completed
+                                        </span>
+                                        <span
+                                            v-if="rev.categories?.some(c => c.id === activeAbstract.category_id)"
+                                            class="rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 border border-purple-200"
+                                        >
+                                            🎯 Matched Track
+                                        </span>
+                                    </div>
                                 </label>
                             </div>
                         </div>
@@ -494,6 +560,62 @@ function getReviewStats(item) {
                     </div>
                 </div>
             </div>
+
+            <!-- Floating Dropdown Menu (Teleported to body to eliminate table clipping and scrollbar glitches) -->
+            <Teleport to="body">
+                <transition
+                    enter-active-class="transition duration-150 ease-out"
+                    enter-from-class="transform scale-95 opacity-0"
+                    enter-to-class="transform scale-100 opacity-100"
+                    leave-active-class="transition duration-100 ease-in"
+                    leave-from-class="transform scale-100 opacity-100"
+                    leave-to-class="transform scale-95 opacity-0"
+                >
+                    <div
+                        v-if="activeDropdownItem"
+                        class="fixed inset-0 z-50 bg-transparent"
+                        @click="closeDropdown"
+                    >
+                        <div
+                            :style="dropdownStyle"
+                            class="fixed w-52 rounded-2xl bg-white p-1.5 shadow-2xl border border-slate-200 text-left text-xs space-y-1"
+                            @click.stop
+                        >
+                            <button
+                                @click="openAssignModal(activeDropdownItem); closeDropdown();"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-purple-50 hover:text-purple-900 font-semibold cursor-pointer transition"
+                            >
+                                <span class="text-sm">👥</span>
+                                <span>Assign Reviewers</span>
+                            </button>
+
+                            <a
+                                v-if="activeDropdownItem.file_path"
+                                :href="formatStorageUrl(activeDropdownItem.file_path)"
+                                target="_blank"
+                                download
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-purple-50 hover:text-purple-900 font-semibold cursor-pointer transition"
+                                @click="closeDropdown"
+                            >
+                                <span class="text-sm" v-if="isDocx(activeDropdownItem.file_path)">📝</span>
+                                <span class="text-sm" v-else>📄</span>
+                                <span v-if="isDocx(activeDropdownItem.file_path)">Unduh Dokumen (.docx)</span>
+                                <span v-else>Buka / Unduh PDF</span>
+                            </a>
+
+                            <div class="border-t border-slate-100 my-1"></div>
+
+                            <button
+                                @click="deleteAbstract(activeDropdownItem); closeDropdown();"
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 font-semibold cursor-pointer transition"
+                            >
+                                <span class="text-sm">🗑️</span>
+                                <span>Delete Abstract</span>
+                            </button>
+                        </div>
+                    </div>
+                </transition>
+            </Teleport>
 
             <!-- Reusable Delete Confirmation Modal -->
             <DeleteConfirmModal

@@ -36,30 +36,6 @@ class ReviewerManagementService
 
         if (!empty($data['category_ids'])) {
             $user->categories()->sync($data['category_ids']);
-
-            // Auto-assign existing abstracts in these categories
-            $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])->get();
-            foreach ($abstracts as $abstract) {
-                $round = ReviewRound::firstOrCreate(
-                    [
-                        'submission_type' => 'abstract',
-                        'submission_id'   => $abstract->id,
-                    ],
-                    [
-                        'status' => 'pending',
-                    ]
-                );
-
-                ReviewAssignment::firstOrCreate(
-                    [
-                        'review_round_id' => $round->id,
-                        'reviewer_id'     => $user->id,
-                    ],
-                    [
-                        'status' => 'assigned',
-                    ]
-                );
-            }
         }
 
         return $user;
@@ -78,30 +54,6 @@ class ReviewerManagementService
 
         if (isset($data['category_ids'])) {
             $reviewer->categories()->sync($data['category_ids']);
-
-            // Auto-assign existing abstracts in these categories
-            $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])->get();
-            foreach ($abstracts as $abstract) {
-                $round = ReviewRound::firstOrCreate(
-                    [
-                        'submission_type' => 'abstract',
-                        'submission_id'   => $abstract->id,
-                    ],
-                    [
-                        'status' => 'pending',
-                    ]
-                );
-
-                ReviewAssignment::firstOrCreate(
-                    [
-                        'review_round_id' => $round->id,
-                        'reviewer_id'     => $reviewer->id,
-                    ],
-                    [
-                        'status' => 'assigned',
-                    ]
-                );
-            }
         } else {
             $reviewer->categories()->detach();
         }

@@ -38,7 +38,7 @@ function toggleMenu() {
 </script>
 
 <template>
-    <div class="min-h-screen bg-white text-slate-800">
+    <div class="min-h-screen bg-white text-slate-800 pt-16">
         <Navbar
             :conference="props.conference"
             :available-conferences="props.availableConferences"

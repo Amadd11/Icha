@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\StoreAbstractRequest;
 use App\Http\Requests\Participant\StorePaperRequest;
 use App\Models\Conference;
+use App\Models\Registration;
 use App\Services\Participant\SubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,8 +24,8 @@ class SubmissionController extends Controller
     {
         $user = $request->user();
         $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
-        
-        $registration = \App\Models\Registration::with(['registrationFee', 'payment'])
+
+        $registration = Registration::with(['registrationFee', 'payment'])
             ->where('user_id', $user->id)
             ->where('conference_id', $activeConference?->id)
             ->latest()

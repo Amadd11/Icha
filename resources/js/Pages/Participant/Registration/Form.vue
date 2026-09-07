@@ -38,7 +38,7 @@ const proofPreview = ref(props.payment?.proof_file ? formatStorageUrl(props.paym
 
 const paymentForm = useForm({
     registration_id: props.existingRegistration?.id || null,
-    payment_method:  props.payment?.payment_method ?? 'Bank Transfer (BSI)',
+    payment_method:  props.payment?.payment_method ?? 'Bank Transfer (Bank JATIM)',
     proof_file:      null,
 });
 
@@ -247,24 +247,24 @@ function isPdf(path) {
                         <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 space-y-2 text-xs text-slate-700">
                             <p class="font-bold text-slate-900">Please transfer the exact amount to:</p>
                             <div class="space-y-1.5 py-1">
-                                <p><span class="text-slate-400 font-sans">Bank:</span> <strong>{{ activeConference?.bank_name || 'Bank Syariah Indonesia (BSI)' }}</strong></p>
+                                <p><span class="text-slate-400 font-sans">Bank:</span> <strong>{{ activeConference?.bank_name || 'Bank JATIM' }}</strong></p>
                                 
                                 <div class="flex items-center gap-2">
-                                    <p><span class="text-slate-400 font-sans">Account No:</span> <strong class="text-purple-900 font-mono text-sm tracking-wider">{{ activeConference?.bank_account_number || '7192837465' }}</strong></p>
+                                    <p><span class="text-slate-400 font-sans">Account No:</span> <strong class="text-purple-900 font-mono text-sm tracking-wider">{{ activeConference?.bank_account_number || '0323300101' }}</strong></p>
                                     <button
                                         type="button"
-                                        @click="copyItem('bank', activeConference?.bank_account_number || '7192837465')"
+                                        @click="copyItem('bank', activeConference?.bank_account_number || '0323300101')"
                                         class="inline-flex items-center gap-1 text-slate-400 hover:text-purple-800 transition cursor-pointer p-0.5"
                                         title="Copy Account Number"
                                     >
                                         <span class="material-symbols-outlined text-[16px] leading-none">
-                                            {{ copiedKey === 'bank' ? 'check' : 'content_copy' }}
+                                             {{ copiedKey === 'bank' ? 'check' : 'content_copy' }}
                                         </span>
                                         <span v-if="copiedKey === 'bank'" class="text-emerald-600 font-bold text-[10px]">Copied!</span>
                                     </button>
                                 </div>
 
-                                <p><span class="text-slate-400 font-sans">Account Name:</span> <strong>{{ activeConference?.bank_account_holder || 'PANITIA ICHA PIPMARSI' }}</strong></p>
+                                <p><span class="text-slate-400 font-sans">Account Name:</span> <strong>{{ activeConference?.bank_account_holder || 'MARS FK UMSURA' }}</strong></p>
                             </div>
                             <p v-if="activeConference?.bank_instructions" class="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
                                 {{ activeConference.bank_instructions }}
@@ -353,6 +353,7 @@ function isPdf(path) {
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method <span class="text-red-500">*</span></label>
                                 <select v-model="paymentForm.payment_method" class="w-full text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white focus:border-purple-600">
                                     <optgroup label="Bank Transfer (Indonesia)">
+                                        <option value="Bank Transfer (Bank JATIM)">Bank JATIM</option>
                                         <option value="Bank Transfer (BSI)">Bank Syariah Indonesia (BSI)</option>
                                         <option value="Bank Transfer (Mandiri)">Bank Mandiri</option>
                                         <option value="Bank Transfer (BCA)">Bank Central Asia (BCA)</option>

@@ -49,13 +49,10 @@ class DashboardService
         $verifiedPayments    = (clone $paymentQuery)->where('status', 'verified')->count();
         $pendingPayments     = (clone $paymentQuery)->where('status', 'pending')->count();
 
-        // 💵 Total Invoiced Revenue (Daftar Tagihan dari Seluruh Peserta Mendaftar)
         $totalInvoicedIdr    = (clone $registrationQuery)->sum('amount');
 
-        // 💰 Verified Received Revenue (Total Uang Masuk yang Sudah Lunas & Terverifikasi)
         $verifiedRevenueIdr  = (clone $paymentQuery)->where('status', 'verified')->sum('amount');
 
-        // ⏳ Unpaid / Pending Revenue (Sisa Uang Tagihan Peserta yang Belum Lunas)
         $unpaidRevenueIdr    = max(0, $totalInvoicedIdr - $verifiedRevenueIdr);
 
         // Abstract Breakdown

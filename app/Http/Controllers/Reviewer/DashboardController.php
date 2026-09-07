@@ -42,6 +42,7 @@ class DashboardController extends Controller
                 ],
                 'round' => [
                     'id'              => $assignment->round?->id,
+                    'round_number'    => $assignment->round?->round_number ?? 1,
                     'submission_type' => $assignment->round?->submission_type ?? 'abstract',
                     'status'          => $assignment->round?->status ?? 'pending',
                 ],

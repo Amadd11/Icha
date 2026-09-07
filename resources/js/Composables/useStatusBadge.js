@@ -1,45 +1,45 @@
 export function useStatusBadge() {
     const badgeStyles = {
         // Success states (Green / Emerald)
-        paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        verified: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        published: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        uploaded: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        active: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        paid: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+        verified: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+        accepted: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+        published: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+        uploaded: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+        completed: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+        active: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
 
-        // Waiting Verification / Review states (Blue)
-        waiting_verification: 'bg-blue-100 text-blue-800 border-blue-200',
-        waiting: 'bg-blue-100 text-blue-800 border-blue-200',
-        under_review: 'bg-blue-100 text-blue-800 border-blue-200',
-        in_review: 'bg-blue-100 text-blue-800 border-blue-200',
-        submitted: 'bg-blue-100 text-blue-800 border-blue-200',
+        // Waiting Verification / Review states
+        waiting_verification: 'bg-amber-50 text-amber-700 border-amber-200/70',
+        waiting: 'bg-amber-50 text-amber-700 border-amber-200/70',
+        under_review: 'bg-blue-50 text-blue-700 border-blue-200/70',
+        in_review: 'bg-blue-50 text-blue-700 border-blue-200/70',
+        submitted: 'bg-sky-50 text-sky-700 border-sky-200/70',
 
-        // Warning / Unpaid / Revision states (Amber)
-        unpaid: 'bg-amber-100 text-amber-800 border-amber-200',
-        pending: 'bg-amber-100 text-amber-800 border-amber-200',
-        minor_revision: 'bg-amber-100 text-amber-800 border-amber-200',
-        major_revision: 'bg-amber-100 text-amber-800 border-amber-200',
-        revision_required: 'bg-amber-100 text-amber-800 border-amber-200',
-        draft: 'bg-slate-100 text-slate-700 border-slate-200',
+        // Warning / Unpaid / Revision states
+        unpaid: 'bg-amber-50 text-amber-700 border-amber-200/70',
+        pending: 'bg-amber-50 text-amber-700 border-amber-200/70',
+        minor_revision: 'bg-orange-50 text-orange-700 border-orange-200/70',
+        major_revision: 'bg-orange-50 text-orange-700 border-orange-200/70',
+        revision_required: 'bg-orange-50 text-orange-700 border-orange-200/70',
+        draft: 'bg-slate-50 text-slate-600 border-slate-200/70',
 
         // Danger / Rejected states (Rose)
-        rejected: 'bg-rose-100 text-rose-800 border-rose-200',
-        declined: 'bg-rose-100 text-rose-800 border-rose-200',
-        cancelled: 'bg-rose-100 text-rose-800 border-rose-200',
-        inactive: 'bg-slate-100 text-slate-600 border-slate-200',
+        rejected: 'bg-rose-50 text-rose-700 border-rose-200/70',
+        declined: 'bg-rose-50 text-rose-700 border-rose-200/70',
+        cancelled: 'bg-rose-50 text-rose-700 border-rose-200/70',
+        inactive: 'bg-slate-50 text-slate-500 border-slate-200/70',
 
         // Special roles
-        presenter: 'bg-purple-100 text-purple-800 border-purple-200',
-        author: 'bg-purple-100 text-purple-800 border-purple-200',
-        speaker: 'bg-amber-100 text-amber-900 border-amber-200',
-        participant: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        presenter: 'bg-purple-50 text-purple-700 border-purple-200/70',
+        author: 'bg-purple-50 text-purple-700 border-purple-200/70',
+        speaker: 'bg-amber-50 text-amber-800 border-amber-200/70',
+        participant: 'bg-indigo-50 text-indigo-700 border-indigo-200/70',
     };
 
     const statusLabels = {
-        paid: 'Paid ✓',
-        verified: 'Paid ✓',
+        paid: 'Paid',
+        verified: 'Paid',
         waiting_verification: 'Waiting Verification',
         waiting: 'Waiting Verification',
         unpaid: 'Unpaid',

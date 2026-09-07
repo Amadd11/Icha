@@ -154,7 +154,15 @@ function submitReview() {
                             :style="{ animationDelay: `${Math.min(index * 90 + 200, 900)}ms` }"
                         >
                             <td class="px-5 py-3.5">
-                                <div class="font-mono text-xs font-bold text-purple-900">{{ getSubmission(assignment).abstract_code }}</div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="font-mono text-xs font-bold text-purple-900">{{ getSubmission(assignment).abstract_code }}</span>
+                                    <span
+                                        v-if="(assignment.round?.round_number ?? 1) > 1"
+                                        class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200"
+                                    >
+                                        Round {{ assignment.round.round_number }} (Revision)
+                                    </span>
+                                </div>
                                 <div class="text-[10px] text-purple-600 font-semibold mt-0.5">{{ getSubmission(assignment).category?.name || 'Scientific Track' }}</div>
                             </td>
                             <td class="px-5 py-3.5 max-w-md">
@@ -192,7 +200,15 @@ function submitReview() {
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
                     <div>
-                        <span class="text-[10px] font-mono font-bold text-purple-700 uppercase">{{ activeAbstract?.abstract_code }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-mono font-bold text-purple-700 uppercase">{{ activeAbstract?.abstract_code }}</span>
+                            <span
+                                v-if="(activeAssignment?.round?.round_number ?? 1) > 1"
+                                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200"
+                            >
+                                Round {{ activeAssignment.round.round_number }}: Revised Submission
+                            </span>
+                        </div>
                         <h3 class="font-bold text-slate-900 text-sm">Blind Peer Review Form</h3>
                     </div>
                     <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
@@ -203,6 +219,11 @@ function submitReview() {
                     
                     <!-- Left: Blinded Abstract Details -->
                     <div class="space-y-4">
+                        <div v-if="(activeAssignment?.round?.round_number ?? 1) > 1" class="bg-amber-50/90 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                            <span class="font-bold">📝 Author Resubmission:</span>
+                            <p class="mt-0.5 text-[11px]">The participant has revised this abstract following reviewer feedback. Please inspect the updated abstract and attachment below.</p>
+                        </div>
+
                         <div class="bg-purple-50/70 rounded-2xl p-4 border border-purple-100">
                             <span class="text-[10px] font-bold uppercase text-purple-700 tracking-wider">Track: {{ activeAbstract?.category?.name || 'General' }}</span>
                             <h4 class="text-sm font-bold text-slate-900 mt-1 leading-snug">{{ activeAbstract?.title }}</h4>

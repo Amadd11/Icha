@@ -152,31 +152,48 @@ function isPdf(path) {
                                 </button>
                             </td>
 
-                            <!-- Submitted At & Verified At -->
-                            <td class="px-5 py-3.5 text-xs">
-                                <div class="space-y-1">
-                                    <div class="flex items-center gap-1.5 text-slate-700">
-                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">SUBMITTED</span>
-                                        <span class="font-medium text-slate-800">{{ formatDateTime(p.paid_at || p.created_at) }}</span>
-                                    </div>
-                                    <div v-if="p.status === 'verified'" class="flex items-center gap-1.5 text-emerald-700">
-                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">APPROVED</span>
-                                        <span class="font-bold">{{ formatDateTime(p.verified_at) }}</span>
-                                    </div>
-                                    <div v-else-if="p.status === 'rejected'" class="flex items-center gap-1.5 text-red-700">
-                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-red-100 text-red-800">REJECTED</span>
-                                        <span class="font-bold">{{ formatDateTime(p.verified_at) }}</span>
-                                    </div>
+                            <!-- Submitted At -->
+                            <td class="px-5 py-3.5 text-xs whitespace-nowrap">
+                                <div class="font-medium text-slate-800">
+                                    {{ formatDateTime(p.paid_at || p.created_at) }}
+                                </div>
+                                <div v-if="p.status === 'verified' && p.verified_at" class="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                                    Approved {{ formatDateTime(p.verified_at) }}
+                                </div>
+                                <div v-else-if="p.status === 'rejected' && p.verified_at" class="text-[11px] text-rose-500 font-semibold mt-0.5">
+                                    Rejected {{ formatDateTime(p.verified_at) }}
                                 </div>
                             </td>
 
-                            <!-- Status -->
-                            <td class="px-5 py-3.5">
-                                <span :class="[
-                                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold capitalize border',
-                                    getBadgeClass(p.status === 'pending' ? 'waiting_verification' : (p.status === 'verified' ? 'paid' : p.status))
-                                ]">
-                                    {{ p.status === 'pending' ? 'Waiting Verification' : (p.status === 'verified' ? 'Paid ✓' : 'Rejected') }}
+                            <!-- Status (Minimalist Redesign) -->
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <span
+                                    v-if="p.status === 'pending'"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50/90 text-amber-700 border border-amber-200/70"
+                                >
+                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    Waiting Verification
+                                </span>
+                                <span
+                                    v-else-if="p.status === 'verified'"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50/90 text-emerald-700 border border-emerald-200/70"
+                                >
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                    Paid
+                                </span>
+                                <span
+                                    v-else-if="p.status === 'rejected'"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-50/90 text-rose-700 border border-rose-200/70"
+                                >
+                                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                    Rejected
+                                </span>
+                                <span
+                                    v-else
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200"
+                                >
+                                    <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                                    {{ p.status }}
                                 </span>
                             </td>
 

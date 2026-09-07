@@ -73,7 +73,26 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="ICHA" />
+    <Head>
+        <title>{{ props.conference?.title ? `${props.conference.title} - ${props.conference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA - International Conference on Healthcare Administration' }}</title>
+        
+        <!-- Standard Meta -->
+        <meta name="description" :content="props.conference?.description || props.conference?.theme || 'The International Conference on Healthcare Administration (ICHA). Join global healthcare leaders and researchers.'" />
+        <meta name="keywords" :content="`ICHA, ${props.conference?.title || 'ICHA'}, Healthcare Administration, PIP MARSI, UMSURA, Medical Conference, Call for Papers`" />
+
+        <!-- Open Graph / WhatsApp / Facebook / LinkedIn -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" :content="props.conference?.title ? `${props.conference.title} - ${props.conference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA - International Conference on Healthcare Administration'" />
+        <meta property="og:description" :content="props.conference?.description || props.conference?.theme || 'Join the International Conference on Healthcare Administration (ICHA).'" />
+        <meta property="og:image" :content="props.conference?.logo ? '/storage/' + props.conference.logo : '/assets/logo/logo-icha.png'" />
+        <meta property="og:site_name" :content="props.conference?.title || 'ICHA Conference'" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" :content="props.conference?.title ? `${props.conference.title} - ${props.conference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA - International Conference on Healthcare Administration'" />
+        <meta name="twitter:description" :content="props.conference?.description || props.conference?.theme || 'The International Conference on Healthcare Administration (ICHA).'" />
+        <meta name="twitter:image" :content="props.conference?.logo ? '/storage/' + props.conference.logo : '/assets/logo/logo-icha.png'" />
+    </Head>
 
     <PublicLayout
         :conference="props.conference"

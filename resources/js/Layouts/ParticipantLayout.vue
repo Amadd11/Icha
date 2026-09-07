@@ -35,27 +35,17 @@ function performLogout() {
         <aside class="hidden w-80 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-4xl shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden">
             <!-- Brand Header -->
             <div class="flex h-18 items-center px-6 border-b border-purple-800/50 gap-3">
-                <Link href="/" class="flex items-center gap-3 transition hover:opacity-95">
-                    <div class="flex items-center gap-1.5 p-1 rounded-md shrink-0">
+                <Link href="/" class="flex items-center gap-3 transition hover:opacity-95 group">
+                    <div class="h-11 w-11 rounded-xl bg-white/10 p-1.5 shrink-0 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform">
                         <img
-                                src="/assets/logo/logo-pipmarsi.png"
-                                alt="PIP MARSI"
-                                class="h-8 sm:h-9 w-auto object-contain"
-                            />
-                            <img
-                                src="/assets/logo/logo-umsura.png"
-                                alt="UMSURA"
-                                class="h-8 sm:h-9 w-auto object-contain"
-                            />
-                            <img
-                                src="/assets/logo/logo-ub.png"
-                                alt="Universitas Brawijaya"
-                                class="h-8 sm:h-9 w-auto object-contain"
-                            />
+                            src="/assets/logo/logo-icha.png"
+                            alt="ICHA"
+                            class="h-full w-full object-contain drop-shadow-sm"
+                        />
                     </div>
                     <div>
-                        <span class="font-extrabold text-sm tracking-tight text-white block leading-tight">Participant Portal</span>
-                        <span class="text-[11px] text-gold font-semibold block mt-0.5">ICHA 2026</span>
+                        <span class="font-extrabold text-base tracking-tight text-white block leading-tight group-hover:text-gold transition-colors">ICHA 2026</span>
+                        <span class="text-[11px] text-purple-200/80 font-medium block mt-0.5">Participant Portal</span>
                     </div>
                 </Link>
             </div>
@@ -83,36 +73,71 @@ function performLogout() {
             </div>
         </aside>
 
-        <!-- Mobile Header Bar -->
-        <header class="h-16 bg-white border-b border-slate-200 px-5 flex items-center justify-between md:hidden sticky top-0 z-30 shadow-xs">
-            <Link href="/" class="font-bold text-slate-900 text-sm">Participant Portal</Link>
-            <button @click="isMobileOpen = !isMobileOpen" class="text-slate-700 font-bold text-lg">
-                ☰
+        <!-- Mobile Header Bar (Fixed at top) -->
+        <header class="h-16 bg-white border-b border-slate-200 px-5 flex items-center justify-between md:hidden fixed top-0 left-0 right-0 z-40 shadow-xs">
+            <Link href="/" class="flex items-center gap-2.5">
+                <div class="h-9 w-9 rounded-lg bg-sidebar p-1 shrink-0 flex items-center justify-center">
+                    <img src="/assets/logo/logo-icha.png" alt="ICHA" class="h-full w-full object-contain" />
+                </div>
+                <div>
+                    <span class="font-extrabold text-slate-900 text-sm block leading-tight">ICHA 2026</span>
+                    <span class="text-[10px] text-slate-500 font-medium block">Participant Portal</span>
+                </div>
+            </Link>
+            <button
+                @click="isMobileOpen = !isMobileOpen"
+                class="flex flex-col justify-center items-center w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer gap-1"
+                :aria-label="isMobileOpen ? 'Close menu' : 'Open menu'"
+            >
+                <span :class="['block h-0.5 w-5 bg-slate-700 transition-all duration-300', isMobileOpen ? 'rotate-45 translate-y-1.5' : '']"></span>
+                <span :class="['block h-0.5 w-5 bg-slate-700 transition-all duration-300', isMobileOpen ? 'opacity-0' : '']"></span>
+                <span :class="['block h-0.5 w-5 bg-slate-700 transition-all duration-300', isMobileOpen ? '-rotate-45 -translate-y-1.5' : '']"></span>
             </button>
         </header>
 
-        <!-- Mobile Navigation Dropdown -->
-        <div v-if="isMobileOpen" class="bg-sidebar text-white p-4 md:hidden border-b border-purple-800">
-            <nav class="space-y-1.5">
-                <Link
-                    v-for="item in navigation"
-                    :key="item.name"
-                    :href="route(item.routeName)"
-                    @click="isMobileOpen = false"
-                    class="block px-3.5 py-2.5 rounded-xl text-xs font-semibold"
-                    :class="route().current(item.routeName) ? 'bg-gold text-slate-950 font-bold' : 'text-purple-100 hover:bg-purple-800/50 hover:text-gold'"
-                >
-                    {{ item.name }}
-                </Link>
+        <!-- Mobile Navigation Drawer Overlay -->
+        <transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-2"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-2"
+        >
+            <div v-if="isMobileOpen" class="fixed top-16 inset-x-0 bottom-0 z-40 md:hidden flex flex-col">
+                <!-- Backdrop -->
+                <div class="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-xs" @click="isMobileOpen = false"></div>
 
-                <button @click="confirmLogout" class="block w-full text-left px-3.5 py-2.5 text-xs text-gold font-bold">
-                    Logout
-                </button>
-            </nav>
-        </div>
+                <!-- Menu Panel -->
+                <div class="relative bg-sidebar text-white p-5 border-b border-purple-800 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto z-10">
+                    <nav class="space-y-2">
+                        <Link
+                            v-for="item in navigation"
+                            :key="item.name"
+                            :href="route(item.routeName)"
+                            @click="isMobileOpen = false"
+                            class="block px-4 py-3 rounded-xl text-xs font-semibold transition"
+                            :class="route().current(item.routeName) ? 'bg-gold text-slate-950 font-bold shadow-sm' : 'text-purple-100 hover:bg-purple-800/50 hover:text-gold'"
+                        >
+                            {{ item.name }}
+                        </Link>
+
+                        <div class="pt-3 mt-2 border-t border-purple-800/60 flex items-center justify-between">
+                            <div class="truncate mr-3">
+                                <p class="text-xs font-bold text-white truncate">{{ $page.props.auth.user.name }}</p>
+                                <p class="text-[10px] text-purple-200 truncate">{{ $page.props.auth.user.email }}</p>
+                            </div>
+                            <button @click="confirmLogout" class="px-3 py-1.5 rounded-lg bg-gold/20 text-gold text-xs font-bold hover:bg-gold/30 transition shrink-0 cursor-pointer">
+                                Logout
+                            </button>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </transition>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col min-w-0 pt-16 md:pt-0">
             <!-- Header Bar -->
             <header class="hidden md:flex h-16 bg-white border-b border-slate-200 px-6 items-center justify-between sticky top-0 z-30 shadow-xs">
                 <div>

@@ -114,16 +114,22 @@ onMounted(() => {
         <title>{{ props.activeConference?.title ? `${props.activeConference.title} - ${props.activeConference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA 2026 - International Conference on Healthcare Administration' }}</title>
         
         <!-- Standard Meta -->
-        <meta name="description" :content="props.activeConference?.description || 'The 11th International Conference on Healthcare Administration (ICHA 2026). Join global healthcare leaders, researchers, academics, and policymakers.'" />
-        <meta name="keywords" content="ICHA 2026, International Conference on Healthcare Administration, PIP MARSI, UMSURA, Call for Papers, Healthcare Management, Hospital Administration, Surabaya Conference" />
+        <meta name="description" :content="props.activeConference?.description || props.activeConference?.theme || 'The 10th International Conference on Healthcare Administration (ICHA 2026). Join global healthcare leaders, researchers, academics, and policymakers.'" />
+        <meta name="keywords" :content="`ICHA, ${props.activeConference?.title || 'ICHA 2026'}, International Conference on Healthcare Administration, PIP MARSI, UMSURA, Call for Papers, Healthcare Management`" />
         <meta name="author" content="PIP MARSI & Universitas Muhammadiyah Surabaya" />
 
         <!-- Open Graph / WhatsApp / Facebook / LinkedIn -->
         <meta property="og:type" content="website" />
         <meta property="og:title" :content="props.activeConference?.title ? `${props.activeConference.title} - ${props.activeConference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA 2026 - International Conference on Healthcare Administration'" />
-        <meta property="og:description" :content="props.activeConference?.description || 'The 10th International Conference on Healthcare Administration (ICHA 2026). Join global healthcare leaders, researchers, academics, and policymakers.'" />
-        <meta property="og:image" content="/assets/logo/logo-umsura.png" />
-        <meta property="og:site_name" content="ICHA Conference" />
+        <meta property="og:description" :content="props.activeConference?.description || props.activeConference?.theme || 'The 10th International Conference on Healthcare Administration (ICHA 2026). Join global healthcare leaders, researchers, academics, and policymakers.'" />
+        <meta property="og:image" :content="props.activeConference?.logo ? '/storage/' + props.activeConference.logo : '/assets/logo/logo-icha.png'" />
+        <meta property="og:site_name" :content="props.activeConference?.title || 'ICHA Conference'" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" :content="props.activeConference?.title ? `${props.activeConference.title} - ${props.activeConference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA 2026 - International Conference on Healthcare Administration'" />
+        <meta name="twitter:description" :content="props.activeConference?.description || props.activeConference?.theme || 'The 10th International Conference on Healthcare Administration (ICHA 2026).'" />
+        <meta name="twitter:image" :content="props.activeConference?.logo ? '/storage/' + props.activeConference.logo : '/assets/logo/logo-icha.png'" />
 
         <!-- Google Structured Data (JSON-LD) -->
         <component :is="'script'" type="application/ld+json" v-if="jsonLd" v-html="jsonLd" />

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Participant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\ProfileUpdateRequest;
+use App\Models\Conference;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         $user = $request->user()->load(['profile', 'registrations.registrationFee', 'registrations.conference']);
-        $activeConference = \App\Models\Conference::where('is_active', true)->first() ?? \App\Models\Conference::latest()->first();
+        $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
 
         return Inertia::render('Participant/Profile/Edit', [
             'user'             => $user,

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 
@@ -25,10 +25,14 @@ const abstractForm = useForm({
     file: null,
 });
 
+const approvedAbstract = computed(() => {
+    return props.abstracts?.find(a => a.status === 'accepted') || props.abstracts?.[0] || null;
+});
+
 // Paper Form
 const paperForm = useForm({
-    title: '',
-    abstract_id: props.abstracts?.[0]?.id || '',
+    title: props.abstracts?.find(a => a.status === 'accepted')?.title || '',
+    abstract_id: props.abstracts?.find(a => a.status === 'accepted')?.id || props.abstracts?.[0]?.id || '',
     file: null,
 });
 
@@ -79,6 +83,9 @@ function cancelPaperRevision() {
 }
 
 function submitPaper() {
+    if (!paperForm.abstract_id && approvedAbstract.value) {
+        paperForm.abstract_id = approvedAbstract.value.id;
+    }
     paperForm.post(route('participant.submission.paper.store'), {
         preserveScroll: true,
         onSuccess: () => {
@@ -248,10 +255,11 @@ function downloadTemplate(type) {
                                             v-if="props.abstracts[0].file_path"
                                             :href="'/storage/' + props.abstracts[0].file_path"
                                             target="_blank"
-                                            class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                                            download
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-primary font-bold text-xs shadow-2xs transition cursor-pointer"
                                         >
-                                            <span class="material-symbols-outlined text-[16px]">description</span>
-                                            Download Current Abstract File &rarr;
+                                            <span class="material-symbols-outlined text-[16px]">download</span>
+                                            <span>Download Current Abstract</span>
                                         </a>
                                     </div>
                                 </div>
@@ -422,14 +430,14 @@ function downloadTemplate(type) {
                                         @click="startPaperRevision"
                                         class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
                                     >
-                                        Upload Revised Manuscript &rarr;
+                                        Upload Revised Paper &rarr;
                                     </button>
                                 </div>
 
                                 <!-- Submitted Paper Card -->
                                 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                                     <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Submitted Manuscript</h4>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Submitted Paper</h4>
                                         <button
                                             v-if="props.papers[0].status !== 'accepted'"
                                             @click="startPaperRevision"
@@ -468,10 +476,11 @@ function downloadTemplate(type) {
                                                 v-if="props.papers[0].file_path"
                                                 :href="'/storage/' + props.papers[0].file_path"
                                                 target="_blank"
-                                                class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                                                download
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-primary font-bold text-xs shadow-2xs transition cursor-pointer"
                                             >
-                                                <span class="material-symbols-outlined text-[16px]">description</span>
-                                                Download Current Manuscript File &rarr;
+                                                <span class="material-symbols-outlined text-[16px]">download</span>
+                                                <span>Download Current Paper</span>
                                             </a>
                                         </div>
                                     </div>
@@ -484,7 +493,7 @@ function downloadTemplate(type) {
                                 <form @submit.prevent="submitPaper" class="space-y-4">
                                     <div class="flex items-center justify-between">
                                         <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">
-                                            {{ isRevisingPaper ? '🔄 Replace / Update Manuscript File' : 'Submit Your Full Paper Here' }}
+                                            {{ isRevisingPaper ? '🔄 Replace / Update Paper' : 'Submit Your Full Paper Here' }}
                                         </h3>
                                         <button
                                             v-if="isRevisingPaper"
@@ -508,19 +517,24 @@ function downloadTemplate(type) {
                                         <span v-if="paperForm.errors.title" class="text-[10px] text-rose-500 font-bold mt-1 block">{{ paperForm.errors.title }}</span>
                                     </div>
 
-                                    <div v-if="props.abstracts?.filter(a => a.status === 'accepted').length > 0">
+                                    <div v-if="approvedAbstract">
                                         <label class="block text-xs font-bold text-slate-700 mb-1">Link to Approved Abstract</label>
-                                        <select v-model="paperForm.abstract_id" class="admin-input" required>
-                                            <option value="" disabled>Select approved abstract...</option>
-                                            <option v-for="abs in props.abstracts.filter(a => a.status === 'accepted')" :key="abs.id" :value="abs.id">
-                                                [{{ abs.abstract_code }}] {{ abs.title }} ({{ abs.presentation_type === 'poster' ? 'Poster' : 'Oral' }})
-                                            </option>
-                                        </select>
+                                        <div class="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-800">
+                                            <span class="font-mono font-bold text-primary bg-purple-100/80 border border-purple-200/80 px-2 py-0.5 rounded text-[11px] shrink-0">
+                                                {{ approvedAbstract.abstract_code }}
+                                            </span>
+                                            <span class="font-semibold text-slate-800 truncate flex-1" :title="approvedAbstract.title">
+                                                {{ approvedAbstract.title }}
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                ✓ Accepted ({{ approvedAbstract.presentation_type === 'poster' ? 'Poster' : 'Oral' }})
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1">
-                                            {{ isRevisingPaper ? 'Upload Replacement Manuscript (.doc, .docx, .pdf)' : 'Upload Full Paper File' }}
+                                            {{ isRevisingPaper ? 'Upload Replacement Paper (.doc, .docx, .pdf)' : 'Upload Full Paper File' }}
                                         </label>
                                         <input
                                             type="file"
@@ -550,7 +564,7 @@ function downloadTemplate(type) {
                                                 isRevisingPaper ? 'w-2/3' : 'w-full'
                                             ]"
                                         >
-                                            {{ paperForm.processing ? 'Saving...' : (isRevisingPaper ? 'REPLACE MANUSCRIPT' : 'SUBMIT FULL PAPER') }}
+                                            {{ paperForm.processing ? 'Saving...' : (isRevisingPaper ? 'REPLACE PAPER' : 'SUBMIT FULL PAPER') }}
                                         </button>
                                     </div>
                                 </form>

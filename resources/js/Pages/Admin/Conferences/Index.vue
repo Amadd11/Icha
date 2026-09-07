@@ -101,29 +101,18 @@ function formatDate(dateStr) {
                                 :key="c.id"
                                 class="hover:bg-slate-50/50 transition"
                             >
-                                <!-- Title & Banner -->
+                                <!-- Conference Title & Details -->
                                 <td class="px-5 py-3.5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="h-10 w-14 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center p-0.5">
-                                            <img 
-                                                v-if="(c.hero_images && c.hero_images.length > 0) || c.logo" 
-                                                :src="formatStorageUrl((c.hero_images && c.hero_images[0]) || c.logo)" 
-                                                alt="Banner" 
-                                                class="h-full w-full object-cover rounded" 
-                                            />
-                                            <span v-else class="text-[10px] font-bold text-slate-400">ICHA</span>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <p class="font-bold text-slate-900 text-xs truncate max-w-sm">{{ c.title }}</p>
+                                            <span v-if="c.is_active" class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                                                Active Portal
+                                            </span>
                                         </div>
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <p class="font-bold text-slate-900 text-xs truncate max-w-sm">{{ c.title }}</p>
-                                                <span v-if="c.is_active" class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                                                    Active Portal
-                                                </span>
-                                            </div>
-                                            <p v-if="c.theme" class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">
-                                                “{{ c.theme }}”
-                                            </p>
-                                        </div>
+                                        <p v-if="c.theme" class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">
+                                            “{{ c.theme }}”
+                                        </p>
                                     </div>
                                 </td>
 

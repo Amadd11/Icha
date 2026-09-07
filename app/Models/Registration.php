@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin \Illuminate\Database\Eloquent\Builder
+ */
 class Registration extends Model
 {
     use HasFactory, SoftDeletes;

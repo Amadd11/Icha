@@ -210,7 +210,7 @@ function submitReview() {
                         <div>
                             <label class="mb-1 block font-bold text-slate-700">Decision Outcome <span class="text-red-500">*</span></label>
                             <select v-model="reviewForm.status" class="admin-input font-bold" required>
-                                <option value="accepted">Accepted (Camera Ready)</option>
+                                <option value="accepted">Accepted</option>
                                 <option value="revision_required">Revision Required</option>
                                 <option value="rejected">Rejected</option>
                             </select>

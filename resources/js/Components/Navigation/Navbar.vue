@@ -92,35 +92,20 @@ function logout() {
 </script>
 
 <template>
-    <nav class="sticky top-0 z-50 flex h-16 items-center justify-between bg-sidebar px-5 shadow-lg md:px-10">
+    <nav class="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-sidebar/95 backdrop-blur-md px-5 shadow-lg md:px-10 border-b border-purple-900/40">
         <!-- Logo + Title as a unified click-to-home Link -->
-        <Link href="/" class="flex items-center gap-3 text-white transition hover:opacity-90">
-            <div class="flex items-center gap-2 p-1 rounded-md">
+        <Link href="/" class="flex items-center gap-2.5 sm:gap-3 text-white transition hover:opacity-95 group">
+            <div class="flex items-center gap-2 sm:gap-2.5 p-1 rounded-lg">
+                <!-- Main ICHA Official Logo -->
                 <img
-                    v-if="props.conference?.logo"
-                    :src="'/storage/' + props.conference.logo"
-                    :alt="props.conference?.title || 'Conference Logo'"
-                    class="h-8 md:h-9 w-auto object-contain"
+                    src="/assets/logo/logo-icha.png"
+                    alt="ICHA 10th Logo"
+                    class="h-9 sm:h-10 md:h-11 w-auto object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
                 />
-                <template v-else>
-                    <img
-                        src="/assets/logo/logo-pipmarsi.png"
-                        alt="PIP MARSI"
-                        class="h-8 md:h-9 w-auto object-contain"
-                    />
-                    <img
-                        src="/assets/logo/logo-umsura.png"
-                        alt="UMSURA"
-                        class="h-8 md:h-9 w-auto object-contain"
-                    />
-                    <img
-                        src="/assets/logo/logo-ub.png"
-                        alt="Universitas Brawijaya"
-                        class="h-8 md:h-9 w-auto object-contain"
-                    />
-                </template>
             </div>
-            <span class="text-xl md:text-2xl font-bold tracking-tight text-white">{{ props.conference?.title || 'ICHA 2026' }}</span>
+            <span class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white group-hover:text-gold transition-colors">
+                {{ props.conference?.title || 'ICHA 2026' }}
+            </span>
         </Link>
 
         <!-- Navigation Links (Desktop) -->
@@ -222,98 +207,117 @@ function logout() {
 
             <!-- Mobile Hamburger Toggle -->
             <button
-                class="flex flex-col gap-1.25 lg:hidden cursor-pointer"
+                class="flex flex-col justify-center items-center w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition lg:hidden cursor-pointer gap-1.25"
                 @click="emit('toggle-menu')"
+                :aria-label="props.isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'"
             >
-                <span class="block h-0.5 w-6 bg-white"></span>
-                <span class="block h-0.5 w-6 bg-white"></span>
-                <span class="block h-0.5 w-6 bg-white"></span>
+                <span :class="['block h-0.5 w-5 bg-white transition-all duration-300', props.isMenuOpen ? 'rotate-45 translate-y-1.75' : '']"></span>
+                <span :class="['block h-0.5 w-5 bg-white transition-all duration-300', props.isMenuOpen ? 'opacity-0' : '']"></span>
+                <span :class="['block h-0.5 w-5 bg-white transition-all duration-300', props.isMenuOpen ? '-rotate-45 -translate-y-1.75' : '']"></span>
             </button>
         </div>
     </nav>
 
-    <!-- Mobile Navigation Drawer -->
-    <div v-if="props.isMenuOpen" class="bg-sidebar px-5 py-4 shadow-md lg:hidden">
-        <ul class="flex flex-col gap-4">
-            <li v-for="link in props.links" :key="link.label">
-                <div v-if="link.isDropdown" class="flex flex-col gap-2">
-                    <span class="block text-sm font-medium text-white/50 uppercase tracking-wider text-xs">
-                        {{ link.label }}
-                    </span>
-                    <template v-if="props.availableConferences && props.availableConferences.length > 0">
-                        <Link
-                            v-for="conf in props.availableConferences"
-                            :key="conf.id"
-                            :href="conf.slug ? route('conferences.show', conf.slug) : route('conferences.index')"
-                            class="block text-sm font-medium pl-3 border-l border-white/20 transition-colors hover:text-gold"
-                            :class="props.conference?.id === conf.id ? 'text-gold border-gold' : 'text-white/80'"
+    <!-- Mobile Navigation Drawer Overlay (Fixed right below Navbar) -->
+    <transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 -translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 -translate-y-2"
+    >
+        <div v-if="props.isMenuOpen" class="fixed top-16 inset-x-0 bottom-0 z-40 lg:hidden flex flex-col">
+            <!-- Backdrop: Click to close -->
+            <div class="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-xs" @click="emit('close-menu')"></div>
+
+            <!-- Drawer Content Panel -->
+            <div class="relative bg-sidebar border-t border-purple-800/60 px-6 py-6 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto z-10">
+                <ul class="flex flex-col gap-4">
+                    <li v-for="link in props.links" :key="link.label">
+                        <div v-if="link.isDropdown" class="flex flex-col gap-2">
+                            <span class="block text-sm font-medium text-white/50 uppercase tracking-wider text-xs">
+                                {{ link.label }}
+                            </span>
+                            <template v-if="props.availableConferences && props.availableConferences.length > 0">
+                                <Link
+                                    v-for="conf in props.availableConferences"
+                                    :key="conf.id"
+                                    :href="conf.slug ? route('conferences.show', conf.slug) : route('conferences.index')"
+                                    @click="emit('close-menu')"
+                                    class="block text-sm font-medium pl-3 border-l border-white/20 transition-colors hover:text-gold"
+                                    :class="props.conference?.id === conf.id ? 'text-gold border-gold' : 'text-white/80'"
+                                >
+                                    {{ conf.title }}
+                                </Link>
+                            </template>
+                            <Link
+                                v-else-if="props.conference"
+                                :href="props.conference.slug ? route('conferences.show', props.conference.slug) : route('home')"
+                                @click="emit('close-menu')"
+                                class="block text-sm font-medium pl-3 border-l border-gold text-gold"
+                            >
+                                {{ props.conference.title || 'ICHA 2026' }}
+                            </Link>
+                            <Link
+                                :href="route('conferences.index')"
+                                @click="emit('close-menu')"
+                                class="block text-xs font-semibold pl-3 border-l border-white/10 text-white/50 hover:text-gold"
+                            >
+                                View All Editions &rarr;
+                            </Link>
+                        </div>
+                        <a
+                            v-else-if="isHashLink(link.href)"
+                            :href="link.href"
+                            @click="scrollToSection($event, link.href)"
+                            class="block text-sm font-medium transition-colors hover:text-gold"
+                            :class="activeSection === link.href.split('#')[1] ? 'text-gold' : 'text-white/80'"
                         >
-                            {{ conf.title }}
+                            {{ link.label }}
+                        </a>
+                        <Link
+                            v-else
+                            :href="link.href"
+                            @click="emit('close-menu')"
+                            class="block text-sm font-medium text-white/80 transition-colors hover:text-gold"
+                        >
+                            {{ link.label }}
                         </Link>
-                    </template>
-                    <Link
-                        v-else-if="props.conference"
-                        :href="props.conference.slug ? route('conferences.show', props.conference.slug) : route('home')"
-                        class="block text-sm font-medium pl-3 border-l border-gold text-gold"
-                    >
-                        {{ props.conference.title || 'ICHA 2026' }}
-                    </Link>
-                    <Link
-                        :href="route('conferences.index')"
-                        class="block text-xs font-semibold pl-3 border-l border-white/10 text-white/50 hover:text-gold"
-                    >
-                        View All Editions &rarr;
-                    </Link>
-                </div>
-                <a
-                    v-else-if="isHashLink(link.href)"
-                    :href="link.href"
-                    @click="scrollToSection($event, link.href)"
-                    class="block text-sm font-medium transition-colors hover:text-gold"
-                    :class="activeSection === link.href.split('#')[1] ? 'text-gold' : 'text-white/80'"
-                >
-                    {{ link.label }}
-                </a>
-                <Link
-                    v-else
-                    :href="link.href"
-                    @click="emit('close-menu')"
-                    class="block text-sm font-medium text-white/80 transition-colors hover:text-gold"
-                >
-                    {{ link.label }}
-                </Link>
-            </li>
-            <li class="pt-3 border-t border-white/10 flex flex-col gap-2">
-                <template v-if="$page.props.auth?.user">
-                    <div class="px-2 py-1 text-xs text-gold font-bold flex items-center gap-2">
-                        <span>👤 {{ $page.props.auth.user.name }}</span>
-                    </div>
-                    <Link
-                        :href="route('dashboard')"
-                        class="text-sm font-semibold text-white hover:text-gold flex items-center gap-2 px-2 py-1"
-                        @click="emit('close-menu')"
-                    >
-                        <span class="material-symbols-outlined text-[18px]">dashboard</span>
-                        Dashboard
-                    </Link>
-                    <button
-                        @click="logout"
-                        class="text-sm font-semibold text-rose-300 hover:text-rose-400 flex items-center gap-2 px-2 py-1 cursor-pointer text-left"
-                    >
-                        <span class="material-symbols-outlined text-[18px]">logout</span>
-                        Logout
-                    </button>
-                </template>
-                <template v-else>
-                    <Link
-                        :href="route('login')"
-                        class="text-sm font-medium text-white/80 hover:text-gold px-2 py-1"
-                        @click="emit('close-menu')"
-                    >
-                        Login
-                    </Link>
-                </template>
-            </li>
-        </ul>
-    </div>
+                    </li>
+                    <li class="pt-4 border-t border-white/10 flex flex-col gap-2.5">
+                        <template v-if="$page.props.auth?.user">
+                            <div class="px-2 py-1 text-xs text-gold font-bold flex items-center gap-2">
+                                <span>👤 {{ $page.props.auth.user.name }}</span>
+                            </div>
+                            <Link
+                                :href="route('dashboard')"
+                                class="text-sm font-semibold text-white hover:text-gold flex items-center gap-2 px-2 py-1.5 rounded-xl bg-white/10"
+                                @click="emit('close-menu')"
+                            >
+                                <span class="material-symbols-outlined text-[18px]">dashboard</span>
+                                Dashboard
+                            </Link>
+                            <button
+                                @click="logout"
+                                class="text-sm font-semibold text-rose-300 hover:text-rose-400 flex items-center gap-2 px-2 py-1.5 cursor-pointer text-left"
+                            >
+                                <span class="material-symbols-outlined text-[18px]">logout</span>
+                                Logout
+                            </button>
+                        </template>
+                        <template v-else>
+                            <Link
+                                :href="route('login')"
+                                class="text-sm font-medium text-white/80 hover:text-gold px-2 py-1.5"
+                                @click="emit('close-menu')"
+                            >
+                                Login
+                            </Link>
+                        </template>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </transition>
 </template>

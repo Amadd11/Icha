@@ -29,9 +29,9 @@ const form = useForm({
     country:            props.conference?.country     ?? 'Indonesia',
     theme:               props.conference?.theme               ?? '',
     email:               props.conference?.email               ?? '',
-    bank_name:                props.conference?.bank_name                ?? 'Bank Syariah Indonesia (BSI)',
-    bank_account_number:      props.conference?.bank_account_number      ?? '7192837465',
-    bank_account_holder:      props.conference?.bank_account_holder      ?? 'PANITIA ICHA PIPMARSI',
+    bank_name:                props.conference?.bank_name                ?? 'Bank JATIM',
+    bank_account_number:      props.conference?.bank_account_number      ?? '0323300101',
+    bank_account_holder:      props.conference?.bank_account_holder      ?? 'MARS FK UMSURA',
     bank_instructions:        props.conference?.bank_instructions        ?? '',
     status:                   props.conference?.status                   ?? 'draft',
     is_active:                props.conference?.is_active                ?? false,
@@ -280,27 +280,7 @@ function submit() {
                             <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Media Assets</h2>
                         </div>
 
-                        <div class="grid gap-6 sm:grid-cols-2">
-                            <!-- Logo Upload -->
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Logo (Max 2MB)</label>
-                                <input type="file" @change="handleLogoChange" class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer" accept="image/*" />
-                                <p v-if="form.errors.logo" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.logo }}</p>
-                                
-                                <div v-if="!form.remove_logo && (logoPreview || (isEdit && conference.logo))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
-                                    <div class="flex items-center gap-3">
-                                        <img :src="logoPreview || formatStorageUrl(conference.logo)" alt="Logo preview" class="h-10 w-auto rounded-lg object-contain border border-slate-200 p-1 bg-white" />
-                                        <span class="text-xs text-slate-600 font-bold">{{ logoPreview ? 'New logo selected' : 'Current active logo' }}</span>
-                                    </div>
-                                    <button type="button" @click="removeLogo" class="text-xs font-extrabold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition cursor-pointer">
-                                        Delete
-                                    </button>
-                                </div>
-                                <div v-else-if="form.remove_logo" class="mt-2 text-xs font-bold text-amber-600">
-                                    Logo will be removed upon saving.
-                                </div>
-                            </div>
-
+                        <div class="space-y-6">
                             <!-- Hero Carousel Banners (Multi-Upload, Max 4) -->
                             <div class="sm:col-span-2">
                                 <div class="flex items-center justify-between mb-1.5">
@@ -420,21 +400,21 @@ function submit() {
                             <!-- Bank Name -->
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Bank Name (Nama Bank)</label>
-                                <input v-model="form.bank_name" type="text" class="admin-input" placeholder="e.g. Bank Syariah Indonesia (BSI), Mandiri, BCA" />
+                                <input v-model="form.bank_name" type="text" class="admin-input" placeholder="e.g. Bank JATIM, Mandiri, BCA" />
                                 <p v-if="form.errors.bank_name" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_name }}</p>
                             </div>
 
                             <!-- Account Number -->
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Account Number (Nomor Rekening)</label>
-                                <input v-model="form.bank_account_number" type="text" class="admin-input font-mono font-bold" placeholder="e.g. 7192837465" />
+                                <input v-model="form.bank_account_number" type="text" class="admin-input font-mono font-bold" placeholder="e.g. 0323300101" />
                                 <p v-if="form.errors.bank_account_number" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_account_number }}</p>
                             </div>
 
                             <!-- Account Holder -->
                             <div class="sm:col-span-2">
                                 <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Account Holder Name (Atas Nama / Rekening Penerima)</label>
-                                <input v-model="form.bank_account_holder" type="text" class="admin-input" placeholder="e.g. PANITIA ICHA PIPMARSI" />
+                                <input v-model="form.bank_account_holder" type="text" class="admin-input" placeholder="e.g. MARS FK UMSURA" />
                                 <p v-if="form.errors.bank_account_holder" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.bank_account_holder }}</p>
                             </div>
 
@@ -635,12 +615,6 @@ function submit() {
                             </p>
                         </div>
 
-                        <div class="border-b border-amber-200/60 pb-3">
-                            <p class="font-extrabold text-slate-900 mb-1">Logo Image Guidelines</p>
-                            <p class="text-slate-600">
-                                Use a clean transparent PNG or SVG logo file (max <strong>2MB</strong>). It will be displayed in the portal header and footer.
-                            </p>
-                        </div>
 
                         <div>
                             <p class="font-extrabold text-slate-900 mb-1">Master Data Checklist</p>

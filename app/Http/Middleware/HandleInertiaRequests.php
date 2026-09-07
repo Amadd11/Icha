@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Conference;
+use App\Models\Registration;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -61,7 +62,7 @@ class HandleInertiaRequests extends Middleware
 
         if ($user && $user->role === 'participant') {
             $activeConfId = $activeConference?->id;
-            $reg = \App\Models\Registration::with(['registrationFee', 'payment'])
+            $reg = Registration::with(['registrationFee', 'payment'])
                 ->where('user_id', $user->id)
                 ->when($activeConfId, fn($q) => $q->where('conference_id', $activeConfId))
                 ->latest()

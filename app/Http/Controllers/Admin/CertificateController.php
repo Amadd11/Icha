@@ -9,6 +9,8 @@ use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -130,44 +132,56 @@ class CertificateController extends Controller
 
         $roleTitle = $registration?->registrationFee?->name ?? 'Participant / Attendee';
 
-        // Check if certificate record exists
-        $certificate = Certificate::where('user_id', $user->id)
-            ->where('conference_id', $conference->id)
-            ->first();
+        // Atomic lock per user per conference protects against duplicate upload race condition
+        return Cache::lock("upload_certificate_{$user->id}_{$conference->id}", 10)->block(5, function () use ($request, $user, $conference, $roleTitle) {
+            return DB::transaction(function () use ($request, $user, $conference, $roleTitle) {
+                // Check if certificate record exists with lockForUpdate
+                $certificate = Certificate::where('user_id', $user->id)
+                    ->where('conference_id', $conference->id)
+                    ->lockForUpdate()
+                    ->first();
 
-        // Handle file upload
-        $file = $request->file('file');
-        $cleanUserName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $user->name);
-        $filename = 'CERT_' . $user->id . '_' . time() . '_' . $cleanUserName . '.pdf';
-        $filePath = $file->storeAs('certificates', $filename, 'public');
+                // Handle file upload
+                $file = $request->file('file');
+                $cleanUserName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $user->name);
+                $filename = 'CERT_' . $user->id . '_' . time() . '_' . $cleanUserName . '.pdf';
+                $filePath = $file->storeAs('certificates', $filename, 'public');
 
-        if ($certificate) {
-            // Delete old file
-            if ($certificate->file_path) {
-                Storage::disk('public')->delete($certificate->file_path);
-            }
+                if ($certificate) {
+                    // Delete old file
+                    if ($certificate->file_path) {
+                        Storage::disk('public')->delete($certificate->file_path);
+                    }
 
-            $certificate->update([
-                'file_path'  => $filePath,
-                'type'       => 'participant',
-                'role_title' => $roleTitle,
-                'issued_at'  => now(),
-            ]);
-        } else {
-            $code = 'CERT-ICHA-' . date('Y') . '-' . strtoupper(bin2hex(random_bytes(3)));
+                    $certificate->update([
+                        'file_path'  => $filePath,
+                        'type'       => 'participant',
+                        'role_title' => $roleTitle,
+                        'issued_at'  => now(),
+                    ]);
+                } else {
+                    $code = Cache::lock('generate_certificate_code_lock', 10)->block(5, function () use ($conference) {
+                        $year = $conference->year ?: date('Y');
+                        do {
+                            $c = "CERT-ICHA-{$year}-" . strtoupper(bin2hex(random_bytes(3)));
+                        } while (Certificate::withTrashed()->where('certificate_number', $c)->exists());
+                        return $c;
+                    });
 
-            Certificate::create([
-                'user_id'            => $user->id,
-                'conference_id'      => $conference->id,
-                'type'               => 'participant',
-                'role_title'         => $roleTitle,
-                'certificate_number' => $code,
-                'file_path'          => $filePath,
-                'issued_at'          => now(),
-            ]);
-        }
+                    Certificate::create([
+                        'user_id'            => $user->id,
+                        'conference_id'      => $conference->id,
+                        'type'               => 'participant',
+                        'role_title'         => $roleTitle,
+                        'certificate_number' => $code,
+                        'file_path'          => $filePath,
+                        'issued_at'          => now(),
+                    ]);
+                }
 
-        return redirect()->back()->with('success', "Certificate uploaded successfully for {$user->name}.");
+                return redirect()->back()->with('success', "Certificate uploaded successfully for {$user->name}.");
+            });
+        });
     }
 
     public function destroy(Certificate $certificate): RedirectResponse
