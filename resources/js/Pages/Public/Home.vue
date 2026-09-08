@@ -20,7 +20,11 @@ const props = defineProps({
     availableConferences: Array,
 });
 
-const { countdown } = useCountdown(props.activeConference?.event_date || "2026-11-10T08:00:00+07:00");
+const countdownTarget = computed(() => {
+    return props.activeConference?.start_date || "2026-11-10T08:00:00+07:00";
+});
+
+const { countdown } = useCountdown(countdownTarget);
 
 const countdownUnits = [
     { label: "Days", key: "days" },
@@ -172,7 +176,7 @@ onMounted(() => {
 
         <Abstract />
 
-        <Venue />
+        <Venue :conference="props.activeConference" />
 
         <Sponsors
             v-if="props.activeConference?.sponsors?.length"

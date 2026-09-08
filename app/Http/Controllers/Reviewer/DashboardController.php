@@ -19,17 +19,23 @@ class DashboardController extends Controller
         $assignments = $this->dashboardService->getAssignments();
 
         $formattedAssignments = $assignments->map(function ($assignment) {
-            $submission = $assignment->round?->abstractSubmission 
-                ?? $assignment->round?->fullPaper 
+            $submission = $assignment->round?->abstractSubmission
+                ?? $assignment->round?->fullPaper
                 ?? $assignment->round?->submission;
+
+            $isDecided = ($assignment->round?->status === 'completed')
+                || in_array($submission?->status, ['accepted', 'rejected'], true)
+                || ($submission?->status === 'revision_required' && $assignment->round?->status !== 'open');
 
             return [
                 'id'              => $assignment->id,
                 'review_round_id' => $assignment->review_round_id,
                 'reviewer_id'     => $assignment->reviewer_id,
                 'status'          => $assignment->status,
+                'is_decided'      => (bool) $isDecided,
                 'submission'      => [
                     'id'            => $submission?->id,
+                    'status'        => $submission?->status,
                     'abstract_code' => $submission?->abstract_code ?? $submission?->paper_code ?? ('ABS-' . str_pad($submission?->id ?? 1, 3, '0', STR_PAD_LEFT)),
                     'title'         => $submission?->title ?? 'Untitled Abstract',
                     'abstract_text' => $submission?->abstract_text ?? null,
@@ -46,6 +52,7 @@ class DashboardController extends Controller
                     'submission_type' => $assignment->round?->submission_type ?? 'abstract',
                     'status'          => $assignment->round?->status ?? 'pending',
                 ],
+                'previous_history' => $assignment->previous_history ?? [],
                 'review' => $assignment->review ? [
                     'id'               => $assignment->review->id,
                     'score_criteria_1' => $assignment->review->score_criteria_1,
@@ -57,7 +64,7 @@ class DashboardController extends Controller
         });
 
         return Inertia::render('Reviewer/Dashboard', [
-            'stats'       => $this->dashboardService->getStats(),
+            'stats'       => $this->dashboardService->getStats($assignments),
             'assignments' => $formattedAssignments,
         ]);
     }

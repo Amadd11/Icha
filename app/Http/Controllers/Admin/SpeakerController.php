@@ -31,11 +31,6 @@ class SpeakerController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
-    {
-        return redirect()->route('admin.speakers.index');
-    }
-
     public function store(StoreSpeakerRequest $request): RedirectResponse
     {
         $validated = $request->validated();
@@ -49,11 +44,6 @@ class SpeakerController extends Controller
 
         return redirect()->route('admin.speakers.index')
             ->with('success', 'Speaker added successfully.');
-    }
-
-    public function edit(Speaker $speaker): RedirectResponse
-    {
-        return redirect()->route('admin.speakers.index');
     }
 
     public function update(UpdateSpeakerRequest $request, Speaker $speaker): RedirectResponse

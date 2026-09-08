@@ -34,22 +34,12 @@ class RegistrationFeeController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
-    {
-        return redirect()->route('admin.registration-fees.index');
-    }
-
     public function store(StoreRegistrationFeeRequest $request): RedirectResponse
     {
         RegistrationFee::create($request->validated());
 
         return redirect()->route('admin.registration-fees.index')
             ->with('success', 'Registration fee created successfully.');
-    }
-
-    public function edit(RegistrationFee $registrationFee): RedirectResponse
-    {
-        return redirect()->route('admin.registration-fees.index');
     }
 
     public function update(UpdateRegistrationFeeRequest $request, RegistrationFee $registrationFee): RedirectResponse

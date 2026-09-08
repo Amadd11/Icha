@@ -60,6 +60,86 @@ onMounted(() => {
 onUnmounted(() => {
     if (intervalId) clearInterval(intervalId);
 });
+
+const locationText = computed(() => {
+    const conf = props.conference;
+    if (!conf) return 'UMSURA, Surabaya';
+    if (conf.venue && conf.city) {
+        if (conf.venue.toLowerCase().includes(conf.city.toLowerCase())) {
+            return conf.venue;
+        }
+        return `${conf.venue}, ${conf.city}`;
+    }
+    return conf.venue || conf.city || 'UMSURA, Surabaya';
+});
+
+function formatDateRange(startDateStr, endDateStr, defaultFallback) {
+    if (!startDateStr) return defaultFallback;
+    try {
+        const start = new Date(startDateStr);
+        if (isNaN(start.getTime())) return defaultFallback;
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const startDay = start.getDate();
+        const startMonth = months[start.getMonth()];
+        const startYear = start.getFullYear();
+
+        if (!endDateStr) {
+            return `${startDay} ${startMonth} ${startYear}`;
+        }
+
+        const end = new Date(endDateStr);
+        if (isNaN(end.getTime())) {
+            return `${startDay} ${startMonth} ${startYear}`;
+        }
+
+        const endDay = end.getDate();
+        const endMonth = months[end.getMonth()];
+        const endYear = end.getFullYear();
+
+        if (startYear === endYear) {
+            if (startMonth === endMonth) {
+                if (startDay === endDay) {
+                    return `${startDay} ${startMonth} ${startYear}`;
+                }
+                return `${startDay}–${endDay} ${startMonth} ${startYear}`;
+            }
+            return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${startYear}`;
+        }
+        return `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
+    } catch {
+        return defaultFallback;
+    }
+}
+
+const formattedConferenceDates = computed(() => {
+    return formatDateRange(props.conference?.start_date, props.conference?.end_date, '10–11 Nov 2026');
+});
+
+const abstractSchedule = computed(() => {
+    const conf = props.conference;
+    // 1. Read structured milestone dates
+    if (conf?.abstract_open_date || conf?.abstract_deadline) {
+        return {
+            title: 'Abstract Open',
+            period: formatDateRange(conf.abstract_open_date, conf.abstract_deadline, '11 Aug – 3 Oct'),
+        };
+    }
+
+    // 2. Fallback to timeline if ever defined
+    const match = conf?.timelines?.find(t => /abstract/i.test(t.title || ''));
+    if (match?.period) {
+        return {
+            title: 'Abstract Open',
+            period: match.period,
+        };
+    }
+
+    return {
+        title: 'Abstract Open',
+        period: '11 Aug – 3 Oct',
+    };
+});
 </script>
 
 <template>
@@ -133,8 +213,8 @@ onUnmounted(() => {
                             </svg>
                         </div>
                         <div>
-                            <strong class="block text-sm font-bold text-white leading-tight">UMSURA, Surabaya</strong>
-                            <span class="text-xs font-semibold text-purple-300">10–11 Nov 2026</span>
+                            <strong class="block text-sm font-bold text-white leading-tight line-clamp-1 max-w-[220px]" :title="locationText">{{ locationText }}</strong>
+                            <span class="text-xs font-semibold text-purple-300">{{ formattedConferenceDates }}</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
@@ -144,8 +224,8 @@ onUnmounted(() => {
                             </svg>
                         </div>
                         <div>
-                            <strong class="block text-sm font-bold text-white leading-tight">Abstract Open</strong>
-                            <span class="text-xs font-semibold text-gold">11 Aug – 3 Oct</span>
+                            <strong class="block text-sm font-bold text-white leading-tight line-clamp-1 max-w-[200px]" :title="abstractSchedule.title">{{ abstractSchedule.title }}</strong>
+                            <span class="text-xs font-semibold text-gold">{{ abstractSchedule.period }}</span>
                         </div>
                     </div>
                 </div>

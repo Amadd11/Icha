@@ -18,8 +18,10 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Artisan::command('storage:prune-orphans {--force : Actually delete the orphaned files}', function () {
-    $disk = Storage::disk('public');
-    $allFiles = $disk->allFiles();
+    $disks = [
+        'public' => Storage::disk('public'),
+        'local'  => Storage::disk('local'),
+    ];
 
     // Collect all referenced file paths from the database
     $referencedFiles = collect();
@@ -46,7 +48,6 @@ Artisan::command('storage:prune-orphans {--force : Actually delete the orphaned 
 
     // 5. Conferences
     Conference::withTrashed()->get()->each(function ($conf) use (&$referencedFiles) {
-        if ($conf->logo) $referencedFiles->push($conf->logo);
         if ($conf->poster) $referencedFiles->push($conf->poster);
         if ($conf->abstract_template) $referencedFiles->push($conf->abstract_template);
         if ($conf->paper_template) $referencedFiles->push($conf->paper_template);
@@ -78,32 +79,40 @@ Artisan::command('storage:prune-orphans {--force : Actually delete the orphaned 
     $orphans = [];
     $savedBytes = 0;
 
-    foreach ($allFiles as $file) {
-        $normalized = str_replace('\\', '/', $file);
-        if ($normalized === '.gitignore') {
+    foreach ($disks as $diskName => $disk) {
+        try {
+            $allFiles = $disk->allFiles();
+        } catch (\Throwable $e) {
             continue;
         }
 
-        if (!$referencedSet->has($normalized)) {
-            $size = $disk->size($file);
-            $orphans[] = ['path' => $file, 'size' => $size];
-            $savedBytes += $size;
+        foreach ($allFiles as $file) {
+            $normalized = str_replace('\\', '/', $file);
+            if ($normalized === '.gitignore') {
+                continue;
+            }
+
+            if (!$referencedSet->has($normalized)) {
+                $size = $disk->size($file);
+                $orphans[] = ['disk' => $diskName, 'path' => $file, 'size' => $size];
+                $savedBytes += $size;
+            }
         }
     }
 
     if (empty($orphans)) {
-        $this->info('No orphaned files found in storage/app/public.');
+        $this->info('No orphaned files found across storage disks.');
         return;
     }
 
     $this->warn('Found ' . count($orphans) . ' orphaned file(s) (' . round($savedBytes / 1024 / 1024, 2) . ' MB):');
     foreach ($orphans as $orphan) {
-        $this->line(" - {$orphan['path']} (" . round($orphan['size'] / 1024, 1) . ' KB)');
+        $this->line(" - [{$orphan['disk']}] {$orphan['path']} (" . round($orphan['size'] / 1024, 1) . ' KB)');
     }
 
     if ($this->option('force')) {
         foreach ($orphans as $orphan) {
-            $disk->delete($orphan['path']);
+            Storage::disk($orphan['disk'])->delete($orphan['path']);
         }
         $this->info('Successfully deleted ' . count($orphans) . ' orphaned file(s). Freed ' . round($savedBytes / 1024 / 1024, 2) . ' MB.');
     } else {
@@ -111,4 +120,4 @@ Artisan::command('storage:prune-orphans {--force : Actually delete the orphaned 
         $this->comment('To delete these files, run with --force:');
         $this->line('php artisan storage:prune-orphans --force');
     }
-})->purpose('Scan and prune orphaned files in storage/app/public that are not referenced in the database');
+})->purpose('Scan and prune orphaned files in storage/app/public and storage/app/private that are not referenced in the database');

@@ -159,11 +159,11 @@ function isPdf(path) {
                     <!-- Left: Document Preview (2 cols) -->
                     <div class="md:col-span-2 flex flex-col items-center justify-center bg-slate-100 rounded-2xl border border-slate-200 p-3 min-h-[320px] max-h-[480px] overflow-hidden">
                         <template v-if="isPdf(registration.payment.proof_file)">
-                            <iframe :src="formatStorageUrl(registration.payment.proof_file)" class="w-full h-[400px] rounded-xl border-0"></iframe>
+                            <iframe :src="registration.payment.proof_url || formatStorageUrl(registration.payment.proof_file)" class="w-full h-[400px] rounded-xl border-0"></iframe>
                         </template>
                         <template v-else>
                             <img
-                                :src="formatStorageUrl(registration.payment.proof_file)"
+                                :src="registration.payment.proof_url || formatStorageUrl(registration.payment.proof_file)"
                                 alt="Payment Proof"
                                 class="max-h-[420px] w-auto max-w-full object-contain rounded-xl shadow-xs"
                             />

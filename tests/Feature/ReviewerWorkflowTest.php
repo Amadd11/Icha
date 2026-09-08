@@ -174,4 +174,89 @@ class ReviewerWorkflowTest extends TestCase
 
         $response->assertSessionHasErrors(['score_criteria_1', 'score_criteria_2', 'recommendation']);
     }
+
+    public function test_reviewer_can_update_their_submitted_review_before_admin_decision(): void
+    {
+        $abstract = AbstractSubmission::first();
+        $round = ReviewRound::firstOrCreate(
+            [
+                'submission_type' => 'abstract',
+                'submission_id'   => $abstract->id,
+            ],
+            [
+                'status' => 'open',
+            ]
+        );
+
+        $assignment = ReviewAssignment::firstOrCreate(
+            [
+                'review_round_id' => $round->id,
+                'reviewer_id'     => $this->reviewer1->id,
+            ],
+            [
+                'status' => 'completed',
+            ]
+        );
+
+        // Submit updated review
+        $updatePayload = [
+            'score_criteria_1' => 5,
+            'score_criteria_2' => 5,
+            'recommendation'   => 'ORAL',
+            'summary'          => 'Updated review with perfect score.',
+        ];
+
+        $response = $this->actingAs($this->reviewer1)
+            ->post("/reviewer/assignments/{$assignment->id}/review", $updatePayload);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('reviews', [
+            'review_assignment_id' => $assignment->id,
+            'score_criteria_1'     => 5,
+            'score_criteria_2'     => 5,
+            'total_score'          => 10,
+            'recommendation'       => 'ORAL',
+            'summary'              => 'Updated review with perfect score.',
+        ]);
+    }
+
+    public function test_reviewer_cannot_update_review_after_admin_final_decision(): void
+    {
+        $abstract = AbstractSubmission::first();
+        $round = ReviewRound::firstOrCreate(
+            [
+                'submission_type' => 'abstract',
+                'submission_id'   => $abstract->id,
+            ],
+            [
+                'status' => 'completed',
+            ]
+        );
+        $round->update(['status' => 'completed']);
+        $abstract->update(['status' => 'accepted']);
+
+        $assignment = ReviewAssignment::firstOrCreate(
+            [
+                'review_round_id' => $round->id,
+                'reviewer_id'     => $this->reviewer1->id,
+            ],
+            [
+                'status' => 'completed',
+            ]
+        );
+
+        $updatePayload = [
+            'score_criteria_1' => 2,
+            'score_criteria_2' => 2,
+            'recommendation'   => 'REJECT',
+            'summary'          => 'Attempt to change score after decision finalized.',
+        ];
+
+        $response = $this->actingAs($this->reviewer1)
+            ->post("/reviewer/assignments/{$assignment->id}/review", $updatePayload);
+
+        $response->assertSessionHasErrors('error');
+    }
 }

@@ -31,11 +31,6 @@ class SponsorController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
-    {
-        return redirect()->route('admin.sponsors.index');
-    }
-
     public function store(StoreSponsorRequest $request): RedirectResponse
     {
         $validated = $request->validated();
@@ -49,11 +44,6 @@ class SponsorController extends Controller
 
         return redirect()->route('admin.sponsors.index')
             ->with('success', 'Sponsor added successfully.');
-    }
-
-    public function edit(Sponsor $sponsor): RedirectResponse
-    {
-        return redirect()->route('admin.sponsors.index');
     }
 
     public function update(UpdateSponsorRequest $request, Sponsor $sponsor): RedirectResponse

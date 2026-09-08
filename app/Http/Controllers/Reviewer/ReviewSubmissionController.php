@@ -29,9 +29,15 @@ class ReviewSubmissionController extends Controller
             abort(403, 'Conflict of interest: You cannot review your own submission.');
         }
 
-        // Check if round is already locked
-        if ($assignment->round->status === 'locked' || $assignment->round->status === 'completed') {
-            return redirect()->back()->withErrors(['error' => 'This review round is already locked.']);
+        // Check if final decision has already been made by Admin
+        $round = $assignment->round;
+        $submission = $round?->abstractSubmission ?? $round?->fullPaper;
+        $isDecided = ($round?->status === 'completed')
+            || in_array($submission?->status, ['accepted', 'rejected'], true)
+            || ($submission?->status === 'revision_required' && $round?->status !== 'open');
+
+        if ($isDecided) {
+            return redirect()->back()->withErrors(['error' => 'Penilaian tidak dapat diubah karena Admin telah menetapkan keputusan final.']);
         }
 
         $this->service->submitReview($assignment, $request->validated());

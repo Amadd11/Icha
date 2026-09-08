@@ -84,7 +84,7 @@ function submitReview() {
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Submitted Manuscripts</h3>
-                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.papers ? props.papers.length : 0 }}</span>
+                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.papers?.total ?? paperList.length }}</span>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -162,9 +162,12 @@ function submitReview() {
                                 <td class="px-5 py-3.5 text-right">
                                     <button
                                         @click="openReviewModal(item)"
-                                        class="px-3 py-1 rounded-lg bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer"
+                                        class="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-950 border border-amber-200/90 px-3 py-1.5 font-semibold text-xs transition cursor-pointer shadow-2xs"
                                     >
-                                        Decision
+                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                        </svg>
+                                        <span>Decision</span>
                                     </button>
                                 </td>
                             </tr>
@@ -228,7 +231,7 @@ function submitReview() {
                             <button
                                 type="submit"
                                 :disabled="reviewForm.processing"
-                                class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 transition disabled:opacity-50 cursor-pointer"
+                                class="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
                             >
                                 {{ reviewForm.processing ? 'Saving...' : 'Save Decision' }}
                             </button>

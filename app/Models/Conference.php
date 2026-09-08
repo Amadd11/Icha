@@ -21,12 +21,15 @@ class Conference extends Model
         'description',
         'start_date',
         'end_date',
+        'abstract_open_date',
+        'abstract_deadline',
+        'paper_deadline',
         'venue',
+        'address',
         'city',
         'country',
         'theme',
         'email',
-        'logo',
         'hero_images',
         'poster',
         'bank_name',
@@ -64,11 +67,40 @@ class Conference extends Model
     protected function casts(): array
     {
         return [
-            'hero_images' => 'array',
-            'start_date'  => 'date',
-            'end_date'    => 'date',
-            'is_active'   => 'boolean',
+            'hero_images'        => 'array',
+            'start_date'         => 'date',
+            'end_date'           => 'date',
+            'abstract_open_date' => 'date',
+            'abstract_deadline'  => 'date',
+            'paper_deadline'     => 'date',
+            'is_active'          => 'boolean',
         ];
+    }
+
+    /**
+     * Check if abstract submissions are currently open.
+     */
+    public function isAbstractSubmissionOpen(): bool
+    {
+        $now = now();
+        if ($this->abstract_open_date && $now->lt($this->abstract_open_date->startOfDay())) {
+            return false;
+        }
+        if ($this->abstract_deadline && $now->gt($this->abstract_deadline->endOfDay())) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Check if full paper submissions are currently open.
+     */
+    public function isPaperSubmissionOpen(): bool
+    {
+        if ($this->paper_deadline && now()->gt($this->paper_deadline->endOfDay())) {
+            return false;
+        }
+        return true;
     }
 
     // ─── Relationships ───────────────────────────────────────────────

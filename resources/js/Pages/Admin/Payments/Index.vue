@@ -256,7 +256,7 @@ function isPdf(path) {
                                 </svg>
                                 <p class="text-sm font-semibold">PDF Document Uploaded</p>
                                 <a
-                                    :href="formatStorageUrl(proofModal.activeItem.value.proof_file)"
+                                    :href="proofModal.activeItem.value.proof_url || formatStorageUrl(proofModal.activeItem.value.proof_file)"
                                     target="_blank"
                                     class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold transition"
                                 >
@@ -267,7 +267,7 @@ function isPdf(path) {
                         </template>
                         <template v-else>
                             <img
-                                :src="formatStorageUrl(proofModal.activeItem.value.proof_file)"
+                                :src="proofModal.activeItem.value.proof_url || formatStorageUrl(proofModal.activeItem.value.proof_file)"
                                 alt="Payment Proof"
                                 class="max-h-[400px] w-auto max-w-full object-contain rounded-lg"
                             />

@@ -271,7 +271,7 @@ function isPdf(path) {
                     </div>
                     <a
                         v-if="selectedRegistration.payment.proof_file"
-                        :href="formatStorageUrl(selectedRegistration.payment.proof_file)"
+                        :href="selectedRegistration.payment.proof_url || formatStorageUrl(selectedRegistration.payment.proof_file)"
                         target="_blank"
                         class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 font-bold transition inline-flex items-center gap-1 shadow-xs self-start sm:self-auto"
                     >

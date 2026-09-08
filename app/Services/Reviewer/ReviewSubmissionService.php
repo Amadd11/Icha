@@ -13,18 +13,31 @@ class ReviewSubmissionService
     {
         return Cache::lock("submit_review_assignment_{$assignment->id}", 10)->block(5, function () use ($assignment, $data) {
             return DB::transaction(function () use ($assignment, $data) {
-                $assignment->loadMissing('round');
+                $assignment->loadMissing(['round.abstractSubmission', 'round.fullPaper']);
+                $round = $assignment->round;
+                $submission = $round?->abstractSubmission ?? $round?->fullPaper;
 
-                if ($assignment->status !== 'assigned' || !$assignment->round || !in_array($assignment->round->status, ['open', 'pending'], true)) {
+                $isDecided = !$round || $round->status === 'completed'
+                    || in_array($submission?->status, ['accepted', 'revision_required', 'rejected'], true);
+
+                if ($isDecided || !in_array($assignment->status, ['assigned', 'completed'], true)) {
                     throw new \DomainException('Review assignment is not available for submission.');
                 }
 
-                if ($assignment->round->status === 'pending') {
-                    $assignment->round->transitionTo('open');
+                if ($round->status === 'pending') {
+                    $round->update(['status' => 'open']);
                 }
 
                 $totalScore = (int) $data['score_criteria_1'] + (int) $data['score_criteria_2'];
-                $recommendation = ($totalScore >= 5) ? 'ORAL' : 'POSTER';
+
+                $rawRec = strtoupper((string) ($data['recommendation'] ?? ''));
+                $recommendation = match ($rawRec) {
+                    'ORAL', 'ACCEPT_ORAL' => 'ORAL',
+                    'POSTER', 'ACCEPT_POSTER' => 'POSTER',
+                    'REVISION', 'REVISION_REQUIRED' => 'REVISION',
+                    'REJECT', 'REJECTED' => 'REJECT',
+                    default => ($totalScore >= 5 ? 'ORAL' : 'POSTER'),
+                };
 
                 // Check existing review with lockForUpdate to guarantee uniqueness
                 $review = Review::where('review_assignment_id', $assignment->id)->lockForUpdate()->first();
@@ -48,9 +61,9 @@ class ReviewSubmissionService
                     ]);
                 }
 
-                $assignment->transitionTo('completed');
-
-                $round = $assignment->round;
+                if ($assignment->status !== 'completed') {
+                    $assignment->update(['status' => 'completed']);
+                }
 
                 // Update submission status to under_review if still pending
                 if ($round && $round->submission_type === 'abstract' && $round->abstractSubmission) {
@@ -63,8 +76,12 @@ class ReviewSubmissionService
                 $totalAssignments = $round->assignments()->count();
                 $completedAssignments = $round->assignments()->where('status', 'completed')->count();
 
-                if ($totalAssignments === 3 && $completedAssignments === 3) {
-                    $round->transitionTo('locked');
+                $isReadyToLock = ($round->round_number === 1)
+                    ? ($totalAssignments === 3 && $completedAssignments === 3)
+                    : ($totalAssignments > 0 && $completedAssignments === $totalAssignments);
+
+                if ($isReadyToLock && $round->status === 'open') {
+                    $round->update(['status' => 'locked']);
                 }
 
                 return $review;

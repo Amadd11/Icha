@@ -42,10 +42,6 @@ class ConferenceController extends Controller
 
         $data = $request->validated();
 
-        if ($request->hasFile('logo')) {
-            $data['logo'] = $request->file('logo')->store('conferences/logos', 'public');
-        }
-
         if ($request->hasFile('hero_images')) {
             $heroPaths = [];
             foreach (array_slice($request->file('hero_images'), 0, 4) as $file) {
@@ -97,20 +93,6 @@ class ConferenceController extends Controller
     public function update(UpdateConferenceRequest $request, Conference $conference): RedirectResponse
     {
         $data = $request->validated();
-
-        if ($request->boolean('remove_logo')) {
-            if ($conference->logo) {
-                Storage::disk('public')->delete($conference->logo);
-            }
-            $data['logo'] = null;
-        } elseif ($request->hasFile('logo')) {
-            if ($conference->logo) {
-                Storage::disk('public')->delete($conference->logo);
-            }
-            $data['logo'] = $request->file('logo')->store('conferences/logos', 'public');
-        } else {
-            unset($data['logo']);
-        }
 
         // Manage hero carousel images array (Max 4 photos)
         $currentHeroImages = is_array($conference->hero_images) ? $conference->hero_images : [];
@@ -201,10 +183,6 @@ class ConferenceController extends Controller
     {
         if ($request->user()->role !== 'super_admin') {
             abort(403, 'Only Super Admin can delete conference editions.');
-        }
-
-        if ($conference->logo) {
-            Storage::disk('public')->delete($conference->logo);
         }
         if (is_array($conference->hero_images)) {
             foreach ($conference->hero_images as $imgPath) {

@@ -26,6 +26,10 @@ class Payment extends Model
         'verified_by',
     ];
 
+    protected $appends = [
+        'proof_url',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -62,7 +66,7 @@ class Payment extends Model
 
     public function getProofUrlAttribute(): ?string
     {
-        return $this->proof_file ? asset('storage/' . $this->proof_file) : null;
+        return $this->proof_file ? route('payments.proof', $this->id) : null;
     }
 
     public function transitionTo(string $status): void

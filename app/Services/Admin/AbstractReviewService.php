@@ -56,13 +56,10 @@ class AbstractReviewService
             $updateData['presentation_type'] = in_array($presentationType, ['oral', 'poster'], true) ? $presentationType : 'oral';
         }
 
-        $abstract->transitionTo($data['status']);
-        unset($updateData['status']);
-
         $updated = $abstract->update($updateData);
 
         if ($round && $round->status === 'locked') {
-            $round->transitionTo('completed');
+            $round->update(['status' => 'completed']);
         }
 
         return $updated;
@@ -88,10 +85,18 @@ class AbstractReviewService
         $totalAssignments = $round->assignments()->count();
         $completedAssignments = $round->assignments()->where('status', 'completed')->count();
 
-        if ($totalAssignments !== 3 || $completedAssignments !== 3) {
-            throw ValidationException::withMessages([
-                'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
-            ]);
+        if ($round->round_number === 1) {
+            if ($totalAssignments !== 3 || $completedAssignments !== 3) {
+                throw ValidationException::withMessages([
+                    'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
+                ]);
+            }
+        } else {
+            if ($totalAssignments === 0 || $completedAssignments < $totalAssignments) {
+                throw ValidationException::withMessages([
+                    'status' => 'Final decision memerlukan seluruh reviewer pada round revisi ini menyelesaikan review.',
+                ]);
+            }
         }
 
         return $round;

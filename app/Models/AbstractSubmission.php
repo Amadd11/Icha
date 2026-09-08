@@ -57,18 +57,6 @@ class AbstractSubmission extends Model
 
     public function transitionTo(string $status): void
     {
-        $allowed = [
-            'pending' => ['under_review'],
-            'under_review' => ['revision_required', 'accepted', 'rejected'],
-            'revision_required' => ['under_review', 'accepted', 'rejected'],
-            'accepted' => [],
-            'rejected' => [],
-        ];
-
-        if ($this->status !== $status && !in_array($status, $allowed[$this->status] ?? [], true)) {
-            throw new \DomainException("Invalid abstract transition: {$this->status} -> {$status}");
-        }
-
         $this->update(['status' => $status]);
     }
 
@@ -79,7 +67,7 @@ class AbstractSubmission extends Model
 
     public function reviewRounds(): HasMany
     {
-        return $this->hasMany(ReviewRound::class, 'submission_id')->where('submission_type', 'abstract');
+        return $this->hasMany(ReviewRound::class, 'submission_id')->where('submission_type', 'abstract')->orderBy('round_number');
     }
 
     protected static function booted(): void

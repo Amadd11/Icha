@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, unref } from "vue";
 
 export function useCountdown(targetDate) {
     const countdown = ref({
@@ -9,7 +9,12 @@ export function useCountdown(targetDate) {
     });
 
     const updateCountdown = () => {
-        const target = new Date(targetDate).getTime();
+        const rawDate = unref(targetDate);
+        if (!rawDate) return;
+
+        const target = new Date(rawDate).getTime();
+        if (isNaN(target)) return;
+
         const diff = target - Date.now();
 
         if (diff <= 0) {
@@ -30,14 +35,19 @@ export function useCountdown(targetDate) {
         };
     };
 
+    let timer = null;
+
     onMounted(() => {
         updateCountdown();
-        const timer = window.setInterval(updateCountdown, 1000);
+        timer = window.setInterval(updateCountdown, 1000);
+    });
 
-        onBeforeUnmount(() => {
+    onBeforeUnmount(() => {
+        if (timer) {
             window.clearInterval(timer);
-        });
+        }
     });
 
     return { countdown };
 }
+

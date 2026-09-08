@@ -9,12 +9,16 @@ const props = defineProps({
 
 const isEdit = !!props.conference;
 
-const logoPreview = ref(null);
 const posterPreview = ref(null);
 const newHeroPreviews = ref([]);
 const existingHeroImages = ref([
     ...(Array.isArray(props.conference?.hero_images) ? props.conference.hero_images : [])
 ]);
+
+const formatDateInput = (val) => {
+    if (!val) return '';
+    return String(val).substring(0, 10);
+};
 
 const form = useForm({
     _method:            isEdit ? 'put' : 'post',
@@ -22,9 +26,13 @@ const form = useForm({
     year:               props.conference?.year        ?? new Date().getFullYear(),
     tagline:            props.conference?.tagline     ?? '',
     description:        props.conference?.description ?? '',
-    start_date:         props.conference?.start_date  ?? '',
-    end_date:           props.conference?.end_date    ?? '',
+    start_date:         formatDateInput(props.conference?.start_date),
+    end_date:           formatDateInput(props.conference?.end_date),
+    abstract_open_date: formatDateInput(props.conference?.abstract_open_date),
+    abstract_deadline:  formatDateInput(props.conference?.abstract_deadline),
+    paper_deadline:     formatDateInput(props.conference?.paper_deadline),
     venue:              props.conference?.venue       ?? '',
+    address:            props.conference?.address     ?? '',
     city:               props.conference?.city        ?? 'Surabaya',
     country:            props.conference?.country     ?? 'Indonesia',
     theme:               props.conference?.theme               ?? '',
@@ -35,26 +43,15 @@ const form = useForm({
     bank_instructions:        props.conference?.bank_instructions        ?? '',
     status:                   props.conference?.status                   ?? 'draft',
     is_active:                props.conference?.is_active                ?? false,
-    logo:                     null,
     hero_images:              [],
     remove_hero_images:       [],
     poster:                   null,
     abstract_template:        null,
     paper_template:           null,
-    remove_logo:              false,
     remove_poster:            false,
     remove_abstract_template: false,
     remove_paper_template:    false,
 });
-
-function handleLogoChange(e) {
-    const file = e.target.files[0];
-    if (file) {
-        form.logo = file;
-        form.remove_logo = false;
-        logoPreview.value = URL.createObjectURL(file);
-    }
-}
 
 const heroUploadError = ref('');
 
@@ -112,12 +109,6 @@ function handlePosterChange(e) {
     }
 }
 
-function removeLogo() {
-    form.logo = null;
-    form.remove_logo = true;
-    logoPreview.value = null;
-}
-
 function removePoster() {
     form.poster = null;
     form.remove_poster = true;
@@ -171,6 +162,24 @@ function formatStorageUrl(path) {
 }
 
 function submit() {
+    form.clearErrors();
+    let hasError = false;
+
+    if (!form.start_date) {
+        form.setError('start_date', 'Tanggal mulai (Start Date) wajib diisi.');
+        hasError = true;
+    }
+
+    if (!form.end_date) {
+        form.setError('end_date', 'Tanggal selesai (End Date) wajib diisi.');
+        hasError = true;
+    } else if (form.start_date && form.end_date < form.start_date) {
+        form.setError('end_date', 'Tanggal selesai harus sama atau setelah tanggal mulai.');
+        hasError = true;
+    }
+
+    if (hasError) return;
+
     const url = isEdit
         ? route('admin.conferences.update', props.conference.id)
         : route('admin.conferences.store');
@@ -247,29 +256,81 @@ function submit() {
                     <!-- Date & Venue Card -->
                     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                         <div class="mb-5 border-b border-slate-100 pb-3">
-                            <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Date & Venue Settings</h2>
+                            <h2 class="text-xs font-black uppercase tracking-widest text-slate-400">Conference Schedule & Submission Milestones</h2>
                         </div>
 
                         <div class="grid gap-5 sm:grid-cols-2">
+                            <!-- Conference Days -->
                             <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Start Date</label>
-                                <input v-model="form.start_date" type="date" class="admin-input" />
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Conference Start Date <span class="text-red-500">*</span>
+                                </label>
+                                <input v-model="form.start_date" type="date" class="admin-input" required />
+                                <p v-if="form.errors.start_date" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.start_date }}</p>
                             </div>
                             <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">End Date</label>
-                                <input v-model="form.end_date" type="date" class="admin-input" />
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Conference End Date <span class="text-red-500">*</span>
+                                </label>
+                                <input v-model="form.end_date" type="date" class="admin-input" :min="form.start_date" required />
+                                <p v-if="form.errors.end_date" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.end_date }}</p>
+                            </div>
+
+                            <!-- Divider for Submission Milestones -->
+                            <div class="sm:col-span-2 pt-2 border-t border-slate-100">
+                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">Submission Deadlines</h3>
+                                <p class="text-xs text-slate-500">Dates for public call for abstracts, deadlines, and automated submission cutoff.</p>
+                            </div>
+
+                            <!-- Abstract Open & Deadline -->
+                            <div>
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Abstract Open Date
+                                </label>
+                                <input v-model="form.abstract_open_date" type="date" class="admin-input" />
+                                <p v-if="form.errors.abstract_open_date" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.abstract_open_date }}</p>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Abstract Submission Deadline
+                                </label>
+                                <input v-model="form.abstract_deadline" type="date" class="admin-input" :min="form.abstract_open_date || form.start_date" />
+                                <p v-if="form.errors.abstract_deadline" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.abstract_deadline }}</p>
+                            </div>
+
+                            <!-- Paper Deadline -->
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Full Paper Submission Deadline
+                                </label>
+                                <input v-model="form.paper_deadline" type="date" class="admin-input" :min="form.abstract_deadline" />
+                                <p v-if="form.errors.paper_deadline" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.paper_deadline }}</p>
+                            </div>
+
+                            <!-- Divider for Venue -->
+                            <div class="sm:col-span-2 pt-2 border-t border-slate-100">
+                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">Venue & Location</h3>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Venue Name</label>
+                                <input v-model="form.venue" type="text" class="admin-input" placeholder="e.g. Auditorium UMSURA" />
+                                <p v-if="form.errors.venue" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.venue }}</p>
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Venue</label>
-                                <input v-model="form.venue" type="text" class="admin-input" placeholder="e.g. Surabaya International Convention Center" />
+                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Venue Address (Alamat Lengkap)</label>
+                                <textarea v-model="form.address" rows="2" class="admin-input" placeholder="e.g. Jl. Sutorejo No. 59, Mulyorejo, Surabaya"></textarea>
+                                <p v-if="form.errors.address" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.address }}</p>
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">City</label>
                                 <input v-model="form.city" type="text" class="admin-input" placeholder="Surabaya" />
+                                <p v-if="form.errors.city" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.city }}</p>
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Country</label>
                                 <input v-model="form.country" type="text" class="admin-input" placeholder="Indonesia" />
+                                <p v-if="form.errors.country" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.country }}</p>
                             </div>
                         </div>
                     </div>

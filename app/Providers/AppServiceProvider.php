@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         Mail::extend('resend', function () {
-            $key = config('services.resend.key') ?: env('RESEND_API_KEY');
+            $key = (string) config('services.resend.key');
             return new ResendTransport($key);
         });
     }

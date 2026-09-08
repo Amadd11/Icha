@@ -31,22 +31,12 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
-    {
-        return redirect()->route('admin.categories.index');
-    }
-
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
         Category::create($request->validated());
 
         return redirect()->route('admin.categories.index')
             ->with('success', 'Category created successfully.');
-    }
-
-    public function edit(Category $category): RedirectResponse
-    {
-        return redirect()->route('admin.categories.index');
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse

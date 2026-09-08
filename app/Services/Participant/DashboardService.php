@@ -308,6 +308,28 @@ class DashboardService
      */
     private function resolveNearestDeadline(?Conference $activeConference): array
     {
+        if ($activeConference) {
+            $now = now();
+            if ($activeConference->abstract_deadline && $now->lte($activeConference->abstract_deadline->endOfDay())) {
+                return [
+                    'title' => 'Abstract Submission Deadline',
+                    'date'  => $activeConference->abstract_deadline->format('d M Y'),
+                ];
+            }
+            if ($activeConference->paper_deadline && $now->lte($activeConference->paper_deadline->endOfDay())) {
+                return [
+                    'title' => 'Full Paper Submission Deadline',
+                    'date'  => $activeConference->paper_deadline->format('d M Y'),
+                ];
+            }
+            if ($activeConference->start_date && $now->lte($activeConference->start_date->endOfDay())) {
+                return [
+                    'title' => 'Conference Opening Day',
+                    'date'  => $activeConference->start_date->format('d M Y'),
+                ];
+            }
+        }
+
         $nextTimeline = $activeConference
             ? Timeline::where('conference_id', $activeConference->id)->orderBy('order')->first()
             : null;

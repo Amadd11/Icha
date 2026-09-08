@@ -1,5 +1,22 @@
 <script setup>
 import SectionHeading from "@/Components/UI/SectionHeading.vue";
+import { computed } from "vue";
+
+const props = defineProps({
+    conference: {
+        type: Object,
+        default: null,
+    },
+});
+
+const venueName = computed(() => props.conference?.venue || 'Auditorium UMSURA');
+const venueAddress = computed(() => props.conference?.address || 'Jl. Sutorejo No.59, Surabaya');
+const locationHeading = computed(() => {
+    if (props.conference?.city) {
+        return `${props.conference.city}, ${props.conference.country || 'Indonesia'}`;
+    }
+    return 'Surabaya, Indonesia';
+});
 </script>
 
 <template>
@@ -8,22 +25,22 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
             <SectionHeading
                 eyebrow="Location"
                 title="Conference Venue"
-                description="Universitas Muhammadiyah Surabaya (UMSURA), Surabaya, Indonesia"
+                :description="`${venueName}, ${locationHeading}`"
             />
 
             <div class="mt-12 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm grid grid-cols-1 md:grid-cols-2">
                 <div class="p-8 flex flex-col justify-center">
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4">Surabaya, Indonesia</h3>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-4">{{ locationHeading }}</h3>
                     <p class="text-slate-600 mb-6 leading-relaxed">
                         Surabaya is known as the City of Heroes and is the second-largest city in Indonesia.
                         A vibrant hub for healthcare, education, and commerce in East Java.
                     </p>
                     <div class="space-y-3 text-sm text-slate-600">
                         <div class="flex items-center gap-2">
-                            <span class="text-primary font-bold">Venue:</span> Auditorium UMSURA
+                            <span class="text-primary font-bold">Venue:</span> {{ venueName }}
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="text-primary font-bold">Address:</span> Jl. Sutorejo No.59, Surabaya
+                            <span class="text-primary font-bold">Address:</span> {{ venueAddress }}
                         </div>
                     </div>
                 </div>

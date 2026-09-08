@@ -34,7 +34,7 @@ function submitRegistration() {
 }
 
 // Form 2: Payment Receipt Upload
-const proofPreview = ref(props.payment?.proof_file ? formatStorageUrl(props.payment.proof_file) : null);
+const proofPreview = ref(props.payment?.proof_url || (props.payment?.proof_file ? formatStorageUrl(props.payment.proof_file) : null));
 
 const paymentForm = useForm({
     registration_id: props.existingRegistration?.id || null,
@@ -51,7 +51,7 @@ watch(() => props.existingRegistration, (newVal) => {
 
 watch(() => props.payment, (newVal) => {
     if (newVal?.proof_file) {
-        proofPreview.value = formatStorageUrl(newVal.proof_file);
+        proofPreview.value = newVal.proof_url || formatStorageUrl(newVal.proof_file);
     }
     if (newVal?.payment_method) {
         paymentForm.payment_method = newVal.payment_method;
@@ -430,13 +430,13 @@ function isPdf(path) {
                     <div class="max-h-[65vh] overflow-y-auto text-center">
                         <img
                             v-if="!isPdf(payment.proof_file)"
-                            :src="formatStorageUrl(payment.proof_file)"
+                            :src="payment.proof_url || formatStorageUrl(payment.proof_file)"
                             alt="Receipt Proof"
                             class="max-h-[60vh] mx-auto rounded-xl shadow-xs"
                         />
                         <a
                             v-else
-                            :href="formatStorageUrl(payment.proof_file)"
+                            :href="payment.proof_url || formatStorageUrl(payment.proof_file)"
                             target="_blank"
                             class="inline-block rounded-xl bg-purple-100 text-purple-800 font-bold px-4 py-2 text-xs"
                         >

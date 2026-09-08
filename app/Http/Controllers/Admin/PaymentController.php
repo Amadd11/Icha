@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -52,5 +53,28 @@ class PaymentController extends Controller
             : 'Payment rejected.';
 
         return redirect()->back()->with('success', $msg);
+    }
+
+    public function proof(Request $request, Payment $payment)
+    {
+        $user = $request->user();
+        $isOwner = $payment->registration && $payment->registration->user_id === $user?->id;
+        $isAdmin = in_array($user?->role, ['admin', 'super_admin'], true);
+
+        abort_unless($isOwner || $isAdmin, 403, 'Unauthorized access to payment proof.');
+
+        if (!$payment->proof_file) {
+            abort(404, 'Payment proof file not found.');
+        }
+
+        if (Storage::disk('local')->exists($payment->proof_file)) {
+            return Storage::disk('local')->response($payment->proof_file);
+        }
+
+        if (Storage::disk('public')->exists($payment->proof_file)) {
+            return Storage::disk('public')->response($payment->proof_file);
+        }
+
+        abort(404, 'Payment proof file not found on disk.');
     }
 }

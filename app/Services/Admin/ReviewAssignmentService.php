@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AbstractSubmission;
 use App\Models\ReviewRound;
 use App\Models\ReviewAssignment;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,13 +16,32 @@ class ReviewAssignmentService
     {
         $reviewerIds = array_values(array_unique($reviewerIds));
 
-        if (count($reviewerIds) !== 3) {
+        $latestRound = ReviewRound::where('submission_type', 'abstract')
+            ->where('submission_id', $abstract->id)
+            ->latest('round_number')
+            ->first();
+
+        if ($abstract->status === 'revision_required') {
             throw ValidationException::withMessages([
-                'reviewer_ids' => 'Tepat tiga reviewer harus ditugaskan untuk setiap round.',
+                'reviewer_ids' => 'Naskah sedang menunggu unggahan berkas revisi dari penulis. Penugasan reviewer tidak dapat diubah.',
             ]);
         }
 
-        $invalidReviewerExists = \App\Models\User::whereIn('id', $reviewerIds)
+        $isRound1 = !$latestRound || $latestRound->round_number === 1;
+
+        if (!$isRound1) {
+            throw ValidationException::withMessages([
+                'reviewer_ids' => 'Penugasan reviewer pada tahap revisi terkunci otomatis dan hanya dapat dinilai oleh reviewer yang meminta revisi.',
+            ]);
+        }
+
+        if (count($reviewerIds) !== 3) {
+            throw ValidationException::withMessages([
+                'reviewer_ids' => 'Tepat tiga reviewer harus ditugaskan untuk telaah awal.',
+            ]);
+        }
+
+        $invalidReviewerExists = User::whereIn('id', $reviewerIds)
             ->where('role', '!=', 'reviewer')
             ->exists();
 
@@ -36,6 +56,23 @@ class ReviewAssignmentService
             throw ValidationException::withMessages([
                 'reviewer_ids' => 'Penulis (author) naskah ini tidak dapat ditugaskan sebagai reviewer untuk naskahnya sendiri.',
             ]);
+        }
+
+        // Enforce category match: Reviewer must have expertise in the abstract's category
+        if ($abstract->category_id) {
+            $unmatchedReviewers = User::whereIn('id', $reviewerIds)
+                ->whereDoesntHave('categories', function ($query) use ($abstract) {
+                    $query->where('categories.id', $abstract->category_id);
+                })
+                ->pluck('name')
+                ->toArray();
+
+            if (!empty($unmatchedReviewers)) {
+                $names = implode(', ', $unmatchedReviewers);
+                throw ValidationException::withMessages([
+                    'reviewer_ids' => "Reviewer ({$names}) tidak memiliki bidang kepakaran yang sesuai dengan kategori naskah ini.",
+                ]);
+            }
         }
 
         Cache::lock("assign_reviewers_abstract_{$abstract->id}", 10)->block(5, function () use ($abstract, $reviewerIds) {
@@ -54,8 +91,8 @@ class ReviewAssignmentService
                         'status'          => 'open',
                     ]);
                 } elseif ($round->status === 'pending') {
-                    $round->transitionTo('open');
-                } elseif ($round->status !== 'open') {
+                    $round->update(['status' => 'open']);
+                } elseif (in_array($round->status, ['locked', 'completed'], true)) {
                     throw ValidationException::withMessages([
                         'reviewer_ids' => 'Reviewer tidak dapat diubah setelah round dikunci atau selesai.',
                     ]);

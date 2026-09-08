@@ -199,9 +199,12 @@ function logout() {
                 <Link
                     v-else
                     :href="route('login')"
-                    class="hidden text-sm font-medium text-white/80 transition-colors hover:text-gold lg:inline-block"
+                    class="hidden lg:inline-flex items-center gap-2 rounded-full bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-900 font-bold text-base px-6 py-2 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
                 >
-                    Login
+                    <svg class="h-4.5 w-4.5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Login</span>
                 </Link>
             </template>
 
@@ -309,10 +312,13 @@ function logout() {
                         <template v-else>
                             <Link
                                 :href="route('login')"
-                                class="text-sm font-medium text-white/80 hover:text-gold px-2 py-1.5"
+                                class="flex items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-bold text-base px-5 py-3 shadow-sm transition-all duration-200 mt-2"
                                 @click="emit('close-menu')"
                             >
-                                Login
+                                <svg class="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                </svg>
+                                <span>Login ke Portal</span>
                             </Link>
                         </template>
                     </li>

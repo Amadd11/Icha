@@ -118,7 +118,12 @@ class SubmissionService
             throw new SubmissionException('Kategori ilmiah tidak sesuai dengan konferensi yang sedang aktif.', 422);
         }
 
-        // 4. Block early if an existing abstract is already locked-in as accepted.
+        // 4. Block early if abstract submission is closed or deadline passed.
+        if ($activeConference && !$activeConference->isAbstractSubmissionOpen()) {
+            throw new SubmissionException('Penerimaan abstrak saat ini sedang ditutup atau batas waktu (deadline) telah berakhir.', 403);
+        }
+
+        // 5. Block early if an existing abstract is already locked-in as accepted.
         //    Checked *before* storing the file so we don't leave orphaned uploads.
         $existingAbstractPeek = AbstractSubmission::where('user_id', $user->id)
             ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
@@ -255,6 +260,10 @@ class SubmissionService
             throw new SubmissionException('Full Paper hanya dapat diunggah setelah Abstrak dinyatakan Diterima (Accepted).', 403);
         }
 
+        if ($activeConference && !$activeConference->isPaperSubmissionOpen()) {
+            throw new SubmissionException('Batas waktu (deadline) pengunggahan Full Paper telah berakhir.', 403);
+        }
+
         $filePath = null;
         if ($file) {
             $filePath = $file->store('papers', 'public');
@@ -336,8 +345,8 @@ class SubmissionService
 
         $reviewerIds = $this->resolveRevisingReviewers($latestRound, $fallbackCategoryId);
 
-        if (count($reviewerIds) !== 3) {
-            throw new SubmissionException('Round revisi membutuhkan tepat tiga reviewer yang tersedia.', 422);
+        if (empty($reviewerIds)) {
+            throw new SubmissionException('Tidak ada reviewer yang tersedia untuk mengevaluasi revisi.', 422);
         }
 
         $newRound = ReviewRound::create([
@@ -360,49 +369,44 @@ class SubmissionService
 
     /**
      * Determine which reviewers should be assigned to a new revision round:
-     * - Reviewers from the previous round who did NOT already accept
-     *   (i.e. still need to review the revised submission)
-     * - Fallback to all reviewers from the previous round if none qualify
-     * - Fallback to up to 3 reviewers from the same category if there was no previous round
+     * - Only reviewer(s) from previous round who explicitly recommended REVISION / REVISION_REQUIRED
+     * - Fallback to reviewers who did not explicitly accept if none specifically chose revision
+     * - Fallback to all reviewers from the previous round if all accepted (e.g. editorial revision decision)
+     * - Fallback to up to 3 reviewers from the category if there was no previous round
      */
     private function resolveRevisingReviewers(?ReviewRound $latestRound, int $fallbackCategoryId): array
     {
         $revisingReviewerIds = [];
 
         if ($latestRound && $latestRound->assignments->isNotEmpty()) {
+            // 1. Primary: Only reviewers who explicitly recommended REVISION / REVISION_REQUIRED
             foreach ($latestRound->assignments as $assignment) {
-                $recommendation = strtolower($assignment->review?->recommendation ?? '');
-                $alreadyAccepted = in_array($recommendation, ['oral', 'poster', 'accepted']);
-                if (!$alreadyAccepted) {
+                $recommendation = strtoupper(trim((string) ($assignment->review?->recommendation ?? '')));
+                if (in_array($recommendation, ['REVISION', 'REVISION_REQUIRED'], true)) {
                     $revisingReviewerIds[] = $assignment->reviewer_id;
                 }
             }
 
+            // 2. Fallback: If no reviewer specifically recommended revision, include reviewers who did NOT accept
+            if (empty($revisingReviewerIds)) {
+                foreach ($latestRound->assignments as $assignment) {
+                    $recommendation = strtoupper(trim((string) ($assignment->review?->recommendation ?? '')));
+                    $alreadyAccepted = in_array($recommendation, ['ORAL', 'POSTER', 'ACCEPT', 'ACCEPTED'], true);
+                    if (!$alreadyAccepted) {
+                        $revisingReviewerIds[] = $assignment->reviewer_id;
+                    }
+                }
+            }
+
+            // 3. Fallback: If still empty (e.g. all reviewers said accepted, but admin decided revision), re-assign all previous reviewers
             if (empty($revisingReviewerIds)) {
                 $revisingReviewerIds = $latestRound->assignments->pluck('reviewer_id')->toArray();
             }
 
-            $revisingReviewerIds = array_values(array_unique(array_merge(
-                $revisingReviewerIds,
-                $latestRound->assignments->pluck('reviewer_id')->toArray()
-            )));
+            $revisingReviewerIds = array_values(array_unique($revisingReviewerIds));
         }
 
-        if (count($revisingReviewerIds) < 3) {
-            $additionalReviewerIds = User::where('role', 'reviewer')
-                ->whereHas('categories', fn($q) => $q->where('categories.id', $fallbackCategoryId))
-                ->whereNotIn('id', $revisingReviewerIds)
-                ->take(3 - count($revisingReviewerIds))
-                ->pluck('id')
-                ->toArray();
-
-            $revisingReviewerIds = array_merge($revisingReviewerIds, $additionalReviewerIds);
-        }
-
-        if (count($revisingReviewerIds) > 3) {
-            $revisingReviewerIds = array_slice($revisingReviewerIds, 0, 3);
-        }
-
+        // 4. Fallback if there was no previous round or assignments
         if (empty($revisingReviewerIds)) {
             $revisingReviewerIds = User::where('role', 'reviewer')
                 ->whereHas('categories', fn($q) => $q->where('categories.id', $fallbackCategoryId))

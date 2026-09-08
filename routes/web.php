@@ -70,7 +70,7 @@ Route::get('/sitemap.xml', function () {
 })->name('sitemap');
 
 // Authenticated participant routes
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'no-cache'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
@@ -104,8 +104,12 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+// Payment Proof secure view route (Accessible by Admin and the paying Participant)
+Route::middleware(['auth', 'no-cache'])->get('/payments/{payment}/proof', [PaymentController::class, 'proof'])
+    ->name('payments.proof');
+
 // Certificate printable/view route
-Route::middleware('auth')->get('/certificate/{certificate}/download', [CertificateController::class, 'download'])
+Route::middleware(['auth', 'no-cache'])->get('/certificate/{certificate}/download', [CertificateController::class, 'download'])
     ->name('certificate.download');
 
 // Submission Template Download route (Preserves original uploaded filename)
@@ -114,18 +118,18 @@ Route::get('/template/{conference:slug}/{type}', [SubmissionController::class, '
 
 // Admin routes
 Route::prefix('admin')
-    ->middleware(['auth', 'role:super_admin,admin'])
+    ->middleware(['auth', 'role:super_admin,admin', 'no-cache'])
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        Route::resource('conferences', AdminConferenceController::class);
-        Route::resource('speakers', SpeakerController::class)->except(['show']);
-        Route::resource('sponsors', SponsorController::class)->except(['show']);
-        Route::resource('categories', CategoryController::class)->except(['show']);
-        Route::resource('timelines', TimelineController::class)->except(['show']);
-        Route::resource('registration-fees', RegistrationFeeController::class)->except(['show']);
+        Route::resource('conferences', AdminConferenceController::class)->except(['show']);
+        Route::resource('speakers', SpeakerController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('sponsors', SponsorController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('timelines', TimelineController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('registration-fees', RegistrationFeeController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::resource('registrations', AdminRegistrationController::class)->only(['index', 'show']);
         Route::post('registrations/{registration}/send-invoice', [AdminRegistrationController::class, 'sendInvoice'])->name('registrations.send-invoice');
@@ -139,21 +143,21 @@ Route::prefix('admin')
         Route::post('abstracts/{abstract}/assign', [ReviewAssignmentController::class, 'store'])->name('abstracts.assign');
         Route::delete('abstracts/{abstract}', [AbstractController::class, 'destroy'])->name('abstracts.destroy');
 
-        Route::resource('papers', PaperController::class);
+        Route::resource('papers', PaperController::class)->only(['index']);
         Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
 
         // Reviewer Management
-        Route::resource('reviewers', ReviewerManagementController::class)->except(['show']);
+        Route::resource('reviewers', ReviewerManagementController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // Super Admin Only: User Management
         Route::middleware('role:super_admin')->group(function () {
-            Route::resource('users', UserController::class)->except(['show']);
+            Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
         });
     });
 
 // Reviewer routes
 Route::prefix('reviewer')
-    ->middleware(['auth', 'role:reviewer'])
+    ->middleware(['auth', 'role:reviewer', 'no-cache'])
     ->name('reviewer.')
     ->group(function () {
         Route::get('/dashboard', [ReviewerDashboardController::class, 'index'])
@@ -163,7 +167,7 @@ Route::prefix('reviewer')
     });
 
 // Legacy profile routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'no-cache'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

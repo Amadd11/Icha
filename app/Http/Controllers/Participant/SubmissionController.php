@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Participant;
 
+use App\Exceptions\SubmissionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\StoreAbstractRequest;
 use App\Http\Requests\Participant\StorePaperRequest;
@@ -59,7 +60,7 @@ class SubmissionController extends Controller
             );
 
             return redirect()->back()->with('success', 'Abstract submitted successfully!');
-        } catch (\App\Exceptions\SubmissionException $e) {
+        } catch (SubmissionException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -74,7 +75,7 @@ class SubmissionController extends Controller
             );
 
             return redirect()->back()->with('success', 'Full Paper submitted successfully!');
-        } catch (\App\Exceptions\SubmissionException $e) {
+        } catch (SubmissionException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

@@ -145,11 +145,15 @@ Reviewer tidak boleh memilih abstract sendiri.
 
 Hanya Admin yang melakukan assignment.
 
-Satu review round maksimal 3 reviewer.
+Satu review round tepat 3 reviewer (tidak boleh kurang atau lebih).
 
 Reviewer yang sama tidak boleh ditugaskan dua kali pada round yang sama.
 
-Reviewer harus aktif.
+Reviewer harus memiliki peran reviewer dan akun aktif.
+
+**Wajib Kesesuaian Kategori (Track Expertise)**: Reviewer yang ditugaskan harus terdaftar pada kategori yang sama dengan kategori naskah abstract (`categories.id` = `abstracts.category_id`). Penugasan lintas bidang kepakaran/kategori akan ditolak baik di UI maupun di Service backend.
+
+**Pencegahan Konflik Kepentingan (Conflict of Interest)**: Penulis (author) naskah tidak dapat ditugaskan sebagai reviewer untuk naskahnya sendiri.
 
 ## 7. Review Round
 
@@ -230,13 +234,18 @@ Jangan mengarang nama kriteria.
 `total_score` dan `recommendation` wajib dihitung dan ditetapkan secara otoritatif oleh backend:
 
 ```text
-total_score = score_criteria_1 + score_criteria_2
-
-Total >= 5  →  ORAL
-Total < 5   →  POSTER
+total_score = score_criteria_1 + score_criteria_2 (skala 2 - 10)
 ```
 
-Aturan Penguncian & Keputusan Final:
+Rekomendasi eksplisit yang dipilih oleh Reviewer:
+1. `ORAL` — Accept (Oral Presentation / Presentasi Lisan)
+2. `POSTER` — Accept (Poster Presentation / Presentasi Poster)
+3. `REVISION` — Revision Required (Memerlukan revisi/perbaikan dari author)
+4. `REJECT` — Reject (Naskah ditolak / tidak memenuhi kualifikasi)
+
+Konsensus & Keputusan Final:
+- Konsensus ketiga reviewer dihitung via `ReviewRound::finalRecommendation()` (suara mayoritas minimal 2 dari 3 reviewer: `ORAL`, `POSTER`, `REVISION`, atau `REJECT`).
+- Rekomendasi reviewer bersifat pertimbangan ilmiah (advisory). Admin memegang wewenang akhir menetapkan keputusan resmi (`accepted` dengan alokasi tipe Oral/Poster, `revision_required`, atau `rejected`).
 1. **Wajib tepat 3 Reviewer:** Review round hanya dapat dikunci (`locked`) jika seluruh 3 penugasan reviewer berstatus `completed`.
 2. **Keputusan Final Admin:** Admin dilarang mengambil keputusan sebelum round `locked` dengan 3 review lengkap.
 3. **Diskresi Admin:** Rekomendasi reviewer (`ORAL`/`POSTER`) bersifat saran ilmiah (advisory). Admin memegang wewenang penuh untuk memutuskan `accepted` (alokasi Oral/Poster), `revision_required`, atau `rejected`.

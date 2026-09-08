@@ -58,24 +58,31 @@ class PaperReviewService
                 $totalAssignments = $round->assignments()->count();
                 $completedAssignments = $round->assignments()->where('status', 'completed')->count();
 
-                if ($totalAssignments !== 3 || $completedAssignments !== 3) {
-                    throw ValidationException::withMessages([
-                        'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
-                    ]);
+                if ($round->round_number === 1) {
+                    if ($totalAssignments !== 3 || $completedAssignments !== 3) {
+                        throw ValidationException::withMessages([
+                            'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
+                        ]);
+                    }
+                } else {
+                    if ($totalAssignments === 0 || $completedAssignments < $totalAssignments) {
+                        throw ValidationException::withMessages([
+                            'status' => 'Final decision memerlukan seluruh reviewer pada round revisi ini menyelesaikan review.',
+                        ]);
+                    }
                 }
             }
         }
 
-        $paper->transitionTo($data['status']);
-
         $updated = $paper->update([
+            'status'       => $data['status'],
             'review_notes' => $data['review_notes'] ?? null,
-            'reviewed_by' => $reviewer->id,
-            'reviewed_at' => now(),
+            'reviewed_by'  => $reviewer->id,
+            'reviewed_at'  => now(),
         ]);
 
         if ($round && $round->status === 'locked') {
-            $round->transitionTo('completed');
+            $round->update(['status' => 'completed']);
         }
 
         return $updated;

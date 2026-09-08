@@ -40,6 +40,7 @@ const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
 const isAssignModalOpen = ref(false);
 const lockedReviewerIds = ref([]);
+const activeAssignmentsMap = ref({});
 const activeDropdownItem = ref(null);
 const dropdownStyle = ref({});
 
@@ -115,8 +116,13 @@ function openReviewModal(item) {
 }
 
 function openAssignModal(item) {
+    if (!item) return;
+    if (item.status === 'revision_required' || getReviewStats(item).roundNumber > 1) {
+        return;
+    }
     activeAbstract.value = item;
     assignForm.clearErrors();
+    activeAssignmentsMap.value = {};
     
     // Find currently assigned reviewer IDs and locked (completed) reviewers from the latest round
     const assignedIds = [];
@@ -127,6 +133,7 @@ function openAssignModal(item) {
             latestRound.assignments.forEach(a => {
                 if (a.reviewer_id && !assignedIds.includes(a.reviewer_id) && assignedIds.length < 3) {
                     assignedIds.push(a.reviewer_id);
+                    activeAssignmentsMap.value[a.reviewer_id] = a;
                     if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
                         lockedIds.push(a.reviewer_id);
                     }
@@ -137,17 +144,61 @@ function openAssignModal(item) {
 
     // Notice: Admin has 100% manual control. Unassigned abstracts start with [] (0 reviewers).
     lockedReviewerIds.value = lockedIds;
-    assignForm.reviewer_ids = assignedIds;
+    assignForm.reviewer_ids = [...assignedIds];
     isAssignModalOpen.value = true;
 }
 
+function toggleReviewer(rev) {
+    // Reviewers who already completed reviews CANNOT be unassigned
+    if (lockedReviewerIds.value.includes(rev.id)) {
+        return;
+    }
+    // Reviewers outside category or author cannot be assigned
+    if (!isReviewerEligible(rev)) {
+        return;
+    }
+    const idx = assignForm.reviewer_ids.indexOf(rev.id);
+    if (idx > -1) {
+        assignForm.reviewer_ids.splice(idx, 1);
+    } else if (assignForm.reviewer_ids.length < 3) {
+        assignForm.reviewer_ids.push(rev.id);
+    }
+}
+
+function isReviewerEligible(rev) {
+    if (!activeAbstract.value) return false;
+    // Conflict of interest: Author cannot review their own paper
+    if (rev.id === activeAbstract.value.user_id) return false;
+    // If abstract has no specific category, any reviewer is eligible
+    if (!activeAbstract.value.category_id) return true;
+    return rev.categories?.some(c => c.id === activeAbstract.value.category_id);
+}
+
+const eligibleReviewersCount = computed(() => {
+    if (!props.reviewers || !activeAbstract.value) return 0;
+    return props.reviewers.filter(rev => isReviewerEligible(rev)).length;
+});
+
 const sortedReviewers = computed(() => {
     if (!props.reviewers || !activeAbstract.value) return props.reviewers || [];
-    const catId = activeAbstract.value.category_id;
     return [...props.reviewers].sort((a, b) => {
-        const aMatch = a.categories?.some(c => c.id === catId) ? 1 : 0;
-        const bMatch = b.categories?.some(c => c.id === catId) ? 1 : 0;
-        return bMatch - aMatch;
+        // 1. Locked (completed review) always on top
+        const aLocked = lockedReviewerIds.value.includes(a.id) ? 1 : 0;
+        const bLocked = lockedReviewerIds.value.includes(b.id) ? 1 : 0;
+        if (bLocked !== aLocked) return bLocked - aLocked;
+
+        // 2. Currently selected reviewers second
+        const aSelected = assignForm.reviewer_ids.includes(a.id) ? 1 : 0;
+        const bSelected = assignForm.reviewer_ids.includes(b.id) ? 1 : 0;
+        if (bSelected !== aSelected) return bSelected - aSelected;
+
+        // 3. Category eligible reviewers third
+        const aEligible = isReviewerEligible(a) ? 1 : 0;
+        const bEligible = isReviewerEligible(b) ? 1 : 0;
+        if (bEligible !== aEligible) return bEligible - aEligible;
+
+        // 4. Alphabetical by name
+        return a.name.localeCompare(b.name);
     });
 });
 
@@ -209,6 +260,15 @@ function getReviewStats(item) {
         totalCount: totalAssignments,
         reviews: completedAssignments,
     };
+}
+
+function isDecisionReady(item) {
+    if (!item) return false;
+    const stats = getReviewStats(item);
+    if (stats.roundNumber === 1) {
+        return stats.completedCount === 3;
+    }
+    return stats.totalCount > 0 && stats.completedCount >= stats.totalCount;
 }
 </script>
 
@@ -293,7 +353,7 @@ function getReviewStats(item) {
                                                 Belum Ditugaskan (0/3)
                                             </span>
                                         </div>
-                                        <div v-else class="flex items-center gap-1.5">
+                                        <div v-else class="flex items-center gap-1.5 flex-wrap">
                                             <span :class="[
                                                 'inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold border',
                                                 getReviewStats(item).completedCount >= getReviewStats(item).totalCount && getReviewStats(item).completedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -301,15 +361,24 @@ function getReviewStats(item) {
                                             ]">
                                                 {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).totalCount }} Reviewed
                                             </span>
-                                            <span v-if="getReviewStats(item).roundNumber > 1" class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-1.5 py-0.5">
-                                                R{{ getReviewStats(item).roundNumber }} (Revision)
+                                            <span v-if="getReviewStats(item).roundNumber > 1" class="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 rounded-md px-1.5 py-0.5">
+                                                Revisi {{ getReviewStats(item).roundNumber - 1 }}
                                             </span>
                                         </div>
-                                        <p v-if="getReviewStats(item).totalCount > 0" class="text-[10px] text-slate-400">
-                                            Assigned Reviewers: {{ getReviewStats(item).totalCount }}
-                                        </p>
+                                        <div v-if="getReviewStats(item).totalCount > 0" class="text-[10px] text-slate-400">
+                                            <span v-if="getReviewStats(item).roundNumber > 1">
+                                                Reviewer Revisi: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).totalCount }}</strong>
+                                            </span>
+                                            <span v-else>
+                                                Assigned Reviewers: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).totalCount }}</strong>
+                                            </span>
+                                        </div>
                                         <p v-else class="text-[10px] text-amber-600 font-medium">
                                             Perlu ditunjuk oleh Admin
+                                        </p>
+                                        <p v-if="item.status === 'revision_required'" class="text-[10px] text-amber-700 font-medium flex items-center gap-1">
+                                            <span>⏳</span>
+                                            <span>Menunggu author unggah revisi</span>
                                         </p>
                                     </div>
                                 </td>
@@ -327,20 +396,33 @@ function getReviewStats(item) {
                                 <!-- Simplified Action Column -->
                                 <td class="px-5 py-3.5 text-right whitespace-nowrap">
                                     <div class="relative inline-flex items-center justify-end gap-1.5" @click.stop>
-                                        <!-- Primary Action: Assign Reviewers if unassigned, Decision if assigned -->
-                                        <button
-                                            v-if="getReviewStats(item).totalCount === 0"
-                                            @click="openAssignModal(item)"
-                                            class="rounded-xl bg-purple-900 hover:bg-purple-950 text-gold px-3.5 py-1.5 font-bold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1"
+                                        <!-- Primary Action: Menunggu Revisi if revision_required, Assign if unassigned, Decision if assigned -->
+                                        <span
+                                            v-if="item.status === 'revision_required'"
+                                            class="inline-flex items-center gap-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1.5 font-medium text-[11px]"
                                         >
-                                            <span>👥 Assign</span>
+                                            <span>⏳</span>
+                                            <span>Menunggu Revisi</span>
+                                        </span>
+                                        <button
+                                            v-else-if="getReviewStats(item).totalCount === 0"
+                                            @click="openAssignModal(item)"
+                                            class="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-900 border border-purple-200/90 px-3 py-1.5 font-semibold text-xs transition cursor-pointer shadow-2xs"
+                                        >
+                                            <svg class="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                            </svg>
+                                            <span>Assign</span>
                                         </button>
                                         <button
                                             v-else
                                             @click="openReviewModal(item)"
-                                            class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 font-bold text-xs transition cursor-pointer shadow-2xs"
+                                            class="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-950 border border-amber-200/90 px-3 py-1.5 font-semibold text-xs transition cursor-pointer shadow-2xs"
                                         >
-                                            Decision
+                                            <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                            </svg>
+                                            <span>Decision</span>
                                         </button>
 
                                         <!-- More Actions Dropdown Toggle -->
@@ -386,24 +468,53 @@ function getReviewStats(item) {
                             <span class="font-medium leading-relaxed">{{ assignForm.errors.reviewer_ids }}</span>
                         </div>
 
+                        <!-- Warning if category has fewer than 3 eligible reviewers -->
+                        <div v-if="eligibleReviewersCount < 3" class="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-start gap-2">
+                            <span class="mt-0.5 text-base">⚠️</span>
+                            <div class="leading-relaxed">
+                                <strong>Reviewer Kategori Kurang:</strong> Kategori ini baru memiliki <strong>{{ eligibleReviewersCount }}</strong> reviewer yang memenuhi syarat kepakaran (minimal 3 reviewer dibutuhkan). Silakan daftarkan reviewer dengan kategori <strong>{{ activeAbstract.category?.name || 'terkait' }}</strong> di menu Manajemen User terlebih dahulu.
+                            </div>
+                        </div>
+
+                        <!-- Alert jika ada reviewer yang sudah menilai (Terkunci) -->
+                        <div v-if="lockedReviewerIds.length > 0" class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-xl flex items-start gap-2">
+                            <span class="mt-0.5 text-base">🔒</span>
+                            <div class="leading-relaxed">
+                                <strong>Penilaian Terkunci:</strong> {{ lockedReviewerIds.length }} reviewer telah menyelesaikan penilaian dan tidak dapat dicabut.
+                                <span v-if="lockedReviewerIds.length < 3">
+                                    Anda masih dapat mengganti {{ 3 - lockedReviewerIds.length }} reviewer yang belum memberikan penilaian.
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Info jika kuota 3/3 penuh dan semua belum terkunci -->
+                        <div v-else-if="assignForm.reviewer_ids.length >= 3" class="p-3 bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl flex items-start gap-2">
+                            <span class="mt-0.5 text-base">ℹ️</span>
+                            <div class="leading-relaxed">
+                                <strong>Kuota 3 Reviewer Terpenuhi:</strong> Untuk mengganti reviewer, hapus centang pada reviewer yang bertanda <em>"Menunggu Penilaian"</em> terlebih dahulu.
+                            </div>
+                        </div>
+
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-xs font-bold text-slate-700 block">Select Reviewers for Track: <strong>{{ activeAbstract.category?.name || 'General' }}</strong></span>
-                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="assignForm.reviewer_ids.length >= 3 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-purple-100 text-purple-900 border border-purple-200'">
-                                    {{ assignForm.reviewer_ids.length }} / 3 Reviewer
+                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="assignForm.reviewer_ids.length >= (getReviewStats(activeAbstract).roundNumber === 1 ? 3 : 1) ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-purple-100 text-purple-900 border border-purple-200'">
+                                    {{ assignForm.reviewer_ids.length }} / {{ getReviewStats(activeAbstract).roundNumber === 1 ? '3' : '1-3' }} Reviewer
                                 </span>
                             </div>
                             
-                            <div class="space-y-2 max-h-60 overflow-y-auto border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
-                                <label
+                            <div class="space-y-2 max-h-64 overflow-y-auto border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
+                                <div
                                     v-for="rev in sortedReviewers"
                                     :key="rev.id"
-                                    class="flex items-center justify-between p-2.5 rounded-xl border transition"
+                                    @click="toggleReviewer(rev)"
+                                    class="flex items-center justify-between p-3 rounded-2xl border transition select-none"
                                     :class="[
-                                        lockedReviewerIds.includes(rev.id) ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-300 cursor-not-allowed' :
+                                        lockedReviewerIds.includes(rev.id) ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300 cursor-not-allowed' :
+                                        !isReviewerEligible(rev) ? 'bg-slate-100/60 border-slate-200 opacity-50 cursor-not-allowed' :
                                         assignForm.reviewer_ids.includes(rev.id) ? 'bg-purple-50 border-purple-300 ring-1 ring-purple-400 cursor-pointer' : 
-                                        assignForm.reviewer_ids.length >= 3 ? 'bg-slate-100/60 border-slate-200 opacity-60 cursor-not-allowed' :
-                                        'bg-white border-slate-200 hover:bg-slate-50 cursor-pointer'
+                                        assignForm.reviewer_ids.length >= 3 ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed' :
+                                        'bg-white border-slate-200 hover:bg-slate-50 hover:border-purple-200 cursor-pointer shadow-2xs'
                                     ]"
                                 >
                                     <div class="flex items-center gap-3">
@@ -411,29 +522,67 @@ function getReviewStats(item) {
                                             type="checkbox"
                                             :value="rev.id"
                                             v-model="assignForm.reviewer_ids"
-                                            :disabled="lockedReviewerIds.includes(rev.id) || (!assignForm.reviewer_ids.includes(rev.id) && assignForm.reviewer_ids.length >= 3)"
-                                            class="rounded text-purple-700 focus:ring-purple-700 disabled:opacity-50"
+                                            :disabled="lockedReviewerIds.includes(rev.id) || !isReviewerEligible(rev) || (!assignForm.reviewer_ids.includes(rev.id) && assignForm.reviewer_ids.length >= 3)"
+                                            @click.stop
+                                            class="rounded text-purple-700 focus:ring-purple-700 disabled:opacity-50 h-4 w-4"
                                         />
                                         <div>
-                                            <span class="text-xs font-bold text-slate-900 block">{{ rev.name }}</span>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-xs font-bold text-slate-900">{{ rev.name }}</span>
+                                                <span v-if="lockedReviewerIds.includes(rev.id)" class="text-[10px] text-emerald-700 font-bold">(Terkunci)</span>
+                                            </div>
                                             <span class="text-[10px] text-slate-400">{{ rev.email }}</span>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
+                                    <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                                        <!-- Review Selesai & Terkunci -->
                                         <span
                                             v-if="lockedReviewerIds.includes(rev.id)"
-                                            class="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 border border-emerald-200 flex items-center gap-1"
+                                            class="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 border border-emerald-300 flex items-center gap-1"
+                                            title="Reviewer telah menyelesaikan telaah dan tidak dapat dicabut"
                                         >
-                                            ✓ Review Completed
+                                            <span>🔒 Review Selesai</span>
+                                            <span v-if="activeAssignmentsMap[rev.id]?.total_score !== null" class="font-mono text-emerald-900">
+                                                ({{ activeAssignmentsMap[rev.id]?.total_score }}/10)
+                                            </span>
                                         </span>
+
+                                        <!-- Terpilih & Menunggu Penilaian (Dapat Dicabut) -->
                                         <span
-                                            v-if="rev.categories?.some(c => c.id === activeAbstract.category_id)"
-                                            class="rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 border border-purple-200"
+                                            v-else-if="assignForm.reviewer_ids.includes(rev.id)"
+                                            class="rounded-full bg-purple-100 text-purple-900 text-[10px] font-bold px-2.5 py-0.5 border border-purple-200 flex items-center gap-1"
+                                            title="Reviewer belum menilai, centang dapat dicabut untuk diganti"
+                                        >
+                                            <span>⏳ Menunggu Penilaian</span>
+                                        </span>
+
+                                        <!-- Author Naskah -->
+                                        <span
+                                            v-else-if="rev.id === activeAbstract.user_id"
+                                            class="rounded-full bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 border border-red-200"
+                                            title="Penulis naskah tidak dapat menilai naskahnya sendiri"
+                                        >
+                                            🚫 Author Naskah
+                                        </span>
+
+                                        <!-- Matched Track (Belum Terpilih) -->
+                                        <span
+                                            v-else-if="isReviewerEligible(rev)"
+                                            class="rounded-full bg-purple-50 text-purple-800 text-[10px] font-bold px-2 py-0.5 border border-purple-200"
                                         >
                                             🎯 Matched Track
                                         </span>
+
+                                        <!-- Beda Kategori -->
+                                        <span
+                                            v-else
+                                            class="rounded-full bg-slate-200 text-slate-600 text-[10px] font-medium px-2 py-0.5 border border-slate-300"
+                                            title="Bidang kepakaran berbeda dengan naskah"
+                                        >
+                                            Beda Kategori
+                                        </span>
                                     </div>
-                                </label>
+                                </div>
                             </div>
                         </div>
 
@@ -443,10 +592,10 @@ function getReviewStats(item) {
                             </button>
                             <button
                                 type="submit"
-                                :disabled="assignForm.processing || assignForm.reviewer_ids.length !== 3"
-                                class="rounded-xl bg-purple-900 hover:bg-purple-950 text-gold font-bold text-xs px-5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                                :disabled="assignForm.processing || (getReviewStats(activeAbstract).roundNumber === 1 ? assignForm.reviewer_ids.length !== 3 : (assignForm.reviewer_ids.length < 1 || assignForm.reviewer_ids.length > 3))"
+                                class="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-5 py-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
                             >
-                                {{ assignForm.processing ? 'Saving...' : (assignForm.reviewer_ids.length !== 3 ? 'Select exactly 3 reviewers' : 'Save Assignments') }}
+                                {{ assignForm.processing ? 'Saving...' : (getReviewStats(activeAbstract).roundNumber === 1 ? (assignForm.reviewer_ids.length !== 3 ? 'Select exactly 3 reviewers' : 'Save Assignments') : (assignForm.reviewer_ids.length < 1 ? 'Select at least 1 reviewer' : 'Save Assignments')) }}
                             </button>
                         </div>
                     </form>
@@ -494,10 +643,15 @@ function getReviewStats(item) {
                                         </div>
                                         <span :class="[
                                             'rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border',
-                                            rev.recommendation === 'ORAL' || rev.recommendation === 'POSTER' || rev.recommendation === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                            rev.recommendation === 'REJECT' || rev.recommendation === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                                            ['ORAL', 'POSTER', 'ACCEPT', 'ACCEPTED', 'accepted', 'oral', 'poster'].includes(rev.recommendation) ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                            ['REJECT', 'REJECTED', 'reject', 'rejected'].includes(rev.recommendation) ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                                         ]">
-                                            {{ rev.recommendation ? rev.recommendation.replace('_', ' ') : 'Reviewed' }}
+                                            {{
+                                                ['ORAL', 'POSTER', 'ACCEPT', 'ACCEPTED', 'accepted', 'oral', 'poster'].includes(rev.recommendation) ? 'Accepted' :
+                                                ['REJECT', 'REJECTED', 'reject', 'rejected'].includes(rev.recommendation) ? 'Rejected' :
+                                                ['REVISION', 'REVISION_REQUIRED', 'revision', 'revision_required'].includes(rev.recommendation) ? 'Revision' :
+                                                (rev.recommendation || 'Reviewed')
+                                            }}
                                         </span>
                                     </div>
                                     
@@ -515,15 +669,23 @@ function getReviewStats(item) {
 
                         <!-- Form -->
                         <form @submit.prevent="submitReview" class="space-y-3 border-t border-slate-100 pt-3">
-                            <!-- Warning Banner if not completed by 3 reviewers -->
-                            <div v-if="getReviewStats(activeAbstract).completedCount < 3" class="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-center gap-2">
+                            <!-- Warning Banner if not ready for decision -->
+                            <div v-if="!isDecisionReady(activeAbstract)" class="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-center gap-2">
                                 <span class="text-base">🔒</span>
-                                <span class="leading-relaxed"><strong>Decision Locked:</strong> Keputusan final hanya dapat dibuat setelah tepat 3 reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/3 review selesai).</span>
+                                <span class="leading-relaxed">
+                                    <strong>Decision Locked:</strong>
+                                    <template v-if="getReviewStats(activeAbstract).roundNumber === 1">
+                                        Keputusan final hanya dapat dibuat setelah tepat 3 reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/3 review selesai).
+                                    </template>
+                                    <template v-else>
+                                        Keputusan final tahap revisi ini hanya dapat dibuat setelah seluruh reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/{{ getReviewStats(activeAbstract).totalCount }} review selesai).
+                                    </template>
+                                </span>
                             </div>
 
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Decision Outcome <span class="text-red-500">*</span></label>
-                                <select v-model="reviewForm.status" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white font-bold" required :disabled="getReviewStats(activeAbstract).completedCount < 3">
+                                <select v-model="reviewForm.status" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white font-bold" required :disabled="!isDecisionReady(activeAbstract)">
                                     <option value="accepted">Accepted</option>
                                     <option value="revision_required">Revision Required</option>
                                     <option value="rejected">Rejected</option>
@@ -535,11 +697,11 @@ function getReviewStats(item) {
                                 <label class="block text-xs font-bold text-purple-950">Presentation Type Allocation <span class="text-red-500">*</span></label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'oral' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
-                                        <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="getReviewStats(activeAbstract).completedCount < 3" />
+                                        <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="!isDecisionReady(activeAbstract)" />
                                         <span class="text-xs">🎤 Oral Presentation</span>
                                     </label>
                                     <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'poster' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
-                                        <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="getReviewStats(activeAbstract).completedCount < 3" />
+                                        <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="!isDecisionReady(activeAbstract)" />
                                         <span class="text-xs">🖼️ Poster Presentation</span>
                                     </label>
                                 </div>
@@ -547,7 +709,7 @@ function getReviewStats(item) {
 
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Decision Notes for Author</label>
-                                <textarea v-model="reviewForm.review_notes" rows="3" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white" placeholder="Feedback notes for the author..." :disabled="getReviewStats(activeAbstract).completedCount < 3"></textarea>
+                                <textarea v-model="reviewForm.review_notes" rows="3" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white" placeholder="Feedback notes for the author..." :disabled="!isDecisionReady(activeAbstract)"></textarea>
                             </div>
 
                             <div class="flex items-center justify-end gap-2 pt-2">
@@ -556,10 +718,10 @@ function getReviewStats(item) {
                                 </button>
                                 <button
                                     type="submit"
-                                    :disabled="reviewForm.processing || getReviewStats(activeAbstract).completedCount < 3"
-                                    class="rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 transition disabled:opacity-50 cursor-pointer"
+                                    :disabled="reviewForm.processing || !isDecisionReady(activeAbstract)"
+                                    class="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-5 py-2.5 transition disabled:opacity-50 cursor-pointer shadow-xs"
                                 >
-                                    {{ reviewForm.processing ? 'Saving...' : (getReviewStats(activeAbstract).completedCount < 3 ? 'Awaiting 3 Reviews' : 'Save Decision') }}
+                                    {{ reviewForm.processing ? 'Saving...' : (!isDecisionReady(activeAbstract) ? (getReviewStats(activeAbstract).roundNumber === 1 ? 'Awaiting 3 Reviews' : 'Awaiting Reviews') : 'Save Decision') }}
                                 </button>
                             </div>
                         </form>
@@ -588,12 +750,21 @@ function getReviewStats(item) {
                             @click.stop
                         >
                             <button
+                                v-if="getReviewStats(activeDropdownItem).roundNumber === 1 && activeDropdownItem.status !== 'revision_required'"
                                 @click="openAssignModal(activeDropdownItem); closeDropdown();"
                                 class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-purple-50 hover:text-purple-900 font-semibold cursor-pointer transition"
                             >
                                 <span class="text-sm">👥</span>
                                 <span>Assign Reviewers</span>
                             </button>
+                            <div
+                                v-else
+                                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 bg-slate-50 cursor-not-allowed select-none"
+                                :title="activeDropdownItem.status === 'revision_required' ? 'Menunggu naskah revisi dari peserta' : 'Reviewer tahap revisi terkunci otomatis'"
+                            >
+                                <span class="text-sm">🔒</span>
+                                <span class="text-[11px] font-medium">Reviewer Terkunci (Revisi)</span>
+                            </div>
 
                             <a
                                 v-if="activeDropdownItem.file_path"

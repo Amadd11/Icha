@@ -34,8 +34,8 @@ class PaymentService
         $path = null;
         try {
             return Cache::lock("submit_payment_proof_{$registration->id}", 10)->block(5, function () use ($registration, $paymentMethod, $proofFile, &$path) {
-                // Save file
-                $path = $proofFile->store('payments', 'public');
+                // Save file to private local disk
+                $path = $proofFile->store('payments', 'local');
 
                 return DB::transaction(function () use ($registration, $paymentMethod, $path) {
                     // Check existing payment with lockForUpdate to guarantee no duplicate rows
@@ -48,7 +48,11 @@ class PaymentService
 
                         // Delete previous file from storage if replaced
                         if ($existingPayment->proof_file && $existingPayment->proof_file !== $path) {
-                            Storage::disk('public')->delete($existingPayment->proof_file);
+                            if (Storage::disk('local')->exists($existingPayment->proof_file)) {
+                                Storage::disk('local')->delete($existingPayment->proof_file);
+                            } elseif (Storage::disk('public')->exists($existingPayment->proof_file)) {
+                                Storage::disk('public')->delete($existingPayment->proof_file);
+                            }
                         }
 
                         $existingPayment->update([
@@ -83,7 +87,7 @@ class PaymentService
         } catch (\Throwable $e) {
             // Delete uploaded file if anything failed to prevent orphan storage files
             if ($path) {
-                Storage::disk('public')->delete($path);
+                Storage::disk('local')->delete($path);
             }
             throw $e;
         }
@@ -119,25 +123,14 @@ class PaymentService
 
                 $registration = $lockedPayment->registration;
 
-                if ($action === 'approve') {
-                    $lockedPayment->transitionTo('verified');
-                    $lockedPayment->update([
-                        'rejection_reason' => null,
-                        'verified_at'      => now(),
-                        'verified_by'      => $admin->id,
-                    ]);
+                $lockedPayment->transitionTo($action === 'approve' ? 'verified' : 'rejected');
+                $lockedPayment->update([
+                    'rejection_reason' => $action === 'approve' ? null : $rejectionReason,
+                    'verified_at'      => now(),
+                    'verified_by'      => $admin->id,
+                ]);
 
-                    $registration->transitionTo('paid');
-                } else {
-                    $lockedPayment->transitionTo('rejected');
-                    $lockedPayment->update([
-                        'rejection_reason' => $rejectionReason,
-                        'verified_at'      => now(),
-                        'verified_by'      => $admin->id,
-                    ]);
-
-                    $registration->transitionTo('rejected');
-                }
+                $registration->transitionTo($action === 'approve' ? 'paid' : 'rejected');
 
                 return true;
             });

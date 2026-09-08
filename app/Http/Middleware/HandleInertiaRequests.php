@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Conference;
 use App\Models\Registration;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -41,11 +42,9 @@ class HandleInertiaRequests extends Middleware
         $availableConferences = [];
 
         try {
-            $activeConference = $selectedConfId ? Conference::find($selectedConfId) : Conference::where('is_active', true)->first();
-            
-            if (!$activeConference) {
-                $activeConference = Conference::latest()->first();
-            }
+            $activeConference = $selectedConfId
+                ? Conference::find($selectedConfId)
+                : (Conference::where('is_active', true)->first() ?? Conference::latest()->first());
 
             $availableConferences = Conference::select('id', 'title', 'year', 'slug', 'is_active', 'status')
                 ->orderByDesc('year')

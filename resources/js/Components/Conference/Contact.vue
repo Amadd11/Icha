@@ -36,8 +36,12 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
                         <p class="text-xs text-slate-500 mt-1">Fast response for participant assistance</p>
                     </div>
                     <div class="pt-2 border-t border-slate-100 text-xs font-bold text-slate-800">
-                        <a href="https://wa.me/6281234567890" target="_blank" class="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
-                            <span>+62 812-3456-7890</span>
+                        <a href="https://wa.me/6281330032303" target="_blank" class="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
+                            <span>081330032303</span>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">Online</span>
+                        </a>
+                        <a href="https://wa.me/6285546070244" target="_blank" class="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
+                            <span>085546070244</span>
                             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">Online</span>
                         </a>
                     </div>

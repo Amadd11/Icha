@@ -29,22 +29,12 @@ class TimelineController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
-    {
-        return redirect()->route('admin.timelines.index');
-    }
-
     public function store(StoreTimelineRequest $request): RedirectResponse
     {
         Timeline::create($request->validated());
 
         return redirect()->route('admin.timelines.index')
             ->with('success', 'Timeline item added successfully.');
-    }
-
-    public function edit(Timeline $timeline): RedirectResponse
-    {
-        return redirect()->route('admin.timelines.index');
     }
 
     public function update(UpdateTimelineRequest $request, Timeline $timeline): RedirectResponse
