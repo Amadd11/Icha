@@ -23,7 +23,6 @@ class Conference extends Model
         'end_date',
         'abstract_open_date',
         'abstract_deadline',
-        'paper_deadline',
         'venue',
         'address',
         'city',
@@ -37,7 +36,6 @@ class Conference extends Model
         'bank_account_holder',
         'bank_instructions',
         'abstract_template',
-        'paper_template',
         'status',
         'is_active',
     ];
@@ -72,7 +70,6 @@ class Conference extends Model
             'end_date'           => 'date',
             'abstract_open_date' => 'date',
             'abstract_deadline'  => 'date',
-            'paper_deadline'     => 'date',
             'is_active'          => 'boolean',
         ];
     }
@@ -87,17 +84,6 @@ class Conference extends Model
             return false;
         }
         if ($this->abstract_deadline && $now->gt($this->abstract_deadline->endOfDay())) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Check if full paper submissions are currently open.
-     */
-    public function isPaperSubmissionOpen(): bool
-    {
-        if ($this->paper_deadline && now()->gt($this->paper_deadline->endOfDay())) {
             return false;
         }
         return true;

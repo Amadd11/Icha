@@ -100,8 +100,8 @@ function changeConference(e) {
                 </div>
             </div>
 
-            <!-- Submissions & Participants Metrics Grid (4 Cards) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Submissions & Participants Metrics Grid (3 Cards) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Card 1: Participants -->
                 <div class="animate-fade-in-up animation-delay-100 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-purple-200">
                     <div class="flex items-center justify-between">
@@ -120,7 +120,7 @@ function changeConference(e) {
                 <div class="animate-fade-in-up animation-delay-200 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-indigo-200">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Abstracts</span>
-                        <span class="rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 border border-indigo-100">Phase 1</span>
+                        <span class="rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 border border-indigo-100">Submissions</span>
                     </div>
                     <div class="flex items-baseline justify-between">
                         <span class="text-xl font-bold text-slate-900">
@@ -130,22 +130,8 @@ function changeConference(e) {
                     </div>
                 </div>
 
-                <!-- Card 3: Full Papers -->
-                <div class="animate-fade-in-up animation-delay-300 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-200">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Full Papers</span>
-                        <span class="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-100">Phase 2</span>
-                    </div>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold text-slate-900">
-                            <AnimatedCounter :value="props.stats?.total_full_papers || 0" />
-                        </span>
-                        <span class="text-xs font-bold text-emerald-700">{{ props.stats?.accepted_papers || 0 }} Accepted</span>
-                    </div>
-                </div>
-
-                <!-- Card 4: Active Scientific Tracks -->
-                <div class="animate-fade-in-up animation-delay-400 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-amber-200">
+                <!-- Card 3: Active Scientific Tracks -->
+                <div class="animate-fade-in-up animation-delay-300 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-amber-200">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Scientific Tracks</span>
                         <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">Topics</span>
@@ -275,9 +261,6 @@ function changeConference(e) {
                     </Link>
                     <Link :href="route('admin.abstracts.index')" class="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-bold text-xs text-slate-700 transition shadow-2xs">
                         Abstract Submissions
-                    </Link>
-                    <Link :href="route('admin.papers.index')" class="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-bold text-xs text-slate-700 transition shadow-2xs">
-                        Full Papers
                     </Link>
                 </div>
             </div>

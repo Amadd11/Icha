@@ -13,9 +13,9 @@ class ReviewSubmissionService
     {
         return Cache::lock("submit_review_assignment_{$assignment->id}", 10)->block(5, function () use ($assignment, $data) {
             return DB::transaction(function () use ($assignment, $data) {
-                $assignment->loadMissing(['round.abstractSubmission', 'round.fullPaper']);
+                $assignment->loadMissing(['round.abstractSubmission']);
                 $round = $assignment->round;
-                $submission = $round?->abstractSubmission ?? $round?->fullPaper;
+                $submission = $round?->abstractSubmission;
 
                 $isDecided = !$round || $round->status === 'completed'
                     || in_array($submission?->status, ['accepted', 'rejected'], true)
@@ -32,15 +32,13 @@ class ReviewSubmissionService
                 $totalScore = (int) $data['score_criteria_1'] + (int) $data['score_criteria_2'];
 
                 $rawRec = strtoupper((string) ($data['recommendation'] ?? ''));
-                $isFullPaper = ($round->submission_type === 'full_paper');
 
                 $recommendation = match ($rawRec) {
-                    'ACCEPTED', 'ACCEPT' => 'ACCEPTED',
-                    'ORAL', 'ACCEPT_ORAL' => $isFullPaper ? 'ACCEPTED' : 'ORAL',
-                    'POSTER', 'ACCEPT_POSTER' => $isFullPaper ? 'ACCEPTED' : 'POSTER',
+                    'ACCEPTED', 'ACCEPT', 'ORAL', 'ACCEPT_ORAL' => 'ORAL',
+                    'POSTER', 'ACCEPT_POSTER' => 'POSTER',
                     'REVISION', 'REVISION_REQUIRED' => 'REVISION',
                     'REJECT', 'REJECTED' => 'REJECT',
-                    default => ($totalScore >= 5 ? ($isFullPaper ? 'ACCEPTED' : 'ORAL') : ($isFullPaper ? 'REJECT' : 'POSTER')),
+                    default => ($totalScore >= 5 ? 'ORAL' : 'POSTER'),
                 };
 
                 // Check existing review with lockForUpdate to guarantee uniqueness
@@ -69,15 +67,9 @@ class ReviewSubmissionService
                     $assignment->update(['status' => 'completed']);
                 }
 
-                // Update submission status to under_review if still pending
-                if ($round && $round->submission_type === 'abstract' && $round->abstractSubmission) {
-                    if ($round->abstractSubmission->status === 'pending') {
-                        $round->abstractSubmission->update(['status' => 'under_review']);
-                    }
-                } elseif ($round && $round->submission_type === 'full_paper' && $round->fullPaper) {
-                    if ($round->fullPaper->status === 'pending') {
-                        $round->fullPaper->update(['status' => 'under_review']);
-                    }
+                // Update abstract status to under_review if still pending
+                if ($round && $round->abstractSubmission && $round->abstractSubmission->status === 'pending') {
+                    $round->abstractSubmission->update(['status' => 'under_review']);
                 }
 
                 // Locking Logic: If all assignments in round are completed, lock round

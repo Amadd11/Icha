@@ -23,15 +23,14 @@ class ReviewSubmissionController extends Controller
         }
 
         // Conflict of Interest: Author cannot review their own submission
-        $authorId = $assignment->round?->abstractSubmission?->user_id
-            ?? $assignment->round?->fullPaper?->user_id;
+        $authorId = $assignment->round?->abstractSubmission?->user_id;
         if ($authorId && $authorId === Auth::id()) {
             abort(403, 'Conflict of interest: You cannot review your own submission.');
         }
 
         // Check if final decision has already been made by Admin
         $round = $assignment->round;
-        $submission = $round?->abstractSubmission ?? $round?->fullPaper;
+        $submission = $round?->abstractSubmission;
         $isDecided = ($round?->status === 'completed')
             || in_array($submission?->status, ['accepted', 'rejected'], true)
             || ($submission?->status === 'revision_required' && $round?->status !== 'open');

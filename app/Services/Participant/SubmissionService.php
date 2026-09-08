@@ -7,7 +7,6 @@ use App\Helpers\CodeGenerator;
 use App\Models\AbstractSubmission;
 use App\Models\Category;
 use App\Models\Conference;
-use App\Models\FullPaper;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\ReviewAssignment;
@@ -37,12 +36,6 @@ class SubmissionService
             ->latest()
             ->get();
 
-        $papers = FullPaper::with('abstract')
-            ->where('user_id', $user->id)
-            ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
-            ->latest()
-            ->get();
-
         // Check registration and verified payment
         $registration = Registration::with('registrationFee')
             ->where('user_id', $user->id)
@@ -62,11 +55,32 @@ class SubmissionService
         $isAbstractRevisionRequired = $abstracts->where('status', 'revision_required')->isNotEmpty();
         $userCode = 'ICHA-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
 
+        $formattedAbstracts = $abstracts->map(function ($abstract) {
+            $feedbacks = $abstract->reviewRounds->flatMap(function ($round) {
+                return $round->assignments->map(function ($assignment, $idx) use ($round) {
+                    $review = $assignment->review;
+                    if (!$review) return null;
+                    return [
+                        'round_number'      => $round->round_number,
+                        'reviewer_alias'    => 'Reviewer #' . ($idx + 1),
+                        'recommendation'    => $review->recommendation,
+                        'score_criteria_1'  => $review->score_criteria_1,
+                        'score_criteria_2'  => $review->score_criteria_2,
+                        'comments'          => $review->summary,
+                        'reviewed_at'       => $review->created_at?->format('d M Y, H:i'),
+                    ];
+                })->filter();
+            })->values();
+
+            $item = $abstract->toArray();
+            $item['reviewer_feedbacks'] = $feedbacks;
+            return $item;
+        });
+
         return [
             'activeConference' => $activeConference,
             'categories'       => $categories,
-            'abstracts'        => $abstracts,
-            'papers'           => $papers,
+            'abstracts'        => $formattedAbstracts,
             'isPaid'           => $isPaid,
             'isPresenter'      => $isPresenter,
             'registration'     => $registration,
@@ -202,119 +216,6 @@ class SubmissionService
         } catch (\Throwable $e) {
             // Roll back the uploaded file if anything after storage failed,
             // so we don't leave orphaned files in storage.
-            if ($filePath) {
-                Storage::disk('public')->delete($filePath);
-            }
-            throw $e;
-        }
-    }
-
-    /**
-     * Handle Full Paper Submission logic & file storage.
-     */
-    public function submitPaper(User $user, array $data, ?UploadedFile $file = null): FullPaper
-    {
-        $activeConference = $this->getActiveConference();
-
-        // 1. Verify Payment
-        $registration = Registration::with('registrationFee')
-            ->where('user_id', $user->id)
-            ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
-            ->latest()
-            ->first();
-
-        $isPaid = $registration && Payment::where('registration_id', $registration->id)->where('status', 'verified')->exists();
-
-        if (!$isPaid) {
-            throw new SubmissionException('Payment verification is required before submitting a full paper.', 403);
-        }
-
-        // 2. Verify Presenter Ticket Type
-        if ($registration->registrationFee && $registration->registrationFee->type === 'non_presenter') {
-            throw new SubmissionException('Peserta dengan tiket Non-Presenter tidak memiliki akses pengunggahan full paper.', 403);
-        }
-
-        // 3. Verify Abstract exists, belongs to user, and is Accepted
-        $abstractId = $data['abstract_id'] ?? null;
-        $abstract = null;
-
-        if ($abstractId) {
-            $abstract = AbstractSubmission::where('id', $abstractId)
-                ->where('user_id', $user->id)
-                ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
-                ->first();
-        } else {
-            // Fallback: Find user's accepted abstract in active conference
-            $abstract = AbstractSubmission::where('user_id', $user->id)
-                ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
-                ->where('status', 'accepted')
-                ->latest()
-                ->first();
-        }
-
-        if (!$abstract) {
-            throw new SubmissionException('Abstrak tidak ditemukan atau Anda tidak memiliki hak akses ke abstrak ini.', 404);
-        }
-
-        if ($abstract->status !== 'accepted') {
-            throw new SubmissionException('Full Paper hanya dapat diunggah setelah Abstrak dinyatakan Diterima (Accepted).', 403);
-        }
-
-        if ($activeConference && !$activeConference->isPaperSubmissionOpen()) {
-            throw new SubmissionException('Batas waktu (deadline) pengunggahan Full Paper telah berakhir.', 403);
-        }
-
-        $filePath = null;
-        if ($file) {
-            $filePath = $file->store('papers', 'public');
-        }
-
-        try {
-            // Atomic lock per abstract prevents double-submit race condition
-            return Cache::lock("submit_paper_abstract_{$abstract->id}", 10)->block(5, function () use ($user, $data, $filePath, $activeConference, $abstract) {
-                return DB::transaction(function () use ($user, $data, $filePath, $activeConference, $abstract) {
-                    // Check for existing paper for this abstract (e.g. revision / update) with lockForUpdate
-                    $existingPaper = FullPaper::where('abstract_id', $abstract->id)->lockForUpdate()->first();
-
-                    if ($existingPaper) {
-                        $isRevision = ($existingPaper->status === 'revision_required');
-
-                        // Delete previous file when a new revision file is uploaded
-                        if ($filePath && $existingPaper->file_path && $existingPaper->file_path !== $filePath) {
-                            Storage::disk('public')->delete($existingPaper->file_path);
-                        }
-
-                        $existingPaper->update([
-                            'title'     => $data['title'],
-                            'file_path' => $filePath ?? $existingPaper->file_path,
-                            'status'    => 'under_review',
-                        ]);
-
-                        if ($isRevision) {
-                            $this->createRevisionRound(
-                                submissionType: 'full_paper',
-                                submissionId: $existingPaper->id,
-                                fallbackCategoryId: $abstract->category_id
-                            );
-                        }
-
-                        return $existingPaper;
-                    }
-
-                    // Database-agnostic & collision-free sequential code generation (FP-001, FP-002, ...)
-                    // Atomic creation inside lock eliminates TOCTOU race conditions.
-                    return CodeGenerator::create(FullPaper::class, 'paper_code', 'FP', [
-                        'user_id'       => $user->id,
-                        'conference_id' => $activeConference?->id,
-                        'abstract_id'   => $abstract->id,
-                        'title'         => $data['title'],
-                        'file_path'     => $filePath,
-                        'status'        => 'under_review',
-                    ]);
-                });
-            });
-        } catch (\Throwable $e) {
-            // Roll back the uploaded file if anything after storage failed
             if ($filePath) {
                 Storage::disk('public')->delete($filePath);
             }

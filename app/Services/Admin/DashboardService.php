@@ -5,7 +5,6 @@ namespace App\Services\Admin;
 use App\Models\AbstractSubmission;
 use App\Models\Category;
 use App\Models\Conference;
-use App\Models\FullPaper;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\Timeline;
@@ -32,7 +31,6 @@ class DashboardService
         $registrationQuery = Registration::query();
         $paymentQuery      = Payment::query();
         $abstractQuery     = AbstractSubmission::query();
-        $paperQuery        = FullPaper::query();
 
         if ($activeConferenceId) {
             $registrationQuery->where('conference_id', $activeConferenceId);
@@ -40,7 +38,6 @@ class DashboardService
                 $q->where('conference_id', $activeConferenceId);
             });
             $abstractQuery->where('conference_id', $activeConferenceId);
-            $paperQuery->where('conference_id', $activeConferenceId);
         }
 
         // Executive Aggregate Statistics
@@ -61,12 +58,6 @@ class DashboardService
         $revisionAbstracts   = (clone $abstractQuery)->where('status', 'revision_required')->count();
         $pendingAbstracts    = (clone $abstractQuery)->whereIn('status', ['pending', 'under_review'])->count();
 
-        // Full Paper Breakdown
-        $totalPapers         = (clone $paperQuery)->count();
-        $acceptedPapers      = (clone $paperQuery)->where('status', 'accepted')->count();
-        $revisionPapers      = (clone $paperQuery)->where('status', 'revision_required')->count();
-        $pendingPapers       = (clone $paperQuery)->whereIn('status', ['pending', 'under_review'])->count();
-
         $stats = [
             'total_participants'   => $totalParticipants,
             'total_registrations'  => $totalRegistrations,
@@ -82,10 +73,6 @@ class DashboardService
             'accepted_abstracts'   => $acceptedAbstracts,
             'revision_abstracts'   => $revisionAbstracts,
             'pending_abstracts'    => $pendingAbstracts,
-            'total_full_papers'    => $totalPapers,
-            'accepted_papers'      => $acceptedPapers,
-            'revision_papers'      => $revisionPapers,
-            'pending_papers'       => $pendingPapers,
         ];
 
         // Track Category Recap Breakdown

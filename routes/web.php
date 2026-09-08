@@ -7,7 +7,6 @@ use App\Http\Controllers\Admin\{
     ConferenceController as AdminConferenceController,
     DashboardController as AdminDashboardController,
     PaymentController,
-    PaperController,
     RegistrationController as AdminRegistrationController,
     RegistrationFeeController,
     ReviewAssignmentController,
@@ -90,13 +89,11 @@ Route::middleware(['auth', 'no-cache'])->group(function () {
         Route::post('/payment', [RegistrationController::class, 'submitPayment'])
             ->name('payment.submit');
 
-        // Submission routes (Abstract & Full Paper)
+        // Submission route (Abstract only)
         Route::get('/submission', [SubmissionController::class, 'index'])
             ->name('submission.index');
         Route::post('/submission/abstract', [SubmissionController::class, 'storeAbstract'])
             ->name('submission.abstract.store');
-        Route::post('/submission/paper', [SubmissionController::class, 'storePaper'])
-            ->name('submission.paper.store');
 
         // Certificate routes
         Route::get('/certificate', [CertificateController::class, 'index'])
@@ -143,9 +140,7 @@ Route::prefix('admin')
         Route::post('abstracts/{abstract}/assign', [ReviewAssignmentController::class, 'store'])->name('abstracts.assign');
         Route::delete('abstracts/{abstract}', [AbstractController::class, 'destroy'])->name('abstracts.destroy');
 
-        Route::resource('papers', PaperController::class)->only(['index', 'destroy']);
-        Route::post('papers/{paper}/review', [PaperController::class, 'review'])->name('papers.review');
-        Route::post('papers/{paper}/assign', [PaperController::class, 'assignReviewers'])->name('papers.assign');
+
 
         // Reviewer Management
         Route::resource('reviewers', ReviewerManagementController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -166,8 +161,9 @@ Route::prefix('reviewer')
         })->name('dashboard');
         Route::get('/abstracts', [ReviewerDashboardController::class, 'abstracts'])
             ->name('abstracts.index');
-        Route::get('/papers', [ReviewerDashboardController::class, 'papers'])
-            ->name('papers.index');
+        Route::get('/papers', function () {
+            return redirect()->route('reviewer.abstracts.index');
+        })->name('papers.index');
         Route::post('/assignments/{assignment}/review', [ReviewSubmissionController::class, 'store'])
             ->name('assignments.review');
     });

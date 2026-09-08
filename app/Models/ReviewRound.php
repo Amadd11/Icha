@@ -27,19 +27,9 @@ class ReviewRound extends Model
         return $this->belongsTo(AbstractSubmission::class, 'submission_id');
     }
 
-    public function fullPaper()
-    {
-        return $this->belongsTo(FullPaper::class, 'submission_id');
-    }
-
     public function getSubmissionAttribute()
     {
-        if ($this->submission_type === 'abstract') {
-            return $this->abstractSubmission;
-        } elseif ($this->submission_type === 'full_paper') {
-            return $this->fullPaper;
-        }
-        return null;
+        return $this->abstractSubmission;
     }
 
     public function transitionTo(string $status): void
@@ -57,7 +47,7 @@ class ReviewRound extends Model
             return null;
         }
 
-        $requiredCount = ($this->submission_type === 'full_paper') ? 2 : 3;
+        $requiredCount = 3;
         if ($this->round_number === 1 && $total !== $requiredCount) {
             return null;
         }

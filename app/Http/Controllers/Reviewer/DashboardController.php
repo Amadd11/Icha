@@ -17,27 +17,16 @@ class DashboardController extends Controller
 
     public function index(Request $request): Response
     {
-        return $this->renderSubmissionView('abstract');
+        return $this->abstracts($request);
     }
 
     public function abstracts(Request $request): Response
     {
-        return $this->renderSubmissionView('abstract');
-    }
+        $assignments = $this->dashboardService->getAssignments('abstract');
 
-    public function papers(Request $request): Response
-    {
-        return $this->renderSubmissionView('full_paper');
-    }
-
-    private function renderSubmissionView(string $submissionType): Response
-    {
-        $assignments = $this->dashboardService->getAssignments($submissionType);
-        $component = ($submissionType === 'full_paper') ? 'Reviewer/Papers/Index' : 'Reviewer/Abstracts/Index';
-
-        return Inertia::render($component, [
-            'submissionType' => $submissionType,
-            'stats'          => $this->dashboardService->getStats($assignments, $submissionType),
+        return Inertia::render('Reviewer/Abstracts/Index', [
+            'submissionType' => 'abstract',
+            'stats'          => $this->dashboardService->getStats($assignments, 'abstract'),
             'assignments'    => ReviewerAssignmentResource::collection($assignments)->resolve(),
         ]);
     }

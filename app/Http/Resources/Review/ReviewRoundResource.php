@@ -13,8 +13,6 @@ class ReviewRoundResource extends JsonResource
 
         if ($this->relationLoaded('abstractSubmission') && $this->abstractSubmission) {
             $submission = BlindedAbstractResource::make($this->abstractSubmission);
-        } elseif ($this->relationLoaded('fullPaper') && $this->fullPaper) {
-            $submission = $this->fullPaper;
         } elseif ($this->submission) {
             $submission = BlindedAbstractResource::make($this->submission);
         }

@@ -50,31 +50,18 @@ class DashboardService
 
         $allAssignments = ReviewAssignment::with([
             'round.abstractSubmission.category',
-            'round.fullPaper.abstract.category',
-            'review'
+            'review',
         ])
             ->where('reviewer_id', $user->id)
-            ->whereHas('round', function ($q) use ($submissionType) {
-                if ($submissionType === 'abstract') {
-                    $q->where('submission_type', 'abstract')
-                      ->whereHas('abstractSubmission');
-                } elseif ($submissionType === 'full_paper') {
-                    $q->where('submission_type', 'full_paper')
-                      ->whereHas('fullPaper');
-                } else {
-                    $q->where(function ($subQ) {
-                        $subQ->where(fn($a) => $a->where('submission_type', 'abstract')->whereHas('abstractSubmission'))
-                             ->orWhere(fn($p) => $p->where('submission_type', 'full_paper')->whereHas('fullPaper'));
-                    });
-                }
+            ->whereHas('round', function ($q) {
+                $q->where('submission_type', 'abstract')
+                  ->whereHas('abstractSubmission');
             })
             ->get();
 
-        // Group assignments by unique submission (submission_type + submission_id)
+        // Group assignments by unique abstract submission
         $grouped = $allAssignments->groupBy(function ($assignment) {
-            $type = $assignment->round?->submission_type ?? 'abstract';
-            $subId = $assignment->round?->submission_id ?? 0;
-            return "{$type}_{$subId}";
+            return (string) ($assignment->round?->submission_id ?? $assignment->id);
         });
 
         $consolidated = $grouped->map(function ($group) {

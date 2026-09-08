@@ -16,10 +16,9 @@ const navigationGroups = [
         ]
     },
     {
-        name: 'SUBMISSION',
+        name: 'PEER REVIEW',
         items: [
-            { name: 'Abstract', routeName: 'reviewer.abstracts.index', icon: 'description' },
-            { name: 'Full Paper', routeName: 'reviewer.papers.index', icon: 'article' },
+            { name: 'Abstract Review', routeName: 'reviewer.abstracts.index', icon: 'description' },
         ]
     }
 ];

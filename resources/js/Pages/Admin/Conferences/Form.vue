@@ -116,7 +116,6 @@ function removePoster() {
 }
 
 const abstractTemplateName = ref(null);
-const paperTemplateName = ref(null);
 
 function handleAbstractTemplateChange(e) {
     const file = e.target.files[0];
@@ -131,21 +130,6 @@ function removeAbstractTemplate() {
     form.abstract_template = null;
     form.remove_abstract_template = true;
     abstractTemplateName.value = null;
-}
-
-function handlePaperTemplateChange(e) {
-    const file = e.target.files[0];
-    if (file) {
-        form.paper_template = file;
-        form.remove_paper_template = false;
-        paperTemplateName.value = file.name;
-    }
-}
-
-function removePaperTemplate() {
-    form.paper_template = null;
-    form.remove_paper_template = true;
-    paperTemplateName.value = null;
 }
 
 function getFilename(path) {
@@ -296,15 +280,6 @@ function submit() {
                                 </label>
                                 <input v-model="form.abstract_deadline" type="date" class="admin-input" :min="form.abstract_open_date || form.start_date" />
                                 <p v-if="form.errors.abstract_deadline" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.abstract_deadline }}</p>
-                            </div>
-
-                            <!-- Paper Deadline -->
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                    Full Paper Submission Deadline
-                                </label>
-                                <input v-model="form.paper_deadline" type="date" class="admin-input" :min="form.abstract_deadline" />
-                                <p v-if="form.errors.paper_deadline" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.paper_deadline }}</p>
                             </div>
 
                             <!-- Divider for Venue -->
@@ -497,7 +472,7 @@ function submit() {
                             </span>
                         </div>
 
-                        <div class="grid gap-6 sm:grid-cols-2">
+                        <div class="max-w-xl">
                             <!-- Abstract Template Upload -->
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -515,7 +490,9 @@ function submit() {
                                 <div v-if="!form.remove_abstract_template && (abstractTemplateName || (isEdit && conference.abstract_template))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
                                     <div class="flex items-center gap-2.5 min-w-0">
                                         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-800 font-bold text-sm">
-                                            📄
+                                            <svg class="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
                                         </div>
                                         <div class="min-w-0">
                                             <span class="block text-xs text-slate-800 font-bold truncate">
@@ -544,55 +521,6 @@ function submit() {
                                 </div>
                                 <div v-else-if="form.remove_abstract_template" class="mt-2 text-xs font-bold text-amber-600">
                                     Abstract template will be removed.
-                                </div>
-                            </div>
-
-                            <!-- Full Paper Template Upload -->
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                    Full Paper Template (.doc, .docx, .pdf)
-                                </label>
-                                <input
-                                    type="file"
-                                    @change="handlePaperTemplateChange"
-                                    class="block w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-gold file:px-4 file:py-2.5 file:text-xs file:font-bold file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
-                                    accept=".doc,.docx,.pdf"
-                                />
-                                <p class="mt-1 text-[11px] text-slate-400">Max size: 20MB (.doc, .docx, .pdf)</p>
-                                <p v-if="form.errors.paper_template" class="mt-1 text-xs text-red-500 font-semibold">{{ form.errors.paper_template }}</p>
-
-                                <div v-if="!form.remove_paper_template && (paperTemplateName || (isEdit && conference.paper_template))" class="mt-3 flex items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50">
-                                    <div class="flex items-center gap-2.5 min-w-0">
-                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-800 font-bold text-sm">
-                                            📑
-                                        </div>
-                                        <div class="min-w-0">
-                                            <span class="block text-xs text-slate-800 font-bold truncate">
-                                                {{ paperTemplateName || getFilename(conference.paper_template) }}
-                                            </span>
-                                            <a
-                                                v-if="isEdit && conference.paper_template && !paperTemplateName"
-                                                :href="formatStorageUrl(conference.paper_template)"
-                                                target="_blank"
-                                                class="text-[11px] text-primary font-semibold hover:underline"
-                                            >
-                                                Download Active Template
-                                            </a>
-                                            <span v-else class="text-[11px] text-emerald-600 font-semibold">
-                                                New file selected
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        @click="removePaperTemplate"
-                                        class="shrink-0 text-xs font-extrabold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition cursor-pointer"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                                <div v-else-if="form.remove_paper_template" class="mt-2 text-xs font-bold text-amber-600">
-                                    Paper template will be removed.
                                 </div>
                             </div>
                         </div>

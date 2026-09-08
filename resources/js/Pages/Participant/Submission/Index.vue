@@ -7,13 +7,10 @@ const props = defineProps({
     activeConference: Object,
     categories: Array,
     abstracts: Array,
-    papers: Array,
     isPaid: Boolean,
     statusChecklist: Object,
     userSummary: Object,
 });
-
-const activeTab = ref('abstract'); // 'abstract' | 'paper'
 
 // Abstract Form
 const abstractForm = useForm({
@@ -29,20 +26,8 @@ const approvedAbstract = computed(() => {
     return props.abstracts?.find(a => a.status === 'accepted') || props.abstracts?.[0] || null;
 });
 
-// Paper Form
-const paperForm = useForm({
-    title: props.abstracts?.find(a => a.status === 'accepted')?.title || '',
-    abstract_id: props.abstracts?.find(a => a.status === 'accepted')?.id || props.abstracts?.[0]?.id || '',
-    file: null,
-});
-
-function handleFileChange(e, type) {
-    const file = e.target.files[0];
-    if (type === 'abstract') {
-        abstractForm.file = file;
-    } else {
-        paperForm.file = file;
-    }
+function handleFileChange(e) {
+    abstractForm.file = e.target.files[0];
 }
 
 const isRevising = ref(false);
@@ -57,6 +42,11 @@ function startRevision() {
     isRevising.value = true;
 }
 
+function cancelRevision() {
+    isRevising.value = false;
+    abstractForm.reset();
+}
+
 function submitAbstract() {
     abstractForm.post(route('participant.submission.abstract.store'), {
         preserveScroll: true,
@@ -67,46 +57,14 @@ function submitAbstract() {
     });
 }
 
-const isRevisingPaper = ref(false);
-
-function startPaperRevision() {
-    if (props.papers && props.papers.length > 0) {
-        paperForm.title = props.papers[0].title || '';
-        paperForm.abstract_id = props.papers[0].abstract_id || props.abstracts?.find(a => a.status === 'accepted')?.id || '';
-    }
-    isRevisingPaper.value = true;
-}
-
-function cancelPaperRevision() {
-    isRevisingPaper.value = false;
-    paperForm.reset();
-}
-
-function submitPaper() {
-    if (!paperForm.abstract_id && approvedAbstract.value) {
-        paperForm.abstract_id = approvedAbstract.value.id;
-    }
-    paperForm.post(route('participant.submission.paper.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            paperForm.reset();
-            isRevisingPaper.value = false;
-        },
-    });
-}
-
-function downloadTemplate(type) {
-    const hasFile = type === 'abstract'
-        ? !!props.activeConference?.abstract_template
-        : !!props.activeConference?.paper_template;
-
-    if (hasFile && props.activeConference?.slug) {
+function downloadTemplate() {
+    if (props.activeConference?.abstract_template && props.activeConference?.slug) {
         window.location.href = route('template.download', {
             conference: props.activeConference.slug,
-            type: type,
+            type: 'abstract',
         });
     } else {
-        alert(type === 'abstract' ? 'Berkas template abstrak belum diunggah oleh panitia.' : 'Berkas template full paper belum diunggah oleh panitia.');
+        alert('Berkas template abstrak belum diunggah oleh panitia.');
     }
 }
 </script>
@@ -117,44 +75,34 @@ function downloadTemplate(type) {
     <ParticipantLayout>
         <div class="max-w-7xl mx-auto space-y-6">
             
-            <!-- Top Banner / Navigation Tabs -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Choose Submission Type</span>
-                <div class="inline-flex p-1.5 bg-slate-100 rounded-2xl gap-2">
-                    <button
-                        @click="activeTab = 'abstract'"
-                        :class="[
-                            'px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer',
-                            activeTab === 'abstract'
-                                ? 'bg-sidebar text-white shadow-md'
-                                : 'text-slate-600 hover:text-slate-900'
-                        ]"
-                    >
-                        Abstract Submission
-                    </button>
-                    <button
-                        @click="activeTab = 'paper'"
-                        :class="[
-                            'px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer',
-                            activeTab === 'paper'
-                                ? 'bg-sidebar text-white shadow-md'
-                                : 'text-slate-600 hover:text-slate-900'
-                        ]"
-                    >
-                        Paper Submission
-                    </button>
+            <!-- Header Banner -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">Call for Abstracts / Submission Portal</h1>
+                    <p class="text-xs text-slate-500 mt-1">Submit your scientific abstract for peer-review at {{ props.activeConference?.title || 'ICHA 2026' }}.</p>
                 </div>
+                <button
+                    v-if="props.activeConference?.abstract_template"
+                    type="button"
+                    @click="downloadTemplate"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition shrink-0 cursor-pointer"
+                >
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                    Download Abstract Template
+                </button>
             </div>
 
             <!-- Locked State if Payment Not Verified -->
             <div v-if="!props.isPaid" class="bg-white rounded-2xl p-8 border border-amber-200 shadow-2xs text-center space-y-4">
-                <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto text-xl font-bold">
-                    🔒
+                <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-slate-900">Submission Portal Locked</h3>
                     <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                        Payment verification is required before you can submit abstracts or full papers. Please complete registration and upload your payment receipt for admin verification.
+                        Payment verification is required before you can submit abstracts. Please complete registration and upload your payment receipt for admin verification.
                     </p>
                 </div>
                 <div>
@@ -173,8 +121,8 @@ function downloadTemplate(type) {
                 <!-- Main Form & Guideline Section (Col-span 3) -->
                 <div class="lg:col-span-3 space-y-6">
 
-                    <!-- TAB 1: ABSTRACT SUBMISSION -->
-                    <div v-if="activeTab === 'abstract'" class="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
+                    <!-- ABSTRACT SUBMISSION -->
+                    <div class="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
                         <div class="border-b border-slate-100 pb-4 mb-6">
                             <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-primary">add_circle</span>
@@ -195,20 +143,66 @@ function downloadTemplate(type) {
                             </div>
 
                             <!-- Revision Notice Box -->
-                            <div v-if="props.abstracts[0].status === 'revision_required'" class="rounded-2xl border border-amber-300 bg-amber-50/80 p-5 space-y-3">
+                            <div v-if="props.abstracts[0].status === 'revision_required'" class="rounded-2xl border border-amber-300 bg-amber-50/80 p-5 space-y-4">
                                 <div class="flex items-center gap-2 text-amber-950 font-extrabold text-sm">
                                     <span class="material-symbols-outlined text-amber-700 text-lg">warning</span>
                                     Abstract Revision Required
                                 </div>
+
+                                <!-- Committee Decision Note -->
                                 <p v-if="props.abstracts[0].review_notes" class="text-xs text-amber-900 bg-white p-3 rounded-xl border border-amber-200 leading-relaxed font-medium">
-                                    <strong>Committee / Reviewer Notes:</strong> {{ props.abstracts[0].review_notes }}
+                                    <strong>Committee Decision Note:</strong> {{ props.abstracts[0].review_notes }}
                                 </p>
-                                <button
-                                    @click="startRevision"
-                                    class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
-                                >
-                                    Upload Revised Abstract &rarr;
-                                </button>
+
+                                <!-- Peer Reviewers Feedback Cards -->
+                                <div v-if="props.abstracts[0].reviewer_feedbacks?.length" class="space-y-2.5">
+                                    <span class="text-[11px] font-bold text-amber-950 uppercase tracking-wider block">
+                                        Peer Reviewer Evaluation &amp; Revision Notes:
+                                    </span>
+                                    <div class="grid gap-2.5">
+                                        <div
+                                            v-for="rf in props.abstracts[0].reviewer_feedbacks"
+                                            :key="rf.reviewer_alias + '-' + rf.round_number"
+                                            class="bg-white p-3.5 rounded-xl border border-amber-200 shadow-2xs space-y-2"
+                                        >
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs font-bold text-slate-800">{{ rf.reviewer_alias }}</span>
+                                                    <span v-if="rf.round_number > 1" class="text-[10px] text-purple-700 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded font-bold">
+                                                        Round {{ rf.round_number }}
+                                                    </span>
+                                                </div>
+                                                <span
+                                                    :class="[
+                                                        'px-2 py-0.5 rounded-md text-[10px] font-bold',
+                                                        rf.recommendation === 'ORAL' ? 'bg-emerald-100 text-emerald-800' :
+                                                        rf.recommendation === 'POSTER' ? 'bg-blue-100 text-blue-800' :
+                                                        rf.recommendation === 'REVISION' ? 'bg-amber-100 text-amber-800' :
+                                                        'bg-red-100 text-red-800'
+                                                    ]"
+                                                >
+                                                    {{ rf.recommendation }}
+                                                </span>
+                                            </div>
+                                            <div v-if="rf.score_criteria_1 || rf.score_criteria_2" class="flex gap-4 text-[11px] text-slate-500 font-semibold">
+                                                <span>Originality: <strong class="text-slate-700">{{ rf.score_criteria_1 }}/5</strong></span>
+                                                <span>Methodology: <strong class="text-slate-700">{{ rf.score_criteria_2 }}/5</strong></span>
+                                            </div>
+                                            <p class="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed whitespace-pre-line">
+                                                {{ rf.comments || 'No specific written feedback provided.' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <button
+                                        @click="startRevision"
+                                        class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
+                                    >
+                                        Upload Revised Abstract &rarr;
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -261,6 +255,15 @@ function downloadTemplate(type) {
                                             <span class="material-symbols-outlined text-[16px]">download</span>
                                             <span>Download Current Abstract</span>
                                         </a>
+                                    </div>
+
+                                    <!-- Committee Decision Note if any -->
+                                    <div v-if="props.abstracts[0].review_notes" class="mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 space-y-1">
+                                        <div class="flex items-center gap-1.5 font-bold text-amber-800">
+                                            <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                            Catatan Keputusan Panitia:
+                                        </div>
+                                        <p class="leading-relaxed text-amber-900/90 whitespace-pre-line pl-5">{{ props.abstracts[0].review_notes }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -377,232 +380,7 @@ function downloadTemplate(type) {
                         </div>
                     </div>
 
-                    <!-- TAB 2: PAPER SUBMISSION -->
-                    <div v-if="activeTab === 'paper'" class="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
-                        <div class="border-b border-slate-100 pb-4 mb-6">
-                            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary">description</span>
-                                Full Paper Submission
-                            </h2>
-                        </div>
 
-                        <!-- 🔒 LOCKED IF NO ACCEPTED ABSTRACT -->
-                        <div v-if="!props.abstracts?.some(a => a.status === 'accepted')" class="bg-slate-50 rounded-2xl p-8 border border-slate-200 text-center space-y-3 max-w-lg mx-auto my-4">
-                            <div class="w-14 h-14 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center mx-auto text-2xl font-bold">
-                                🔒
-                            </div>
-                            <h3 class="text-base font-bold text-slate-900">Full Paper Submission Locked</h3>
-                            <p class="text-xs text-slate-600 leading-relaxed">
-                                Full Paper submission will be unlocked automatically after your submitted Abstract is reviewed and officially <strong>Accepted</strong> by the scientific committee.
-                            </p>
-                            <div v-if="props.abstracts?.length > 0" class="pt-2">
-                                <span class="inline-flex px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                                    Current Abstract Status: {{ props.abstracts[0].status.replace('_', ' ') }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- 📄 UNLOCKED IF ABSTRACT IS ACCEPTED -->
-                        <div v-else class="space-y-6">
-
-                            <!-- STATE 1: ALREADY UPLOADED FULL PAPER -->
-                            <div v-if="props.papers?.length > 0 && !isRevisingPaper" class="space-y-6">
-                                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-center">
-                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                                        <span class="material-symbols-outlined text-3xl">check_circle</span>
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="text-lg font-bold text-emerald-900 mb-1">Full Paper Manuscript Uploaded</h3>
-                                        <p class="text-sm text-emerald-700">You have submitted your full paper manuscript. You can replace or update the file if needed before final decision.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Revision Notice Box -->
-                                <div v-if="props.papers[0].status === 'revision_required'" class="rounded-2xl border border-amber-300 bg-amber-50/80 p-5 space-y-3">
-                                    <div class="flex items-center gap-2 text-amber-950 font-extrabold text-sm">
-                                        <span class="material-symbols-outlined text-amber-700 text-lg">warning</span>
-                                        Full Paper Revision Required
-                                    </div>
-                                    <p v-if="props.papers[0].review_notes" class="text-xs text-amber-900 bg-white p-3 rounded-xl border border-amber-200 leading-relaxed font-medium">
-                                        <strong>Committee / Reviewer Notes:</strong> {{ props.papers[0].review_notes }}
-                                    </p>
-                                    <button
-                                        @click="startPaperRevision"
-                                        class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
-                                    >
-                                        Upload Revised Paper &rarr;
-                                    </button>
-                                </div>
-
-                                <!-- Submitted Paper Card -->
-                                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Submitted Paper</h4>
-                                        <button
-                                            v-if="props.papers[0].status !== 'accepted'"
-                                            @click="startPaperRevision"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-primary font-bold text-xs transition cursor-pointer"
-                                        >
-                                            <span class="material-symbols-outlined text-[16px]">sync</span>
-                                            Replace / Update File
-                                        </button>
-                                    </div>
-
-                                    <div class="space-y-4 text-sm">
-                                        <div>
-                                            <span class="text-xs text-slate-500 block mb-0.5">Paper Code</span>
-                                            <span class="font-mono font-bold text-primary bg-indigo-50 px-2 py-0.5 rounded">{{ props.papers[0].paper_code }}</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block mb-0.5">Title</span>
-                                            <span class="font-bold text-slate-900">{{ props.papers[0].title }}</span>
-                                        </div>
-                                        <div v-if="props.papers[0].abstract">
-                                            <span class="text-xs text-slate-500 block mb-0.5">Linked Abstract</span>
-                                            <span class="font-mono text-xs text-purple-900 font-semibold">{{ props.papers[0].abstract.abstract_code }} — {{ props.papers[0].abstract.title }}</span>
-                                        </div>
-                                        <div class="pt-2 flex flex-wrap items-center gap-3">
-                                            <span :class="[
-                                                'inline-flex items-center px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border',
-                                                props.papers[0].status === 'accepted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' :
-                                                props.papers[0].status === 'rejected' ? 'border-rose-200 bg-rose-50 text-rose-700' :
-                                                props.papers[0].status === 'revision_required' ? 'border-amber-200 bg-amber-50 text-amber-700' :
-                                                'border-purple-200 bg-purple-50 text-purple-700'
-                                            ]">
-                                                Status: {{ props.papers[0].status ? props.papers[0].status.replace('_', ' ') : 'Under Review' }}
-                                            </span>
-
-                                            <a
-                                                v-if="props.papers[0].file_path"
-                                                :href="'/storage/' + props.papers[0].file_path"
-                                                target="_blank"
-                                                download
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-primary font-bold text-xs shadow-2xs transition cursor-pointer"
-                                            >
-                                                <span class="material-symbols-outlined text-[16px]">download</span>
-                                                <span>Download Current Paper</span>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- STATE 2: NEW UPLOAD OR REPLACING -->
-                            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <!-- Left: Form -->
-                                <form @submit.prevent="submitPaper" class="space-y-4">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider mb-2">
-                                            {{ isRevisingPaper ? '🔄 Replace / Update Paper' : 'Submit Your Full Paper Here' }}
-                                        </h3>
-                                        <button
-                                            v-if="isRevisingPaper"
-                                            type="button"
-                                            @click="cancelPaperRevision"
-                                            class="text-xs text-slate-500 hover:text-slate-700 font-bold"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 mb-1">Paper Title</label>
-                                        <input
-                                            v-model="paperForm.title"
-                                            type="text"
-                                            placeholder="Enter full paper title..."
-                                            class="admin-input"
-                                            required
-                                        />
-                                        <span v-if="paperForm.errors.title" class="text-[10px] text-rose-500 font-bold mt-1 block">{{ paperForm.errors.title }}</span>
-                                    </div>
-
-                                    <div v-if="approvedAbstract">
-                                        <label class="block text-xs font-bold text-slate-700 mb-1">Link to Approved Abstract</label>
-                                        <div class="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-800">
-                                            <span class="font-mono font-bold text-primary bg-purple-100/80 border border-purple-200/80 px-2 py-0.5 rounded text-[11px] shrink-0">
-                                                {{ approvedAbstract.abstract_code }}
-                                            </span>
-                                            <span class="font-semibold text-slate-800 truncate flex-1" :title="approvedAbstract.title">
-                                                {{ approvedAbstract.title }}
-                                            </span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                ✓ Accepted ({{ approvedAbstract.presentation_type === 'poster' ? 'Poster' : 'Oral' }})
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 mb-1">
-                                            {{ isRevisingPaper ? 'Upload Replacement Paper (.doc, .docx, .pdf)' : 'Upload Full Paper File' }}
-                                        </label>
-                                        <input
-                                            type="file"
-                                            @change="e => handleFileChange(e, 'paper')"
-                                            accept=".doc,.docx,.pdf"
-                                            class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-primary hover:file:bg-purple-100 cursor-pointer"
-                                            required
-                                        />
-                                        <p class="text-[10px] text-slate-400 mt-1">Accepted formats: .doc, .docx, .pdf (Max 20MB)</p>
-                                        <span v-if="paperForm.errors.file" class="text-[10px] text-rose-500 font-bold mt-1 block">{{ paperForm.errors.file }}</span>
-                                    </div>
-
-                                    <div class="pt-2 flex items-center gap-3">
-                                        <button
-                                            v-if="isRevisingPaper"
-                                            type="button"
-                                            @click="cancelPaperRevision"
-                                            class="w-1/3 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs py-3 px-4 rounded-2xl transition cursor-pointer"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            :disabled="paperForm.processing"
-                                            :class="[
-                                                'bg-primary hover:bg-primary-dark text-white font-bold text-xs py-3 px-6 rounded-2xl shadow-lg shadow-purple-500/20 transition-all duration-200 disabled:opacity-50 cursor-pointer',
-                                                isRevisingPaper ? 'w-2/3' : 'w-full'
-                                            ]"
-                                        >
-                                            {{ paperForm.processing ? 'Saving...' : (isRevisingPaper ? 'REPLACE PAPER' : 'SUBMIT FULL PAPER') }}
-                                        </button>
-                                    </div>
-                                </form>
-
-                                <!-- Right: Guideline -->
-                                <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col justify-between">
-                                    <div>
-                                        <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Full Paper Guideline</h3>
-                                        <ul class="space-y-3 text-xs text-slate-600 font-medium">
-                                            <li class="flex items-start gap-2">
-                                                <span class="text-primary font-bold">➤</span>
-                                                <span>Full Paper should be 6 to 10 pages in IEEE/Springer proceedings format.</span>
-                                            </li>
-                                            <li class="flex items-start gap-2">
-                                                <span class="text-primary font-bold">➤</span>
-                                                <span>Ensure all figures and tables are high resolution and referenced correctly.</span>
-                                            </li>
-                                            <li class="flex items-start gap-2">
-                                                <span class="text-primary font-bold">➤</span>
-                                                <span>Plagiarism score must be below 20%.</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-
-                                    <div class="mt-6 pt-4 border-t border-slate-200">
-                                        <button
-                                            type="button"
-                                            @click="downloadTemplate('paper')"
-                                            class="w-full inline-flex items-center justify-center gap-2 bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition-all text-center cursor-pointer"
-                                        >
-                                            <span class="material-symbols-outlined text-[18px]">download</span>
-                                            Download Paper Template
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Submissions History List -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
@@ -611,8 +389,8 @@ function downloadTemplate(type) {
                             My Submissions History
                         </h3>
 
-                        <div v-if="props.abstracts.length === 0 && props.papers.length === 0" class="text-center py-8 text-xs text-slate-400">
-                            No submissions uploaded yet. Use the form above to submit your abstract or paper.
+                        <div v-if="props.abstracts.length === 0" class="text-center py-8 text-xs text-slate-400">
+                            No abstracts uploaded yet. Use the form above to submit your scientific abstract.
                         </div>
 
                         <div v-else class="space-y-4">
@@ -642,51 +420,62 @@ function downloadTemplate(type) {
                                     </div>
                                 </div>
 
-                                <!-- Reviewer Feedback Box -->
-                                <div v-if="abs.review_notes" class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
-                                    <div class="flex items-center gap-1.5 font-bold text-[11px] text-amber-800">
-                                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
-                                        Reviewer Feedback / Catatan Panitia:
+                                <!-- Reviewer Feedback & Committee Notes -->
+                                <div v-if="abs.review_notes || abs.reviewer_feedbacks?.length" class="space-y-3 pt-2 border-t border-slate-200/60">
+                                    <!-- Committee Decision Note -->
+                                    <div v-if="abs.review_notes" class="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
+                                        <div class="flex items-center gap-1.5 font-bold text-[11px] text-amber-800">
+                                            <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                            Catatan Keputusan Panitia:
+                                        </div>
+                                        <p class="text-[11px] leading-relaxed text-amber-900/90 whitespace-pre-line pl-5">{{ abs.review_notes }}</p>
                                     </div>
-                                    <p class="text-[11px] leading-relaxed text-amber-900/90 whitespace-pre-line pl-5">{{ abs.review_notes }}</p>
+
+                                    <!-- Peer Reviewers Cards -->
+                                    <div v-if="abs.reviewer_feedbacks?.length" class="space-y-2">
+                                        <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[16px] text-purple-600">reviews</span>
+                                            Hasil Evaluasi Peer Reviewer (Double-Blind):
+                                        </span>
+                                        <div class="grid gap-2 sm:grid-cols-1">
+                                            <div
+                                                v-for="rf in abs.reviewer_feedbacks"
+                                                :key="rf.reviewer_alias + '-' + rf.round_number"
+                                                class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5"
+                                            >
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-xs font-bold text-slate-800">{{ rf.reviewer_alias }}</span>
+                                                        <span v-if="rf.round_number > 1" class="text-[10px] text-purple-700 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded font-bold">
+                                                            Round {{ rf.round_number }}
+                                                        </span>
+                                                    </div>
+                                                    <span
+                                                        :class="[
+                                                            'px-2 py-0.5 rounded-md text-[10px] font-bold',
+                                                            rf.recommendation === 'ORAL' ? 'bg-emerald-100 text-emerald-800' :
+                                                            rf.recommendation === 'POSTER' ? 'bg-blue-100 text-blue-800' :
+                                                            rf.recommendation === 'REVISION' ? 'bg-amber-100 text-amber-800' :
+                                                            'bg-red-100 text-red-800'
+                                                        ]"
+                                                    >
+                                                        {{ rf.recommendation }}
+                                                    </span>
+                                                </div>
+                                                <div v-if="rf.score_criteria_1 || rf.score_criteria_2" class="flex gap-4 text-[11px] text-slate-500 font-semibold">
+                                                    <span>Originality: <strong class="text-slate-700">{{ rf.score_criteria_1 }}/5</strong></span>
+                                                    <span>Methodology: <strong class="text-slate-700">{{ rf.score_criteria_2 }}/5</strong></span>
+                                                </div>
+                                                <p class="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed whitespace-pre-line">
+                                                    {{ rf.comments || 'Tidak ada catatan tertulis khusus.' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Full Paper Items -->
-                            <div v-for="paper in props.papers" :key="'paper-'+paper.id" class="p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3">
-                                <div class="flex items-start justify-between gap-4">
-                                    <div>
-                                        <span class="inline-block px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-mono text-[10px] font-bold mb-1">
-                                            FULL PAPER: {{ paper.paper_code }}
-                                        </span>
-                                        <h4 class="text-xs font-bold text-slate-900">{{ paper.title }}</h4>
-                                        <p v-if="paper.abstract" class="text-[10px] text-slate-500 mt-0.5">Linked Abstract: {{ paper.abstract.abstract_code }}</p>
-                                    </div>
-                                    <div class="text-right shrink-0">
-                                        <span :class="[
-                                            'px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider',
-                                            paper.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
-                                            paper.status === 'rejected' ? 'bg-rose-100 text-rose-700' :
-                                            paper.status === 'revision_required' ? 'bg-amber-100 text-amber-700' :
-                                            'bg-slate-200 text-slate-700'
-                                        ]">
-                                            {{ paper.status.replace('_', ' ') }}
-                                        </span>
-                                        <a :href="'/storage/' + paper.file_path" target="_blank" class="block text-[10px] font-bold text-primary hover:underline mt-1.5">
-                                            View Manuscript File &rarr;
-                                        </a>
-                                    </div>
-                                </div>
 
-                                <!-- Reviewer Feedback Box -->
-                                <div v-if="paper.review_notes" class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
-                                    <div class="flex items-center gap-1.5 font-bold text-[11px] text-amber-800">
-                                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
-                                        Reviewer Feedback / Catatan Panitia:
-                                    </div>
-                                    <p class="text-[11px] leading-relaxed text-amber-900/90 whitespace-pre-line pl-5">{{ paper.review_notes }}</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
 

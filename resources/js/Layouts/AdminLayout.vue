@@ -58,7 +58,6 @@ const navigationGroups = [
         name: "Peer Review System",
         items: [
             { name: "Abstracts", routeName: "admin.abstracts.index" },
-            { name: "Full Papers", routeName: "admin.papers.index" },
             { name: "Scientific Tracks", routeName: "admin.categories.index" },
             { name: "Reviewers", routeName: "admin.reviewers.index" },
         ]

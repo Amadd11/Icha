@@ -60,13 +60,12 @@ class CodeGenerator
                     "MAX(CAST(SUBSTRING_INDEX($wrapped, '-', -1) AS UNSIGNED)) AS max_num",
             };
 
-            // Support models with and without SoftDeletes trait
-            $baseQuery = method_exists($modelClass, 'withTrashed')
-                ? $modelClass::withTrashed()
-                : $modelClass::query();
+            // Query raw database table directly to include all existing records (including soft-deleted),
+            // guaranteeing that database UNIQUE constraints will never collide.
+            $tableName = (new $modelClass)->getTable();
 
             $next = (int) (
-                $baseQuery
+                DB::table($tableName)
                     ->where($column, 'like', "{$prefix}-%")
                     ->selectRaw($rawSql)
                     ->value('max_num') ?? 0
@@ -79,12 +78,9 @@ class CodeGenerator
                     str_pad((string) $next, $digits, '0', STR_PAD_LEFT)
                 );
 
-                $checkQuery = method_exists($modelClass, 'withTrashed')
-                    ? $modelClass::withTrashed()
-                    : $modelClass::query();
-
+                $exists = DB::table($tableName)->where($column, $code)->exists();
                 $next++;
-            } while ($checkQuery->where($column, $code)->exists());
+            } while ($exists);
 
             // If a callback is provided (e.g. Model::create), execute it INSIDE the lock
             if ($callback !== null) {

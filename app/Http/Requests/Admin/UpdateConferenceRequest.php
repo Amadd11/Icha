@@ -25,7 +25,6 @@ class UpdateConferenceRequest extends FormRequest
             'end_date'           => ['required', 'date', 'after_or_equal:start_date'],
             'abstract_open_date' => ['nullable', 'date'],
             'abstract_deadline'  => ['nullable', 'date', 'after_or_equal:abstract_open_date'],
-            'paper_deadline'     => ['nullable', 'date', 'after_or_equal:abstract_deadline'],
             'venue'               => ['nullable', 'string', 'max:255'],
             'address'             => ['nullable', 'string', 'max:500'],
             'city'                => ['nullable', 'string', 'max:100'],
@@ -37,13 +36,11 @@ class UpdateConferenceRequest extends FormRequest
             'bank_account_holder'      => ['nullable', 'string', 'max:150'],
             'bank_instructions'        => ['nullable', 'string'],
             'abstract_template'        => ['nullable', 'file', 'mimes:doc,docx,pdf', 'max:20480'],
-            'paper_template'           => ['nullable', 'file', 'mimes:doc,docx,pdf', 'max:20480'],
             'status'                   => ['required', 'in:draft,active,archived'],
             'is_active'                => ['boolean'],
             'remove_hero_images'       => ['nullable', 'array'],
             'remove_poster'            => ['nullable', 'boolean'],
             'remove_abstract_template' => ['nullable', 'boolean'],
-            'remove_paper_template'    => ['nullable', 'boolean'],
         ];
     }
 

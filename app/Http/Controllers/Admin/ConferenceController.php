@@ -61,13 +61,6 @@ class ConferenceController extends Controller
             $data['abstract_template'] = $file->storeAs('conferences/templates', $filename, 'public');
         }
 
-        if ($request->hasFile('paper_template')) {
-            $file = $request->file('paper_template');
-            $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
-            $filename = time() . '_' . $cleanName;
-            $data['paper_template'] = $file->storeAs('conferences/templates', $filename, 'public');
-        }
-
         Conference::create($data);
 
         return redirect()->route('admin.conferences.index')
@@ -155,24 +148,6 @@ class ConferenceController extends Controller
             unset($data['abstract_template']);
         }
 
-        // Full Paper Template
-        if ($request->boolean('remove_paper_template')) {
-            if ($conference->paper_template) {
-                Storage::disk('public')->delete($conference->paper_template);
-            }
-            $data['paper_template'] = null;
-        } elseif ($request->hasFile('paper_template')) {
-            if ($conference->paper_template) {
-                Storage::disk('public')->delete($conference->paper_template);
-            }
-            $file = $request->file('paper_template');
-            $cleanName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
-            $filename = time() . '_' . $cleanName;
-            $data['paper_template'] = $file->storeAs('conferences/templates', $filename, 'public');
-        } else {
-            unset($data['paper_template']);
-        }
-
         $conference->update($data);
 
         return redirect()->route('admin.conferences.index')
@@ -194,9 +169,6 @@ class ConferenceController extends Controller
         }
         if ($conference->abstract_template) {
             Storage::disk('public')->delete($conference->abstract_template);
-        }
-        if ($conference->paper_template) {
-            Storage::disk('public')->delete($conference->paper_template);
         }
 
         $conference->delete();

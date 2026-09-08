@@ -60,11 +60,6 @@ class AbstractSubmission extends Model
         $this->update(['status' => $status]);
     }
 
-    public function fullPaper(): HasOne
-    {
-        return $this->hasOne(FullPaper::class, 'abstract_id');
-    }
-
     public function reviewRounds(): HasMany
     {
         return $this->hasMany(ReviewRound::class, 'submission_id')->where('submission_type', 'abstract')->orderBy('round_number');
@@ -74,16 +69,9 @@ class AbstractSubmission extends Model
     {
         static::deleting(function (AbstractSubmission $abstract) {
             $abstract->reviewRounds()->each(function ($round) {
-                // Manually delete assignments to ensure review constraints handle it if any, 
-                // but since ReviewRound deletes its assignments, we can just delete the round.
-                // Assuming ReviewRound has its own deleting event or foreign keys for assignments.
                 $round->assignments()->delete();
                 $round->delete();
             });
-
-            if ($abstract->fullPaper) {
-                $abstract->fullPaper->delete();
-            }
         });
     }
 }

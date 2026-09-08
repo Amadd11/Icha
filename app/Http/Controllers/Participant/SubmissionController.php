@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Participant;
 use App\Exceptions\SubmissionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\StoreAbstractRequest;
-use App\Http\Requests\Participant\StorePaperRequest;
 use App\Models\Conference;
 use App\Models\Registration;
 use App\Services\Participant\SubmissionService;
@@ -65,24 +64,9 @@ class SubmissionController extends Controller
         }
     }
 
-    public function storePaper(StorePaperRequest $request): RedirectResponse
+    public function downloadTemplate(Conference $conference, string $type = 'abstract')
     {
-        try {
-            $this->submissionService->submitPaper(
-                $request->user(),
-                $request->validated(),
-                $request->file('file')
-            );
-
-            return redirect()->back()->with('success', 'Full Paper submitted successfully!');
-        } catch (SubmissionException $e) {
-            return redirect()->back()->with('error', $e->getMessage());
-        }
-    }
-
-    public function downloadTemplate(Conference $conference, string $type)
-    {
-        $filePath = $type === 'abstract' ? $conference->abstract_template : $conference->paper_template;
+        $filePath = $conference->abstract_template;
 
         if (!$filePath || !Storage::disk('public')->exists($filePath)) {
             abort(404, 'Berkas template belum diunggah oleh panitia.');

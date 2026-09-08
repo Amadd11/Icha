@@ -5,7 +5,6 @@ namespace App\Services\Participant;
 use App\Models\AbstractSubmission;
 use App\Models\Certificate;
 use App\Models\Conference;
-use App\Models\FullPaper;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\Timeline;
@@ -38,19 +37,13 @@ class DashboardService
         $isPaid = $payment && $payment->status === 'verified';
         $paymentStatus = $this->resolvePaymentStatus($payment);
 
-        // 4. Resolve Abstract & Full Paper Submission Status
+        // 4. Resolve Abstract Submission Status
         $abstract = AbstractSubmission::where('user_id', $user->id)
             ->where('conference_id', $activeConference?->id)
             ->latest()
             ->first();
 
-        $fullPaper = FullPaper::where('user_id', $user->id)
-            ->where('conference_id', $activeConference?->id)
-            ->latest()
-            ->first();
-
         $abstractStatus = $abstract ? $abstract->status : 'not_submitted';
-        $fullPaperStatus = $fullPaper ? $fullPaper->status : 'not_submitted';
 
         // 5. Resolve Certificate Availability
         $hasCertificate = Certificate::where('user_id', $user->id)
@@ -69,12 +62,11 @@ class DashboardService
             paymentStatus: $paymentStatus,
             isPaidPresenter: $isPaidPresenter,
             hasCertificate: $hasCertificate,
-            abstractStatus: $abstractStatus,
-            fullPaperStatus: $fullPaperStatus
+            abstractStatus: $abstractStatus
         );
 
         $stages = $isPaidPresenter
-            ? $this->buildPresenterStages($isRegistered, $isPaid, $paymentStatus, $abstract, $abstractStatus, $fullPaper, $fullPaperStatus, $hasCertificate)
+            ? $this->buildPresenterStages($isRegistered, $isPaid, $paymentStatus, $abstract, $abstractStatus, $hasCertificate)
             : $this->buildGeneralStages($isRegistered, $isPaid, $paymentStatus, $hasCertificate);
 
         $nearestDeadline = $this->resolveNearestDeadline($activeConference);
@@ -86,7 +78,6 @@ class DashboardService
             'payment'            => $payment,
             'paymentStatus'      => $paymentStatus,
             'abstract'           => $abstract,
-            'fullPaper'          => $fullPaper,
             'hasCertificate'     => $hasCertificate,
             'stages'             => $stages,
             'nextAction'         => $nextAction,
@@ -119,8 +110,7 @@ class DashboardService
         string $paymentStatus,
         bool $isPaidPresenter,
         bool $hasCertificate,
-        string $abstractStatus,
-        string $fullPaperStatus
+        string $abstractStatus
     ): array {
         if (!$isRegistered) {
             return [
@@ -152,13 +142,13 @@ class DashboardService
         if ($paymentStatus === 'rejected') {
             return [
                 'title'        => 'Payment Receipt Rejected',
-                'description'  => 'Your payment receipt was rejected by admin. Please re-upload a valid proof file.',
+                'description'  => 'Your payment receipt was rejected. Please re-upload a valid transfer proof.',
                 'button_label' => 'Re-upload Receipt',
                 'url'          => route('participant.registration.create'),
             ];
         }
 
-        // Non-Presenter / Unverified Flow
+        // For General Participants (Non-Presenter)
         if (!$isPaidPresenter) {
             if ($hasCertificate) {
                 return [
@@ -170,10 +160,10 @@ class DashboardService
             }
 
             return [
-                'title'        => 'Registration Confirmed',
-                'description'  => 'Your conference registration is confirmed and verified. We look forward to seeing you!',
-                'button_label' => 'View My Profile',
-                'url'          => route('participant.profile.edit'),
+                'title'        => 'Access Conference Pass',
+                'description'  => 'Your payment is verified. You can now download your invoice and attend sessions.',
+                'button_label' => 'View Registration Details',
+                'url'          => route('participant.dashboard'),
             ];
         }
 
@@ -187,11 +177,11 @@ class DashboardService
             ];
         }
 
-        if ($fullPaperStatus === 'not_submitted' && $abstractStatus === 'accepted') {
+        if ($abstractStatus === 'revision_required') {
             return [
-                'title'        => 'Submit Full Paper',
-                'description'  => 'Your abstract has been accepted! Submit your full paper.',
-                'button_label' => 'Submit Full Paper',
+                'title'        => 'Upload Revised Abstract',
+                'description'  => 'Your abstract requires revisions based on peer reviewer feedback.',
+                'button_label' => 'Upload Revision',
                 'url'          => route('participant.submission.index'),
             ];
         }
@@ -206,8 +196,8 @@ class DashboardService
         }
 
         return [
-            'title'        => 'Submission Under Review',
-            'description'  => 'Your paper submission is currently being reviewed by peer reviewers.',
+            'title'        => 'Abstract Under Review',
+            'description'  => 'Your abstract submission is currently being reviewed by peer reviewers.',
             'button_label' => 'View Submission Status',
             'url'          => route('participant.submission.index'),
         ];
@@ -251,7 +241,7 @@ class DashboardService
     }
 
     /**
-     * Build complete 6-stage journey for verified paid presenters.
+     * Build complete 5-stage journey for verified paid presenters.
      */
     private function buildPresenterStages(
         bool $isRegistered,
@@ -259,8 +249,6 @@ class DashboardService
         string $paymentStatus,
         ?AbstractSubmission $abstract,
         string $abstractStatus,
-        ?FullPaper $fullPaper,
-        string $fullPaperStatus,
         bool $hasCertificate
     ): array {
         return [
@@ -281,12 +269,6 @@ class DashboardService
                 'label'  => 'Abstract',
                 'status' => $abstract ? ($abstractStatus === 'accepted' ? 'completed' : 'current') : 'pending',
                 'desc'   => $abstract ? ucfirst(str_replace('_', ' ', $abstractStatus)) : 'Not Submitted',
-            ],
-            [
-                'key'    => 'full_paper',
-                'label'  => 'Full Paper',
-                'status' => $fullPaper ? ($fullPaperStatus === 'accepted' ? 'completed' : 'current') : 'pending',
-                'desc'   => $fullPaper ? ucfirst(str_replace('_', ' ', $fullPaperStatus)) : 'Not Submitted',
             ],
             [
                 'key'    => 'presentation',
@@ -314,12 +296,6 @@ class DashboardService
                 return [
                     'title' => 'Abstract Submission Deadline',
                     'date'  => $activeConference->abstract_deadline->format('d M Y'),
-                ];
-            }
-            if ($activeConference->paper_deadline && $now->lte($activeConference->paper_deadline->endOfDay())) {
-                return [
-                    'title' => 'Full Paper Submission Deadline',
-                    'date'  => $activeConference->paper_deadline->format('d M Y'),
                 ];
             }
             if ($activeConference->start_date && $now->lte($activeConference->start_date->endOfDay())) {
