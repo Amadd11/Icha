@@ -307,17 +307,16 @@ function isDecisionReady(item) {
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="border-b border-slate-100 bg-slate-50 uppercase text-[11px] font-bold text-slate-500">
                             <tr>
-                                <th scope="col" class="px-5 py-3">Code / Author</th>
+                                <th scope="col" class="px-5 py-3 whitespace-nowrap">Code / Author</th>
                                 <th scope="col" class="px-5 py-3">Title</th>
-                                <th scope="col" class="px-5 py-3">Track</th>
-                                <th scope="col" class="px-5 py-3">Review Progress</th>
-                                <th scope="col" class="px-5 py-3">Status</th>
-                                <th scope="col" class="px-5 py-3 text-right">Action</th>
+                                <th scope="col" class="px-5 py-3 whitespace-nowrap">Review Progress</th>
+                                <th scope="col" class="px-5 py-3 whitespace-nowrap">Status</th>
+                                <th scope="col" class="px-5 py-3 text-right whitespace-nowrap">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="abstractList.length === 0">
-                                <td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">
+                                <td colspan="5" class="px-5 py-8 text-center text-xs text-slate-400">
                                     No abstracts found in this filter view.
                                 </td>
                             </tr>
@@ -327,41 +326,34 @@ function isDecisionReady(item) {
                                 class="transition hover:bg-slate-50/50"
                             >
                                 <!-- Code / Author -->
-                                <td class="px-5 py-3.5">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
                                     <span class="font-mono font-bold text-purple-900 text-xs">{{ item.abstract_code }}</span>
                                     <p class="font-bold text-slate-800 text-xs mt-0.5">{{ item.user?.name || item.author_name }}</p>
                                     <p class="text-[10px] text-slate-400">{{ item.user?.profile?.institution || item.user?.email }}</p>
                                 </td>
 
                                 <!-- Title -->
-                                <td class="px-5 py-3.5 max-w-xs">
+                                <td class="px-5 py-3.5 max-w-md">
                                     <p class="font-semibold text-slate-800 text-xs line-clamp-2" :title="item.title">{{ item.title }}</p>
                                 </td>
 
-                                <!-- Track -->
-                                <td class="px-5 py-3.5">
-                                    <span class="inline-block rounded bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-900 border border-purple-100">
-                                        {{ item.category?.name || 'General Track' }}
-                                    </span>
-                                </td>
-
                                 <!-- Review Progress Column -->
-                                <td class="px-5 py-3.5">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
                                     <div class="space-y-1">
                                         <div v-if="getReviewStats(item).totalCount === 0" class="flex items-center gap-1.5">
-                                            <span class="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                            <span class="inline-flex items-center whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
                                                 Belum Ditugaskan (0/3)
                                             </span>
                                         </div>
                                         <div v-else class="flex items-center gap-1.5 flex-wrap">
                                             <span :class="[
-                                                'inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold border',
+                                                'inline-flex items-center whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-bold border shadow-2xs',
                                                 getReviewStats(item).completedCount >= getReviewStats(item).totalCount && getReviewStats(item).completedCount > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                                 getReviewStats(item).completedCount > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'
                                             ]">
                                                 {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).totalCount }} Reviewed
                                             </span>
-                                            <span v-if="getReviewStats(item).roundNumber > 1" class="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 rounded-md px-1.5 py-0.5">
+                                            <span v-if="getReviewStats(item).roundNumber > 1" class="whitespace-nowrap text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 rounded-md px-1.5 py-0.5">
                                                 Revisi {{ getReviewStats(item).roundNumber - 1 }}
                                             </span>
                                         </div>
@@ -373,10 +365,10 @@ function isDecisionReady(item) {
                                                 Assigned Reviewers: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).totalCount }}</strong>
                                             </span>
                                         </div>
-                                        <p v-else class="text-[10px] text-amber-600 font-medium">
+                                        <p v-else class="text-[10px] text-amber-600 font-medium leading-tight pt-0.5">
                                             Perlu ditunjuk oleh Admin
                                         </p>
-                                        <p v-if="item.status === 'revision_required'" class="text-[10px] text-amber-700 font-medium flex items-center gap-1">
+                                        <p v-if="item.status === 'revision_required'" class="text-[10px] text-amber-700 font-medium flex items-center gap-1 leading-tight pt-0.5">
                                             <span>⏳</span>
                                             <span>Menunggu author unggah revisi</span>
                                         </p>
@@ -384,9 +376,9 @@ function isDecisionReady(item) {
                                 </td>
 
                                 <!-- Status -->
-                                <td class="px-5 py-3.5">
+                                <td class="px-5 py-3.5 whitespace-nowrap">
                                     <span :class="[
-                                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border',
+                                        'inline-flex items-center whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold capitalize border shadow-2xs',
                                         getBadgeClass(item.status)
                                     ]">
                                         {{ getStatusLabel(item.status) }}
@@ -622,6 +614,25 @@ function isDecisionReady(item) {
                     <!-- Modal Body -->
                     <div class="p-6 space-y-4 text-xs">
                         
+                        <!-- Abstract Details Banner -->
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <p class="text-slate-500 text-[11px]">
+                                    Author: <strong class="text-slate-800 font-bold">{{ activeAbstract.user?.name || activeAbstract.author_name }}</strong> | 
+                                    Track: <strong class="text-purple-900 font-bold">{{ activeAbstract.category?.name || 'General' }}</strong>
+                                </p>
+                            </div>
+                            <a
+                                v-if="activeAbstract.file_path"
+                                :href="formatStorageUrl(activeAbstract.file_path)"
+                                target="_blank"
+                                download
+                                class="inline-flex items-center rounded-xl border border-purple-200 bg-white px-3 py-1.5 text-purple-900 font-bold text-xs hover:bg-purple-50 transition shadow-2xs shrink-0"
+                            >
+                                {{ isDocx(activeAbstract.file_path) ? 'Download Dokumen (.docx)' : 'Download PDF' }}
+                            </a>
+                        </div>
+
                         <!-- Reviewers Feedback Recap -->
                         <div>
                             <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-2">Reviewer Recommendations & Scores</h4>

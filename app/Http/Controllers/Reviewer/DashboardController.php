@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reviewer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Review\ReviewerAssignmentResource;
 use App\Services\Reviewer\DashboardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,56 +17,28 @@ class DashboardController extends Controller
 
     public function index(Request $request): Response
     {
-        $assignments = $this->dashboardService->getAssignments();
+        return $this->renderSubmissionView('abstract');
+    }
 
-        $formattedAssignments = $assignments->map(function ($assignment) {
-            $submission = $assignment->round?->abstractSubmission
-                ?? $assignment->round?->fullPaper
-                ?? $assignment->round?->submission;
+    public function abstracts(Request $request): Response
+    {
+        return $this->renderSubmissionView('abstract');
+    }
 
-            $isDecided = ($assignment->round?->status === 'completed')
-                || in_array($submission?->status, ['accepted', 'rejected'], true)
-                || ($submission?->status === 'revision_required' && $assignment->round?->status !== 'open');
+    public function papers(Request $request): Response
+    {
+        return $this->renderSubmissionView('full_paper');
+    }
 
-            return [
-                'id'              => $assignment->id,
-                'review_round_id' => $assignment->review_round_id,
-                'reviewer_id'     => $assignment->reviewer_id,
-                'status'          => $assignment->status,
-                'is_decided'      => (bool) $isDecided,
-                'submission'      => [
-                    'id'            => $submission?->id,
-                    'status'        => $submission?->status,
-                    'abstract_code' => $submission?->abstract_code ?? $submission?->paper_code ?? ('ABS-' . str_pad($submission?->id ?? 1, 3, '0', STR_PAD_LEFT)),
-                    'title'         => $submission?->title ?? 'Untitled Abstract',
-                    'abstract_text' => $submission?->abstract_text ?? null,
-                    'keywords'      => $submission?->keywords ?? null,
-                    'file_path'     => $submission?->file_path ?? null,
-                    'category'      => [
-                        'id'   => $submission?->category?->id,
-                        'name' => $submission?->category?->name ?? 'General Track',
-                    ],
-                ],
-                'round' => [
-                    'id'              => $assignment->round?->id,
-                    'round_number'    => $assignment->round?->round_number ?? 1,
-                    'submission_type' => $assignment->round?->submission_type ?? 'abstract',
-                    'status'          => $assignment->round?->status ?? 'pending',
-                ],
-                'previous_history' => $assignment->previous_history ?? [],
-                'review' => $assignment->review ? [
-                    'id'               => $assignment->review->id,
-                    'score_criteria_1' => $assignment->review->score_criteria_1,
-                    'score_criteria_2' => $assignment->review->score_criteria_2,
-                    'recommendation'   => $assignment->review->recommendation,
-                    'summary'          => $assignment->review->summary,
-                ] : null,
-            ];
-        });
+    private function renderSubmissionView(string $submissionType): Response
+    {
+        $assignments = $this->dashboardService->getAssignments($submissionType);
+        $component = ($submissionType === 'full_paper') ? 'Reviewer/Papers/Index' : 'Reviewer/Abstracts/Index';
 
-        return Inertia::render('Reviewer/Dashboard', [
-            'stats'       => $this->dashboardService->getStats($assignments),
-            'assignments' => $formattedAssignments,
+        return Inertia::render($component, [
+            'submissionType' => $submissionType,
+            'stats'          => $this->dashboardService->getStats($assignments, $submissionType),
+            'assignments'    => ReviewerAssignmentResource::collection($assignments)->resolve(),
         ]);
     }
 }

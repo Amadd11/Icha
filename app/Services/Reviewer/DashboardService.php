@@ -12,7 +12,7 @@ class DashboardService
     /**
      * Get dashboard statistics for the currently logged-in reviewer based on consolidated submissions.
      */
-    public function getStats(?Collection $assignments = null): array
+    public function getStats(?Collection $assignments = null, ?string $submissionType = null): array
     {
         /** @var User|null $user */
         $user = Auth::user();
@@ -25,7 +25,7 @@ class DashboardService
             ];
         }
 
-        $assignments = $assignments ?? $this->getAssignments();
+        $assignments = $assignments ?? $this->getAssignments($submissionType);
 
         return [
             'total_assigned'     => $assignments->count(),
@@ -40,7 +40,7 @@ class DashboardService
      * Each unique manuscript appears only once (showing the latest round assignment),
      * with past round reviews attached to `previous_history`.
      */
-    public function getAssignments(): Collection
+    public function getAssignments(?string $submissionType = null): Collection
     {
         /** @var User|null $user */
         $user = Auth::user();
@@ -50,15 +50,23 @@ class DashboardService
 
         $allAssignments = ReviewAssignment::with([
             'round.abstractSubmission.category',
-            'round.fullPaper',
+            'round.fullPaper.abstract.category',
             'review'
         ])
             ->where('reviewer_id', $user->id)
-            ->whereHas('round', function ($q) {
-                $q->where(function ($subQ) {
-                    $subQ->whereHas('abstractSubmission')
-                         ->orWhereHas('fullPaper');
-                });
+            ->whereHas('round', function ($q) use ($submissionType) {
+                if ($submissionType === 'abstract') {
+                    $q->where('submission_type', 'abstract')
+                      ->whereHas('abstractSubmission');
+                } elseif ($submissionType === 'full_paper') {
+                    $q->where('submission_type', 'full_paper')
+                      ->whereHas('fullPaper');
+                } else {
+                    $q->where(function ($subQ) {
+                        $subQ->where(fn($a) => $a->where('submission_type', 'abstract')->whereHas('abstractSubmission'))
+                             ->orWhere(fn($p) => $p->where('submission_type', 'full_paper')->whereHas('fullPaper'));
+                    });
+                }
             })
             ->get();
 

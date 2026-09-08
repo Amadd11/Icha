@@ -11,12 +11,25 @@ class SubmitReviewRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('recommendation')) {
+            $this->merge([
+                'recommendation' => strtoupper(trim((string) $this->recommendation)),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'score_criteria_1' => ['required', 'integer', 'min:1', 'max:5'],
             'score_criteria_2' => ['required', 'integer', 'min:1', 'max:5'],
-            'recommendation'   => ['required', 'string', 'in:ORAL,POSTER,REVISION,REJECT,oral,poster,revision,reject,accepted,rejected,revision_required,accept'],
+            'recommendation'   => [
+                'required',
+                'string',
+                'in:ACCEPTED,ACCEPT,REVISION,REVISION_REQUIRED,REJECT,REJECTED,ORAL,POSTER,accepted,accept,revision,revision_required,reject,rejected,oral,poster',
+            ],
             'summary'          => ['nullable', 'string', 'max:5000'],
         ];
     }
@@ -26,7 +39,8 @@ class SubmitReviewRequest extends FormRequest
         return [
             'score_criteria_1.required' => 'Skor kriteria 1 wajib dipilih (1-5).',
             'score_criteria_2.required' => 'Skor kriteria 2 wajib dipilih (1-5).',
-            'recommendation.required'   => 'Rekomendasi (Accept Oral/Poster, Revisi, atau Reject) wajib dipilih.',
+            'recommendation.required'   => 'Rekomendasi (Accepted, Revision, atau Reject) wajib dipilih.',
+            'recommendation.in'         => 'Rekomendasi yang dipilih tidak valid.',
         ];
     }
 }

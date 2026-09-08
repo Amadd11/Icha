@@ -18,7 +18,8 @@ const navigationGroups = [
     {
         name: 'SUBMISSION',
         items: [
-            { name: 'Review', routeName: 'reviewer.dashboard', icon: 'folder' },
+            { name: 'Abstract', routeName: 'reviewer.abstracts.index', icon: 'description' },
+            { name: 'Full Paper', routeName: 'reviewer.papers.index', icon: 'article' },
         ]
     }
 ];

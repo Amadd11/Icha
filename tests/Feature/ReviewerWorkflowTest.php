@@ -45,10 +45,10 @@ class ReviewerWorkflowTest extends TestCase
 
     public function test_reviewer_can_access_dashboard_and_load_stats(): void
     {
-        $response = $this->actingAs($this->reviewer1)->get('/reviewer/dashboard');
+        $response = $this->actingAs($this->reviewer1)->get('/reviewer/abstracts');
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->component('Reviewer/Dashboard')
+            ->component('Reviewer/Abstracts/Index')
             ->has('stats')
             ->has('assignments')
         );

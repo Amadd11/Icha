@@ -57,7 +57,8 @@ class ReviewRound extends Model
             return null;
         }
 
-        if ($this->round_number === 1 && $total !== 3) {
+        $requiredCount = ($this->submission_type === 'full_paper') ? 2 : 3;
+        if ($this->round_number === 1 && $total !== $requiredCount) {
             return null;
         }
 

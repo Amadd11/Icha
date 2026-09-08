@@ -59,9 +59,9 @@ class PaperReviewService
                 $completedAssignments = $round->assignments()->where('status', 'completed')->count();
 
                 if ($round->round_number === 1) {
-                    if ($totalAssignments !== 3 || $completedAssignments !== 3) {
+                    if ($totalAssignments !== 2 || $completedAssignments !== 2) {
                         throw ValidationException::withMessages([
-                            'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
+                            'status' => 'Final decision memerlukan tepat 2 reviewer yang telah menyelesaikan review.',
                         ]);
                     }
                 } else {
