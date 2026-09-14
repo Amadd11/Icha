@@ -73,7 +73,9 @@ Route::middleware(['auth', 'no-cache'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    Route::prefix('my')->name('participant.')->group(function () {
+    Route::prefix('my')->middleware(['role:participant'])->name('participant.')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard');
         Route::get('/profile', [ParticipantProfileController::class, 'edit'])
             ->name('profile.edit');
         Route::put('/profile', [ParticipantProfileController::class, 'update'])

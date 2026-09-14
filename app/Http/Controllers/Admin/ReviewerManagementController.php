@@ -42,8 +42,11 @@ class ReviewerManagementController extends Controller
 
     public function destroy(User $reviewer): RedirectResponse
     {
-        $this->service->deleteReviewer($reviewer);
-
-        return redirect()->back()->with('success', 'Reviewer deleted successfully.');
+        try {
+            $this->service->deleteReviewer($reviewer);
+            return redirect()->back()->with('success', 'Reviewer deleted successfully.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

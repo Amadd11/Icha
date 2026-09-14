@@ -27,20 +27,29 @@ const {
 const form = useForm({
     name: '',
     email: '',
+    password: '',
     category_ids: [],
 });
+
+const showPassword = ref(false);
 
 function openCreateModal() {
     editingReviewer.value = null;
     form.reset();
+    form.clearErrors();
+    form.password = '';
+    showPassword.value = false;
     isModalOpen.value = true;
 }
 
 function openEditModal(reviewer) {
     editingReviewer.value = reviewer;
+    form.clearErrors();
     form.name = reviewer.name;
     form.email = reviewer.email;
-    form.category_ids = reviewer.categories.map(c => c.id);
+    form.password = '';
+    showPassword.value = false;
+    form.category_ids = (reviewer.categories || []).map(c => c.id);
     isModalOpen.value = true;
 }
 
@@ -171,11 +180,46 @@ function submit() {
                         <div>
                             <label class="mb-1 block font-bold text-slate-700">Full Name <span class="text-red-500">*</span></label>
                             <input v-model="form.name" type="text" class="admin-input" placeholder="e.g. Dr. Jane Smith" required />
+                            <p v-if="form.errors.name" class="text-red-500 text-[11px] mt-1">{{ form.errors.name }}</p>
                         </div>
 
                         <div>
                             <label class="mb-1 block font-bold text-slate-700">Email Address <span class="text-red-500">*</span></label>
                             <input v-model="form.email" type="email" class="admin-input" placeholder="reviewer@university.ac.id" required />
+                            <p v-if="form.errors.email" class="text-red-500 text-[11px] mt-1">{{ form.errors.email }}</p>
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block font-bold text-slate-700">
+                                <template v-if="!editingReviewer">
+                                    Password Sementara <span class="text-red-500">*</span>
+                                </template>
+                                <template v-else>
+                                    Ganti Password <span class="text-slate-400 font-normal text-[11px]">(Kosongkan jika tidak diubah)</span>
+                                </template>
+                            </label>
+                            <div class="relative">
+                                <input
+                                    v-model="form.password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    class="admin-input pr-10"
+                                    :placeholder="editingReviewer ? 'Biarkan kosong jika tidak ingin mengubah password' : 'Wajib diisi password sementara (min. 8 karakter)'"
+                                    :required="!editingReviewer"
+                                    minlength="8"
+                                />
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    :title="showPassword ? 'Sembunyikan' : 'Tampilkan'"
+                                >
+                                    <span class="material-symbols-outlined text-[16px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                                </button>
+                            </div>
+                            <p v-if="form.errors.password" class="text-red-500 text-[11px] mt-1">{{ form.errors.password }}</p>
+                            <p v-else-if="!editingReviewer" class="text-slate-500 text-[11px] mt-1">
+                                Admin wajib menentukan password sementara untuk diberikan kepada reviewer.
+                            </p>
                         </div>
 
                         <div>

@@ -598,148 +598,202 @@ function isDecisionReady(item) {
                 </div>
             </div>
 
-            <!-- ⚖️ Minimalist Decision Modal -->
-            <div v-if="isReviewModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-                <div class="relative w-full max-w-2xl rounded-2xl bg-white shadow-lg overflow-hidden border border-slate-200 my-8">
+            <!-- ⚖️ Decision Modal (Balanced, Clean & No Backdrop Blur) -->
+            <div v-if="isReviewModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" @click="isReviewModalOpen = false">
+                <div class="relative w-full max-w-2xl max-h-[88vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200" @click.stop>
                     <!-- Modal Header -->
-                    <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-6 py-4">
-                        <div>
-                            <span class="font-mono text-xs font-bold text-purple-900">{{ activeAbstract.abstract_code }}</span>
-                            <h3 class="text-sm font-bold text-slate-900 line-clamp-1" :title="activeAbstract.title">{{ activeAbstract.title }}</h3>
-                        </div>
-                        <button
-                            @click="isReviewModalOpen = false"
-                            class="rounded-xl bg-slate-200/60 p-2 text-slate-600 hover:bg-slate-200 transition cursor-pointer font-bold text-sm"
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-                    <!-- Modal Body -->
-                    <div class="p-6 space-y-4 text-xs">
-                        
-                        <!-- Abstract Details Banner -->
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div>
-                                <p class="text-slate-500 text-[11px]">
-                                    Author: <strong class="text-slate-800 font-bold">{{ activeAbstract.user?.name || activeAbstract.author_name }}</strong> | 
-                                    Track: <strong class="text-purple-900 font-bold">{{ activeAbstract.category?.name || 'General' }}</strong>
-                                </p>
+                    <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between gap-3 shrink-0">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="font-mono text-[11px] font-bold text-purple-900 bg-purple-100/90 border border-purple-200/80 px-2 py-0.5 rounded">
+                                    {{ activeAbstract.abstract_code }}
+                                </span>
+                                <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded">
+                                    {{ activeAbstract.category?.name || 'General Track' }}
+                                </span>
+                                <span class="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded">
+                                    Tahap {{ getReviewStats(activeAbstract).roundNumber === 1 ? '1' : `Revisi (${getReviewStats(activeAbstract).roundNumber})` }}
+                                </span>
                             </div>
+                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 truncate mt-1" :title="activeAbstract.title">
+                                {{ activeAbstract.title }}
+                            </h3>
+                            <p class="text-[11px] text-slate-500 truncate mt-0.5">
+                                Penulis: <strong class="text-slate-700 font-semibold">{{ activeAbstract.user?.name || activeAbstract.author_name }}</strong>
+                                <span v-if="activeAbstract.user?.profile?.institution" class="text-slate-400"> • {{ activeAbstract.user.profile.institution }}</span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
                             <a
                                 v-if="activeAbstract.file_path"
                                 :href="formatStorageUrl(activeAbstract.file_path)"
                                 target="_blank"
                                 download
-                                class="inline-flex items-center rounded-xl border border-purple-200 bg-white px-3 py-1.5 text-purple-900 font-bold text-xs hover:bg-purple-50 transition shadow-2xs shrink-0"
+                                class="inline-flex items-center gap-1 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-900 font-bold text-[11px] px-2.5 py-1.5 transition shadow-2xs"
+                                :title="isDocx(activeAbstract.file_path) ? 'Download Dokumen (.docx)' : 'Download PDF'"
                             >
-                                {{ isDocx(activeAbstract.file_path) ? 'Download Dokumen (.docx)' : 'Download PDF' }}
+                                <span class="material-symbols-outlined text-[14px]">download</span>
+                                <span>{{ isDocx(activeAbstract.file_path) ? 'Dokumen' : 'PDF' }}</span>
                             </a>
+                            <button
+                                @click="isReviewModalOpen = false"
+                                class="rounded-xl bg-slate-100 hover:bg-slate-200 p-1.5 text-slate-500 hover:text-slate-800 transition cursor-pointer font-bold text-xs"
+                                title="Tutup"
+                            >
+                                ✕
+                            </button>
                         </div>
+                    </div>
 
-                        <!-- Reviewers Feedback Recap -->
+                    <!-- Modal Body -->
+                    <form @submit.prevent="submitReview" class="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+                        <!-- Reviewers Feedback Section -->
                         <div>
-                            <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-2">Reviewer Recommendations & Scores</h4>
-                            <div v-if="getReviewStats(activeAbstract).reviews.length === 0" class="rounded-xl bg-slate-50 border border-slate-100 p-4 text-center text-slate-400">
-                                No peer reviews submitted yet for this abstract.
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[15px] text-purple-600">rate_review</span>
+                                    <span>Evaluasi & Rekomendasi Reviewer</span>
+                                </h4>
+                                <span
+                                    class="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs"
+                                    :class="isDecisionReady(activeAbstract) ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'"
+                                >
+                                    {{ getReviewStats(activeAbstract).completedCount }} / {{ getReviewStats(activeAbstract).totalCount }} Selesai
+                                </span>
                             </div>
-                            <div v-else class="space-y-2.5">
+                            
+                            <div v-if="getReviewStats(activeAbstract).reviews.length === 0" class="rounded-xl bg-slate-50 border border-slate-200/80 p-4 text-center text-slate-400 text-xs">
+                                Belum ada reviewer yang menyelesaikan penilaian pada tahap ini.
+                            </div>
+                            <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                 <div
                                     v-for="(rev, idx) in getReviewStats(activeAbstract).reviews"
                                     :key="idx"
-                                    class="rounded-2xl border border-slate-200 p-3.5 bg-white space-y-2 shadow-xs"
+                                    class="rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 p-2.5 flex flex-col justify-between text-left space-y-2 transition shadow-2xs"
                                 >
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-slate-900">{{ rev.reviewer_name }}</span>
-                                            <span v-if="rev.total_score !== null && rev.total_score !== undefined" class="rounded-md bg-purple-100 text-purple-900 px-2 py-0.5 text-[10px] font-bold">
-                                                Total Score: {{ rev.total_score }} / 10
-                                            </span>
-                                        </div>
+                                    <!-- Reviewer Info & Badge -->
+                                    <div class="flex items-center justify-between gap-1">
+                                        <span class="font-bold text-slate-900 text-[11px] truncate" :title="rev.reviewer_name">
+                                            {{ rev.reviewer_name }}
+                                        </span>
                                         <span :class="[
-                                            'rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border',
+                                            'rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase shrink-0 border leading-none',
                                             ['ORAL', 'POSTER', 'ACCEPT', 'ACCEPTED', 'accepted', 'oral', 'poster'].includes(rev.recommendation) ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                            ['REJECT', 'REJECTED', 'reject', 'rejected'].includes(rev.recommendation) ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                                            ['REJECT', 'REJECTED', 'reject', 'rejected'].includes(rev.recommendation) ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200'
                                         ]">
                                             {{
                                                 ['ORAL', 'POSTER', 'ACCEPT', 'ACCEPTED', 'accepted', 'oral', 'poster'].includes(rev.recommendation) ? 'Accepted' :
-                                                ['REJECT', 'REJECTED', 'reject', 'rejected'].includes(rev.recommendation) ? 'Rejected' :
-                                                ['REVISION', 'REVISION_REQUIRED', 'revision', 'revision_required'].includes(rev.recommendation) ? 'Revision' :
-                                                (rev.recommendation || 'Reviewed')
+                                                ['REJECT', 'REJECTED', 'reject', 'rejected'].includes(rev.recommendation) ? 'Reject' : 'Revision'
                                             }}
                                         </span>
                                     </div>
-                                    
-                                    <div v-if="rev.score_criteria_1 !== null" class="flex gap-4 text-[10px] text-slate-500 font-medium">
-                                        <span>Originality: <strong>{{ rev.score_criteria_1 }}/5</strong></span>
-                                        <span>Methodology: <strong>{{ rev.score_criteria_2 }}/5</strong></span>
+
+                                    <!-- Score Display -->
+                                    <div class="text-[10px] text-slate-500 font-semibold flex items-center justify-between pt-0.5">
+                                        <span>Total: <strong class="text-purple-900 font-bold">{{ rev.total_score ?? '-' }}/10</strong></span>
+                                        <span v-if="rev.score_criteria_1 !== null" class="text-[9px] text-slate-400">({{ rev.score_criteria_1 }}/5, {{ rev.score_criteria_2 }}/5)</span>
                                     </div>
 
-                                    <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] leading-relaxed">
-                                        {{ rev.comments || 'No written comment provided.' }}
+                                    <!-- Written Comments -->
+                                    <p class="text-slate-600 bg-white p-2 rounded-lg border border-slate-100 text-[10px] leading-snug line-clamp-2" :title="rev.comments">
+                                        {{ rev.comments || 'Tanpa catatan tertulis.' }}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Form -->
-                        <form @submit.prevent="submitReview" class="space-y-3 border-t border-slate-100 pt-3">
-                            <!-- Warning Banner if not ready for decision -->
-                            <div v-if="!isDecisionReady(activeAbstract)" class="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-center gap-2">
-                                <span class="text-base">🔒</span>
-                                <span class="leading-relaxed">
-                                    <strong>Decision Locked:</strong>
-                                    <template v-if="getReviewStats(activeAbstract).roundNumber === 1">
-                                        Keputusan final hanya dapat dibuat setelah tepat 3 reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/3 review selesai).
-                                    </template>
-                                    <template v-else>
-                                        Keputusan final tahap revisi ini hanya dapat dibuat setelah seluruh reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/{{ getReviewStats(activeAbstract).totalCount }} review selesai).
-                                    </template>
-                                </span>
-                            </div>
+                        <!-- Warning Banner if not ready for decision -->
+                        <div v-if="!isDecisionReady(activeAbstract)" class="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-600 text-base shrink-0 mt-0.5">lock</span>
+                            <span class="text-[11px] leading-relaxed">
+                                <strong>Keputusan Terkunci:</strong>
+                                <template v-if="getReviewStats(activeAbstract).roundNumber === 1">
+                                    Menunggu tepat 3 reviewer menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/3 selesai).
+                                </template>
+                                <template v-else>
+                                    Menunggu seluruh reviewer tahap revisi menyelesaikan penilaian (Saat ini: {{ getReviewStats(activeAbstract).completedCount }}/{{ getReviewStats(activeAbstract).totalCount }} selesai).
+                                </template>
+                            </span>
+                        </div>
 
-                            <div>
-                                <label class="mb-1 block font-bold text-slate-700">Decision Outcome <span class="text-red-500">*</span></label>
-                                <select v-model="reviewForm.status" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2.5 px-3 focus:bg-white font-bold" required :disabled="!isDecisionReady(activeAbstract)">
-                                    <option value="accepted">Accepted</option>
-                                    <option value="revision_required">Revision Required</option>
-                                    <option value="rejected">Rejected</option>
-                                </select>
-                            </div>
+                        <!-- Decision Formulation Panel -->
+                        <div class="rounded-xl border border-slate-200/90 bg-slate-50/50 p-3.5 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="mb-1 block font-bold text-slate-700 text-[11px]">
+                                        Status Keputusan <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="reviewForm.status"
+                                        class="w-full text-xs rounded-xl border border-slate-300 bg-white py-2 px-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-bold text-slate-800"
+                                        required
+                                        :disabled="!isDecisionReady(activeAbstract)"
+                                    >
+                                        <option value="accepted">Accepted (Diterima)</option>
+                                        <option value="revision_required">Revision Required (Perlu Revisi)</option>
+                                        <option value="rejected">Rejected (Ditolak)</option>
+                                    </select>
+                                </div>
 
-                            <!-- Presentation Type (When Accepted) -->
-                            <div v-if="reviewForm.status === 'accepted'" class="rounded-2xl bg-purple-50/70 border border-purple-200 p-3.5 space-y-2">
-                                <label class="block text-xs font-bold text-purple-950">Presentation Type Allocation <span class="text-red-500">*</span></label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'oral' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
-                                        <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="!isDecisionReady(activeAbstract)" />
-                                        <span class="text-xs">🎤 Oral Presentation</span>
+                                <div v-if="reviewForm.status === 'accepted'">
+                                    <label class="mb-1 block font-bold text-purple-950 text-[11px]">
+                                        Tipe Presentasi <span class="text-red-500">*</span>
                                     </label>
-                                    <label class="flex items-center gap-2 p-2.5 rounded-xl border bg-white cursor-pointer transition" :class="reviewForm.presentation_type === 'poster' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900' : 'border-slate-200 text-slate-700'">
-                                        <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-700 focus:ring-purple-700" :disabled="!isDecisionReady(activeAbstract)" />
-                                        <span class="text-xs">🖼️ Poster Presentation</span>
-                                    </label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <label
+                                            class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl border bg-white cursor-pointer transition text-xs select-none shadow-2xs"
+                                            :class="reviewForm.presentation_type === 'oral' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900 bg-purple-50/60' : 'border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                        >
+                                            <input type="radio" value="oral" v-model="reviewForm.presentation_type" class="text-purple-600 focus:ring-purple-600 h-3.5 w-3.5" :disabled="!isDecisionReady(activeAbstract)" />
+                                            <span>🎤 Oral</span>
+                                        </label>
+                                        <label
+                                            class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl border bg-white cursor-pointer transition text-xs select-none shadow-2xs"
+                                            :class="reviewForm.presentation_type === 'poster' ? 'border-purple-600 ring-1 ring-purple-600 font-bold text-purple-900 bg-purple-50/60' : 'border-slate-200 text-slate-700 hover:bg-slate-50'"
+                                        >
+                                            <input type="radio" value="poster" v-model="reviewForm.presentation_type" class="text-purple-600 focus:ring-purple-600 h-3.5 w-3.5" :disabled="!isDecisionReady(activeAbstract)" />
+                                            <span>🖼️ Poster</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label class="mb-1 block font-bold text-slate-700">Decision Notes for Author</label>
-                                <textarea v-model="reviewForm.review_notes" rows="3" class="w-full text-xs rounded-xl border border-slate-300 bg-slate-50 py-2 px-3 focus:bg-white" placeholder="Feedback notes for the author..." :disabled="!isDecisionReady(activeAbstract)"></textarea>
+                                <label class="mb-1 block font-bold text-slate-700 text-[11px]">
+                                    Catatan Keputusan untuk Penulis
+                                </label>
+                                <textarea
+                                    v-model="reviewForm.review_notes"
+                                    rows="2"
+                                    class="w-full text-xs rounded-xl border border-slate-300 bg-white py-2 px-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400"
+                                    placeholder="Feedback / catatan keputusan untuk author (opsional)..."
+                                    :disabled="!isDecisionReady(activeAbstract)"
+                                ></textarea>
                             </div>
+                        </div>
+                    </form>
 
-                            <div class="flex items-center justify-end gap-2 pt-2">
-                                <button type="button" @click="isReviewModalOpen = false" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    :disabled="reviewForm.processing || !isDecisionReady(activeAbstract)"
-                                    class="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-5 py-2.5 transition disabled:opacity-50 cursor-pointer shadow-xs"
-                                >
-                                    {{ reviewForm.processing ? 'Saving...' : (!isDecisionReady(activeAbstract) ? (getReviewStats(activeAbstract).roundNumber === 1 ? 'Awaiting 3 Reviews' : 'Awaiting Reviews') : 'Save Decision') }}
-                                </button>
-                            </div>
-                        </form>
+                    <!-- Modal Sticky Footer -->
+                    <div class="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/90 shrink-0">
+                        <span class="text-[11px] text-slate-500 font-mono">
+                            {{ activeAbstract.abstract_code }}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="isReviewModalOpen = false"
+                                class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                @click="submitReview"
+                                :disabled="reviewForm.processing || !isDecisionReady(activeAbstract)"
+                                class="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs px-5 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+                            >
+                                {{ reviewForm.processing ? 'Menyimpan...' : (!isDecisionReady(activeAbstract) ? (getReviewStats(activeAbstract).roundNumber === 1 ? 'Menunggu 3 Review' : 'Menunggu Review') : 'Simpan Keputusan') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

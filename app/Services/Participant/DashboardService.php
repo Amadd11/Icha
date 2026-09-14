@@ -163,7 +163,7 @@ class DashboardService
                 'title'        => 'Access Conference Pass',
                 'description'  => 'Your payment is verified. You can now download your invoice and attend sessions.',
                 'button_label' => 'View Registration Details',
-                'url'          => route('participant.dashboard'),
+                'url'          => route('dashboard'),
             ];
         }
 

@@ -206,11 +206,11 @@ function formatDate(dateStr) {
                         @change="applyFilter()"
                         class="admin-input py-2 text-xs font-bold w-full sm:w-auto"
                     >
-                        <option value="all">All Roles ({{ props.roleCounts?.all ?? 0 }})</option>
-                        <option value="super_admin">Super Admin ({{ props.roleCounts?.super_admin ?? 0 }})</option>
-                        <option value="admin">Admin ({{ props.roleCounts?.admin ?? 0 }})</option>
-                        <option value="reviewer">Reviewer ({{ props.roleCounts?.reviewer ?? 0 }})</option>
-                        <option value="participant">Participant ({{ props.roleCounts?.participant ?? 0 }})</option>
+                        <option value="all">All Roles</option>
+                        <option value="super_admin">Super Admin</option>
+                        <option value="admin">Admin</option>
+                        <option value="reviewer">Reviewer</option>
+                        <option value="participant">Participant</option>
                     </select>
 
                     <button
@@ -238,7 +238,6 @@ function formatDate(dateStr) {
                         <thead class="bg-slate-50 border-b border-slate-100 uppercase text-[11px] font-bold text-slate-500">
                             <tr>
                                 <th scope="col" class="px-5 py-3">User Details</th>
-                                <th scope="col" class="px-5 py-3">Institution & Phone</th>
                                 <th scope="col" class="px-5 py-3">Role</th>
                                 <th scope="col" class="px-5 py-3">Joined Date</th>
                                 <th scope="col" class="px-5 py-3 text-right">Actions</th>
@@ -272,12 +271,6 @@ function formatDate(dateStr) {
                                 <td class="px-5 py-3.5">
                                     <p class="font-bold text-slate-900 text-xs">{{ u.name }}</p>
                                     <p class="text-[11px] text-slate-400 mt-0.5">{{ u.email }}</p>
-                                </td>
-
-                                <!-- Institution & Phone -->
-                                <td class="px-5 py-3.5">
-                                    <p class="font-semibold text-slate-800 text-xs">{{ u.profile?.institution || '—' }}</p>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">{{ u.profile?.phone || '—' }}</p>
                                 </td>
 
                                 <!-- Role Pill -->

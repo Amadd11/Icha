@@ -76,9 +76,9 @@ class AbstractReviewService
             ->latest('round_number')
             ->first();
 
-        if (!$round || !in_array($round->status, ['locked', 'completed'], true)) {
+        if (!$round) {
             throw ValidationException::withMessages([
-                'status' => 'Final decision hanya dapat dibuat setelah review round selesai dan terkunci (locked).',
+                'status' => 'Tidak ditemukan tahap penilaian (review round) untuk naskah ini.',
             ]);
         }
 
@@ -97,6 +97,15 @@ class AbstractReviewService
                     'status' => 'Final decision memerlukan seluruh reviewer pada round revisi ini menyelesaikan review.',
                 ]);
             }
+        }
+
+        // Auto-lock if all reviews are completed and round is still open
+        if ($round->status === 'open') {
+            $round->update(['status' => 'locked']);
+        } elseif (!in_array($round->status, ['locked', 'completed'], true)) {
+            throw ValidationException::withMessages([
+                'status' => 'Final decision hanya dapat dibuat setelah review round selesai dan terkunci (locked).',
+            ]);
         }
 
         return $round;

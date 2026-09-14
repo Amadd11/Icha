@@ -35,13 +35,21 @@ import SectionHeading from "@/Components/UI/SectionHeading.vue";
                         <h3 class="text-base font-bold text-slate-900">WhatsApp Helpdesk</h3>
                         <p class="text-xs text-slate-500 mt-1">Fast response for participant assistance</p>
                     </div>
-                    <div class="pt-2 border-t border-slate-100 text-xs font-bold text-slate-800">
-                        <a href="https://wa.me/6281330032303" target="_blank" class="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
-                            <span>081330032303</span>
+                    <div class="pt-2 border-t border-slate-100 space-y-2 text-xs font-bold">
+                        <a
+                            href="https://wa.me/6281330032303"
+                            target="_blank"
+                            class="flex items-center justify-center gap-2 py-1 px-2 rounded-xl text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 transition"
+                        >
+                            <span>0813-3003-2303</span>
                             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">Online</span>
                         </a>
-                        <a href="https://wa.me/6285546070244" target="_blank" class="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
-                            <span>085546070244</span>
+                        <a
+                            href="https://wa.me/6285546070244"
+                            target="_blank"
+                            class="flex items-center justify-center gap-2 py-1 px-2 rounded-xl text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 transition"
+                        >
+                            <span>0855-4607-0244</span>
                             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">Online</span>
                         </a>
                     </div>

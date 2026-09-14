@@ -25,6 +25,7 @@ class UpdateReviewerRequest extends FormRequest
                 'max:255',
                 Rule::unique('users')->ignore($reviewer ? $reviewer->id : null),
             ],
+            'password' => 'nullable|string|min:8|max:255',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
         ];

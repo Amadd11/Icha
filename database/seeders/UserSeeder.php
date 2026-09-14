@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
             ['email' => 'superadmin@icha.com'],
             [
                 'name'     => 'Super Admin ICHA',
-                'password' => bcrypt('password'),
+                'password' => bcrypt('ichaconference123'),
                 'role'     => 'super_admin',
             ]
         );
@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             ['email' => 'admin@icha.com'],
             [
                 'name'     => 'Admin ICHA',
-                'password' => bcrypt('password'),
+                'password' => bcrypt('ichaconference321'),
                 'role'     => 'admin',
             ]
         );
@@ -34,10 +34,10 @@ class UserSeeder extends Seeder
 
         // Reviewer 1 (Primary)
         $r1 = User::updateOrCreate(
-            ['email' => 'reviewer@gmail.com'],
+            ['email' => 'reviewer@icha.com'],
             [
                 'name'     => 'Reviewer',
-                'password' => bcrypt('password'),
+                'password' => bcrypt('ichareviewer'),
                 'role'     => 'reviewer',
             ]
         );
@@ -47,10 +47,10 @@ class UserSeeder extends Seeder
 
         // Reviewer 2
         $r2 = User::updateOrCreate(
-            ['email' => 'reviewer@icha.com'],
+            ['email' => 'reviewer2@icha.com'],
             [
                 'name'     => 'Prof. Reviewer ICHA',
-                'password' => bcrypt('password'),
+                'password' => bcrypt('ichareviewer'),
                 'role'     => 'reviewer',
             ]
         );
@@ -60,10 +60,10 @@ class UserSeeder extends Seeder
 
         // Reviewer 3
         $r3 = User::updateOrCreate(
-            ['email' => 'reviewer2@icha.com'],
+            ['email' => 'reviewer3@icha.com'],
             [
                 'name'     => 'Dr. Reviewer 2',
-                'password' => bcrypt('password'),
+                'password' => bcrypt('ichareviewer'),
                 'role'     => 'reviewer',
             ]
         );

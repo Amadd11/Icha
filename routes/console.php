@@ -3,7 +3,6 @@
 use App\Models\AbstractSubmission;
 use App\Models\Certificate;
 use App\Models\Conference;
-use App\Models\FullPaper;
 use App\Models\Payment;
 use App\Models\Speaker;
 use App\Models\Sponsor;
@@ -31,26 +30,20 @@ Artisan::command('storage:prune-orphans {--force : Actually delete the orphaned 
         AbstractSubmission::withTrashed()->whereNotNull('file_path')->pluck('file_path')
     );
 
-    // 2. Full Papers
-    $referencedFiles = $referencedFiles->merge(
-        FullPaper::withTrashed()->whereNotNull('file_path')->pluck('file_path')
-    );
-
-    // 3. Payments
+    // 2. Payments
     $referencedFiles = $referencedFiles->merge(
         Payment::withTrashed()->whereNotNull('proof_file')->pluck('proof_file')
     );
 
-    // 4. Certificates
+    // 3. Certificates
     $referencedFiles = $referencedFiles->merge(
         Certificate::withTrashed()->whereNotNull('file_path')->pluck('file_path')
     );
 
-    // 5. Conferences
+    // 4. Conferences
     Conference::withTrashed()->get()->each(function ($conf) use (&$referencedFiles) {
         if ($conf->poster) $referencedFiles->push($conf->poster);
         if ($conf->abstract_template) $referencedFiles->push($conf->abstract_template);
-        if ($conf->paper_template) $referencedFiles->push($conf->paper_template);
         if (is_array($conf->hero_images)) {
             foreach ($conf->hero_images as $img) {
                 if ($img) $referencedFiles->push($img);

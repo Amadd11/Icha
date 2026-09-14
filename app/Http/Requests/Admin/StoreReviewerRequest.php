@@ -15,7 +15,14 @@ class StoreReviewerRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
+            'password' => 'required|string|min:8|max:255',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
         ];
