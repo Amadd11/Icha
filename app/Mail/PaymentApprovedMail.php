@@ -32,9 +32,9 @@ class PaymentApprovedMail extends Mailable
         $invoiceNumber = $this->payment->registration->invoice_number ?? 'Invoice';
 
         return new Envelope(
-            from: new Address(config('mail.from.address', 'conference.icha10@gmail.com'), config('mail.from.name', 'ICHA Conference Committee')),
+            from: new Address(config('mail.from.address', 'ichaconference@icha-pipmarsi.org'), config('mail.from.name', 'ICHA Conference Committee')),
             replyTo: [
-                new Address('conference.icha10@gmail.com', 'ICHA Conference Committee'),
+                new Address(config('mail.from.address', 'ichaconference@icha-pipmarsi.org'), config('mail.from.name', 'ICHA Conference Committee')),
             ],
             subject: "[ICHA] Official Payment Receipt & Verified Invoice #{$invoiceNumber}",
         );

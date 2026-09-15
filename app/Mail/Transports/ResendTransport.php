@@ -35,12 +35,13 @@ class ResendTransport extends AbstractTransport
         $subject = $email->getSubject();
 
         // In Resend Sandbox (onboarding@resend.dev), Resend only allows sending to the registered account email.
-        // If testing with dummy participant emails, redirect safely to conference.icha10@gmail.com so test never fails.
+        // If testing with dummy participant emails, redirect safely to config('mail.from.address') so test never fails.
         if (str_contains($fromAddress, 'onboarding@resend.dev')) {
-            $isSendingToOwner = in_array('conference.icha10@gmail.com', $to);
+            $fallbackEmail = config('mail.from.address', 'ichaconference@icha-pipmarsi.org');
+            $isSendingToOwner = in_array($fallbackEmail, $to);
             if (!$isSendingToOwner) {
                 $origTo = implode(', ', $to);
-                $to = ['conference.icha10@gmail.com'];
+                $to = [$fallbackEmail];
                 $subject = "[Sandbox Dev to: {$origTo}] " . $subject;
             }
         }

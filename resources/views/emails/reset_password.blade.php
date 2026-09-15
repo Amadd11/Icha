@@ -171,7 +171,7 @@
                 International Conference on Hospital Administration (ICHA 10th)
             </p>
             <p style="margin: 6px 0 0 0;">
-                Need help? Reach us at <a href="mailto:conference.icha10@gmail.com">conference.icha10@gmail.com</a>
+                Need help? Reach us at <a href="mailto:{{ config('mail.from.address', 'ichaconference@icha-pipmarsi.org') }}">{{ config('mail.from.address', 'ichaconference@icha-pipmarsi.org') }}</a>
             </p>
             <p style="margin: 6px 0 0 0; color: #94a3b8;">
                 &copy; {{ date('Y') }} ICHA Committee. All rights reserved.

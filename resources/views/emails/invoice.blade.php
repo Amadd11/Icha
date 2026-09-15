@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,11 +14,13 @@
             color: #1e293b;
             -webkit-text-size-adjust: 100%;
         }
+
         .wrapper {
             width: 100%;
             background-color: #f1f5f9;
             padding: 30px 10px;
         }
+
         .container {
             max-width: 600px;
             margin: 0 auto;
@@ -27,12 +30,14 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
             border: 1px solid #e2e8f0;
         }
+
         .header {
             background: linear-gradient(135deg, #3b0764 0%, #1e1b4b 100%);
             padding: 36px 28px;
             text-align: center;
             color: #ffffff;
         }
+
         .header-badge {
             display: inline-block;
             background-color: rgba(251, 191, 36, 0.15);
@@ -46,6 +51,7 @@
             letter-spacing: 1px;
             margin-bottom: 12px;
         }
+
         .header h1 {
             margin: 0;
             font-size: 22px;
@@ -53,14 +59,17 @@
             color: #ffffff;
             line-height: 1.3;
         }
+
         .header p {
             margin: 8px 0 0 0;
             font-size: 13px;
             color: #cbd5e1;
         }
+
         .body {
             padding: 32px 28px;
         }
+
         .status-pill {
             display: inline-flex;
             align-items: center;
@@ -72,26 +81,31 @@
             margin-bottom: 16px;
             letter-spacing: 0.5px;
         }
+
         .status-paid {
             background-color: #dcfce7;
             color: #15803d;
             border: 1px solid #bbf7d0;
         }
+
         .status-unpaid {
             background-color: #fef3c7;
             color: #92400e;
             border: 1px solid #fde68a;
         }
+
         .status-review {
             background-color: #e0f2fe;
             color: #0369a1;
             border: 1px solid #bae6fd;
         }
+
         .status-rejected {
             background-color: #fee2e2;
             color: #b91c1c;
             border: 1px solid #fca5a5;
         }
+
         .salutation {
             font-size: 16px;
             font-weight: 700;
@@ -99,12 +113,14 @@
             margin-top: 0;
             margin-bottom: 8px;
         }
+
         .intro-text {
             font-size: 13px;
             color: #475569;
             line-height: 1.6;
             margin-bottom: 24px;
         }
+
         .card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -112,6 +128,7 @@
             padding: 20px;
             margin-bottom: 24px;
         }
+
         .card-title {
             font-size: 11px;
             font-weight: 800;
@@ -122,27 +139,33 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 8px;
         }
+
         .table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .table td {
             padding: 9px 0;
             font-size: 13px;
             border-bottom: 1px dashed #e2e8f0;
         }
+
         .table tr:last-child td {
             border-bottom: none;
         }
+
         .label {
             color: #64748b;
             font-weight: 500;
         }
+
         .val {
             text-align: right;
             font-weight: 700;
             color: #1e293b;
         }
+
         .bank-box {
             background: #faf5ff;
             border: 1px solid #f3e8ff;
@@ -150,6 +173,7 @@
             padding: 20px;
             margin-bottom: 24px;
         }
+
         .success-box {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
@@ -157,6 +181,7 @@
             padding: 20px;
             margin-bottom: 24px;
         }
+
         .review-box {
             background: #f0f9ff;
             border: 1px solid #bae6fd;
@@ -164,12 +189,14 @@
             padding: 20px;
             margin-bottom: 24px;
         }
+
         .bank-name {
             font-size: 14px;
             font-weight: 800;
             color: #581c87;
             margin: 0 0 8px 0;
         }
+
         .acc-number {
             font-size: 18px;
             font-weight: 900;
@@ -183,6 +210,7 @@
             margin-bottom: 8px;
             letter-spacing: 1px;
         }
+
         .steps-box {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -190,6 +218,7 @@
             padding: 16px;
             margin-bottom: 24px;
         }
+
         .step-item {
             display: flex;
             margin-bottom: 10px;
@@ -197,6 +226,7 @@
             color: #475569;
             line-height: 1.5;
         }
+
         .step-num {
             background-color: #3b0764;
             color: #ffffff;
@@ -211,10 +241,12 @@
             margin-right: 10px;
             flex-shrink: 0;
         }
+
         .btn-container {
             text-align: center;
             margin: 28px 0 12px 0;
         }
+
         .btn {
             display: inline-block;
             background-color: #fbbf24;
@@ -227,11 +259,13 @@
             box-shadow: 0 4px 12px rgba(251, 191, 36, 0.25);
             transition: all 0.2s ease;
         }
+
         .btn-green {
             background-color: #10b981;
             color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
         }
+
         .footer {
             background: #f8fafc;
             padding: 24px 28px;
@@ -243,6 +277,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="wrapper">
         <div class="container">
@@ -258,27 +293,27 @@
             <!-- Body -->
             <div class="body">
                 @php
-                    $status = strtolower($registration->status ?? 'unpaid');
+                $status = strtolower($registration->status ?? 'unpaid');
                 @endphp
 
                 @if($status === 'paid')
-                    <span class="status-pill status-paid">✅ PAID / LUNAS</span>
+                <span class="status-pill status-paid">✅ PAID / LUNAS</span>
                 @elseif($status === 'under_review')
-                    <span class="status-pill status-review">🔍 UNDER REVIEW / MENUNGGU VERIFIKASI</span>
+                <span class="status-pill status-review">🔍 UNDER REVIEW / MENUNGGU VERIFIKASI</span>
                 @elseif($status === 'rejected')
-                    <span class="status-pill status-rejected">❌ REJECTED / PEMBAYARAN DITOLAK</span>
+                <span class="status-pill status-rejected">❌ REJECTED / PEMBAYARAN DITOLAK</span>
                 @else
-                    <span class="status-pill status-unpaid">⏳ UNPAID / MENUNGGU PEMBAYARAN</span>
+                <span class="status-pill status-unpaid">⏳ UNPAID / MENUNGGU PEMBAYARAN</span>
                 @endif
 
                 <h2 class="salutation">Dear {{ $user->name }},</h2>
                 <p class="intro-text">
                     @if($status === 'paid')
-                        Your registration and payment for <strong>{{ $conference->title ?? 'ICHA Conference' }}</strong> have been <strong>successfully verified and confirmed</strong>. Below is your official invoice and payment receipt breakdown.
+                    Your registration and payment for <strong>{{ $conference->title ?? 'ICHA Conference' }}</strong> have been <strong>successfully verified and confirmed</strong>. Below is your official invoice and payment receipt breakdown.
                     @elseif($status === 'under_review')
-                        Thank you for submitting your payment proof for <strong>{{ $conference->title ?? 'ICHA Conference' }}</strong>. Your submission is currently under review by our finance committee.
+                    Thank you for submitting your payment proof for <strong>{{ $conference->title ?? 'ICHA Conference' }}</strong>. Your submission is currently under review by our finance committee.
                     @else
-                        Thank you for registering for <strong>{{ $conference->title ?? 'ICHA Conference' }}</strong>. Please find your official invoice information and payment instructions below.
+                    Thank you for registering for <strong>{{ $conference->title ?? 'ICHA Conference' }}</strong>. Please find your official invoice information and payment instructions below.
                     @endif
                 </p>
 
@@ -322,13 +357,13 @@
                             <td class="label">Payment Status</td>
                             <td class="val">
                                 @if($status === 'paid')
-                                    <span style="color: #16a34a; font-weight: 800;">PAID & VERIFIED</span>
+                                <span style="color: #16a34a; font-weight: 800;">PAID & VERIFIED</span>
                                 @elseif($status === 'under_review')
-                                    <span style="color: #0284c7; font-weight: 800;">UNDER REVIEW</span>
+                                <span style="color: #0284c7; font-weight: 800;">UNDER REVIEW</span>
                                 @elseif($status === 'rejected')
-                                    <span style="color: #dc2626; font-weight: 800;">REJECTED</span>
+                                <span style="color: #dc2626; font-weight: 800;">REJECTED</span>
                                 @else
-                                    <span style="color: #d97706; font-weight: 800;">UNPAID</span>
+                                <span style="color: #d97706; font-weight: 800;">UNPAID</span>
                                 @endif
                             </td>
                         </tr>
@@ -342,106 +377,107 @@
                 </div>
 
                 @if($status === 'paid')
-                    <!-- Paid Confirmation Box -->
-                    <div class="success-box">
-                        <div style="font-weight: 800; font-size: 15px; color: #166534; margin-bottom: 6px;">🎉 Registration Confirmed & Active</div>
-                        <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.6;">
-                            Your conference seat is officially secured. You can now access full participant privileges, download conference schedules, and participate in all conference sessions.
-                        </p>
-                    </div>
+                <!-- Paid Confirmation Box -->
+                <div class="success-box">
+                    <div style="font-weight: 800; font-size: 15px; color: #166534; margin-bottom: 6px;">🎉 Registration Confirmed & Active</div>
+                    <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.6;">
+                        Your conference seat is officially secured. You can now access full participant privileges, download conference schedules, and participate in all conference sessions.
+                    </p>
+                </div>
 
-                    <!-- CTA Button -->
-                    <div class="btn-container">
-                        <a href="{{ url('/my/registration') }}" class="btn btn-green">
-                            View Registration & Portal 
-                        </a>
-                    </div>
+                <!-- CTA Button -->
+                <div class="btn-container">
+                    <a href="{{ url('/my/registration') }}" class="btn btn-green">
+                        View Registration & Portal
+                    </a>
+                </div>
                 @elseif($status === 'under_review')
-                    <!-- Under Review Box -->
-                    <div class="review-box">
-                        <div style="font-weight: 800; font-size: 14px; color: #075985; margin-bottom: 6px;">🔍 Payment Proof Submitted</div>
-                        <p style="margin: 0; font-size: 13px; color: #0369a1; line-height: 1.6;">
-                            We have received your payment proof and our finance team is currently validating the transaction. You will receive an official payment confirmation email once verified.
-                        </p>
-                    </div>
+                <!-- Under Review Box -->
+                <div class="review-box">
+                    <div style="font-weight: 800; font-size: 14px; color: #075985; margin-bottom: 6px;">🔍 Payment Proof Submitted</div>
+                    <p style="margin: 0; font-size: 13px; color: #0369a1; line-height: 1.6;">
+                        We have received your payment proof and our finance team is currently validating the transaction. You will receive an official payment confirmation email once verified.
+                    </p>
+                </div>
 
-                    <!-- CTA Button -->
-                    <div class="btn-container">
-                        <a href="{{ url('/my/registration') }}" class="btn">
-                            Check Verification Status →
-                        </a>
-                    </div>
+                <!-- CTA Button -->
+                <div class="btn-container">
+                    <a href="{{ url('/my/registration') }}" class="btn">
+                        Check Verification Status →
+                    </a>
+                </div>
                 @else
-                    <!-- Bank Transfer Details Card (For Unpaid) -->
-                    <div class="bank-box">
-                        <div class="card-title" style="color: #6b21a8; border-color: #f3e8ff;">Payment Instructions (Bank Transfer)</div>
-                        <p style="font-size: 13px; color: #475569; margin: 0 0 10px 0;">Please transfer the exact total amount to our official committee account:</p>
-                        
-                        <div>
-                            <div class="bank-name">{{ $conference->bank_name ?? 'Bank JATIM' }}</div>
-                            <div class="acc-number">{{ $conference->bank_account_number ?? '0323300101' }}</div>
-                            <p style="font-size: 12px; color: #475569; margin: 4px 0 0 0;">
-                                Account Name: <strong>{{ $conference->bank_account_holder ?? 'MARS FK UMSURA' }}</strong>
-                            </p>
-                            @if(!empty($conference->bank_instructions))
-                            <p style="font-size: 11px; color: #64748b; margin: 6px 0 0 0; font-style: italic;">
-                                {{ $conference->bank_instructions }}
-                            </p>
-                            @endif
-                        </div>
+                <!-- Bank Transfer Details Card (For Unpaid) -->
+                <div class="bank-box">
+                    <div class="card-title" style="color: #6b21a8; border-color: #f3e8ff;">Payment Instructions (Bank Transfer)</div>
+                    <p style="font-size: 13px; color: #475569; margin: 0 0 10px 0;">Please transfer the exact total amount to our official committee account:</p>
 
-                        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #d8b4fe; font-size: 11px; color: #6b21a8;">
-                            💡 <strong>Important:</strong> Please write your Invoice Number <strong style="font-family: monospace;">{{ $registration->invoice_number }}</strong> in the transfer remarks/description.
-                        </div>
+                    <div>
+                        <div class="bank-name">{{ $conference->bank_name ?? 'Bank JATIM' }}</div>
+                        <div class="acc-number">{{ $conference->bank_account_number ?? '0323300101' }}</div>
+                        <p style="font-size: 12px; color: #475569; margin: 4px 0 0 0;">
+                            Account Name: <strong>{{ $conference->bank_account_holder ?? 'MARS FK UMSURA' }}</strong>
+                        </p>
+                        @if(!empty($conference->bank_instructions))
+                        <p style="font-size: 11px; color: #64748b; margin: 6px 0 0 0; font-style: italic;">
+                            {{ $conference->bank_instructions }}
+                        </p>
+                        @endif
                     </div>
 
-                    <!-- Steps -->
-                    <div class="steps-box">
-                        <div class="card-title" style="margin-bottom: 8px;">Next Steps to Confirm Registration</div>
-                        <table style="width: 100%;">
-                            <tr>
-                                <td style="width: 28px; vertical-align: top; padding-top: 2px;">
-                                    <span class="step-num">1</span>
-                                </td>
-                                <td style="font-size: 12px; color: #475569; padding-bottom: 8px;">
-                                    <strong>Complete Payment:</strong> Transfer the exact amount of <strong>Rp {{ number_format($registration->amount, 0, ',', '.') }}</strong> to the bank account above.
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width: 28px; vertical-align: top; padding-top: 2px;">
-                                    <span class="step-num">2</span>
-                                </td>
-                                <td style="font-size: 12px; color: #475569; padding-bottom: 8px;">
-                                    <strong>Upload Receipt:</strong> Save your transaction receipt (JPG/PNG/PDF) and upload it to the Participant Portal.
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width: 28px; vertical-align: top; padding-top: 2px;">
-                                    <span class="step-num">3</span>
-                                </td>
-                                <td style="font-size: 12px; color: #475569;">
-                                    <strong>Verification:</strong> Our committee will review and verify your payment within 1-2 business days.
-                                </td>
-                            </tr>
-                        </table>
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #d8b4fe; font-size: 11px; color: #6b21a8;">
+                        💡 <strong>Important:</strong> Please write your Invoice Number <strong style="font-family: monospace;">{{ $registration->invoice_number }}</strong> in the transfer remarks/description.
                     </div>
+                </div>
 
-                    <!-- CTA Button -->
-                    <div class="btn-container">
-                        <a href="{{ url('/my/registration') }}" class="btn">
-                            Upload Payment Proof & View Invoice 
-                        </a>
-                    </div>
+                <!-- Steps -->
+                <div class="steps-box">
+                    <div class="card-title" style="margin-bottom: 8px;">Next Steps to Confirm Registration</div>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 28px; vertical-align: top; padding-top: 2px;">
+                                <span class="step-num">1</span>
+                            </td>
+                            <td style="font-size: 12px; color: #475569; padding-bottom: 8px;">
+                                <strong>Complete Payment:</strong> Transfer the exact amount of <strong>Rp {{ number_format($registration->amount, 0, ',', '.') }}</strong> to the bank account above.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 28px; vertical-align: top; padding-top: 2px;">
+                                <span class="step-num">2</span>
+                            </td>
+                            <td style="font-size: 12px; color: #475569; padding-bottom: 8px;">
+                                <strong>Upload Receipt:</strong> Save your transaction receipt (JPG/PNG/PDF) and upload it to the Participant Portal.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 28px; vertical-align: top; padding-top: 2px;">
+                                <span class="step-num">3</span>
+                            </td>
+                            <td style="font-size: 12px; color: #475569;">
+                                <strong>Verification:</strong> Our committee will review and verify your payment within 1-2 business days.
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- CTA Button -->
+                <div class="btn-container">
+                    <a href="{{ url('/my/registration') }}" class="btn">
+                        Upload Payment Proof & View Invoice
+                    </a>
+                </div>
                 @endif
             </div>
 
             <!-- Footer -->
             <div class="footer">
                 <p style="margin: 0; font-weight: 700; color: #334155;">International Conference on Healthcare Administration (ICHA)</p>
-                <p style="margin: 4px 0 0 0;">Need assistance? Contact our committee at <a href="mailto:conference.icha10@gmail.com" style="color: #3b0764; text-decoration: underline;">conference.icha10@gmail.com</a></p>
+                <p style="margin: 4px 0 0 0;">Need assistance? Contact our committee at <a href="mailto:{{ config('mail.from.address', 'ichaconference@icha-pipmarsi.org') }}" style="color: #3b0764; text-decoration: underline;">{{ config('mail.from.address', 'ichaconference@icha-pipmarsi.org') }}</a></p>
                 <p style="margin: 8px 0 0 0; font-size: 10px; color: #94a3b8;">This is an automated system notification. Please do not reply directly to this email.</p>
             </div>
         </div>
     </div>
 </body>
+
 </html>

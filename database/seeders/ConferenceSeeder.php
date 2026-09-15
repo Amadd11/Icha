@@ -31,7 +31,7 @@ class ConferenceSeeder extends Seeder
                 'city'                => 'Surabaya',
                 'country'     => 'Indonesia',
                 'theme'       => 'Healthcare Administration for a Sustainable Future',
-                'email'               => 'conference.icha10@gmail.com',
+                'email'               => 'ichaconference@icha-pipmarsi.org',
                 'bank_name'           => 'Bank JATIM',
                 'bank_account_number' => '0323300101',
                 'bank_account_holder' => 'MARS FK UMSURA',

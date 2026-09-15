@@ -80,7 +80,7 @@ function scrollToTop() {
                         </div>
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-[18px] text-gold shrink-0">mail</span>
-                            <a href="mailto:conference.icha10@gmail.com" class="hover:text-gold transition-colors font-semibold">conference.icha10@gmail.com</a>
+                            <a href="mailto:ichaconference@icha-pipmarsi.org" class="hover:text-gold transition-colors font-semibold">ichaconference@icha-pipmarsi.org</a>
                         </div>
                         <div class="flex items-center gap-2.5">
                             <span class="material-symbols-outlined text-[18px] text-gold shrink-0">call</span>
