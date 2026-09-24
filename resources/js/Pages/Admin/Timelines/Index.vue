@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
@@ -12,6 +12,18 @@ const props = defineProps({
 
 const isModalOpen = ref(false);
 const editingTimeline = ref(null);
+
+watch(isModalOpen, (val) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('overflow-hidden', val);
+    }
+});
+
+onUnmounted(() => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden');
+    }
+});
 
 const form = useForm({
     conference_id: '',
@@ -191,8 +203,8 @@ function deleteTimeline(t) {
             </div>
 
             <!-- Create / Edit Timeline Modal -->
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 overflow-y-auto">
-                <div class="w-full max-w-xl rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-100 text-xs my-8 max-h-[90vh] overflow-y-auto">
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto">
+                <div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-xs my-auto animate-fade-in">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
                         <div>
                             <h3 class="text-base font-extrabold text-slate-900">
@@ -238,7 +250,7 @@ function deleteTimeline(t) {
                             </div>
                         </div>
 
-                        <div class="flex items-center pt-2">
+                        <div class="flex items-center pt-1">
                             <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
                                 <input type="checkbox" v-model="form.is_completed" class="rounded border-slate-300 text-purple-700 focus:ring-purple-700" />
                                 <span>Mark as Completed Milestone</span>
@@ -249,7 +261,7 @@ function deleteTimeline(t) {
                             <label class="mb-1 block font-bold text-slate-700">Milestone Points / Details (One per line)</label>
                             <textarea
                                 v-model="form.description"
-                                rows="4"
+                                rows="3"
                                 placeholder="24-25 Jul: PIPMARSI Meeting&#10;5 Aug: TOR & Branding&#10;8 Aug: Committee Formation"
                                 class="admin-input"
                             ></textarea>

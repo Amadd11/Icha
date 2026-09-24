@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import ReviewerLayout from '@/Layouts/ReviewerLayout.vue';
 import { formatStorageUrl } from '@/Utils/formatters';
@@ -13,6 +13,18 @@ const props = defineProps({
 const isModalOpen = ref(false);
 const activeAssignment = ref(null);
 const activeAbstract = ref(null);
+
+watch(isModalOpen, (val) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('overflow-hidden', val);
+    }
+});
+
+onUnmounted(() => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden');
+    }
+});
 
 const form = useForm({
     score_criteria_1: '',
@@ -343,8 +355,8 @@ function submitReview() {
         </div>
 
         <!-- 📝 Abstract Review Modal -->
-        <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 overflow-y-auto">
-            <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 my-6">
+        <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto">
+            <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fade-in">
                 
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">

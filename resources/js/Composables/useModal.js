@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 
 /**
  * Composable for managing modal open/close state and active payload data.
@@ -9,6 +9,18 @@ import { ref } from 'vue';
 export function useModal(initialState = false) {
     const isOpen = ref(initialState);
     const activeItem = ref(null);
+
+    watch(isOpen, (val) => {
+        if (typeof document !== 'undefined') {
+            document.body.classList.toggle('overflow-hidden', !!val);
+        }
+    });
+
+    onUnmounted(() => {
+        if (typeof document !== 'undefined' && isOpen.value) {
+            document.body.classList.remove('overflow-hidden');
+        }
+    });
 
     function open(item = null) {
         activeItem.value = item;

@@ -29,6 +29,7 @@ const navLinks = [
     { href: "/#tracks", label: "Tracks" },
     { href: "/#timeline", label: "Timeline" },
     { href: "/#speakers", label: "Speakers" },
+    { href: "/journal-partners", label: "Journal Partners" },
     { href: "/registration", label: "Registration" },
 ];
 

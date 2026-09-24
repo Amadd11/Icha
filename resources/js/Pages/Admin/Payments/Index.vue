@@ -228,8 +228,8 @@ function isPdf(path) {
         </div>
 
         <!-- Proof Image Modal (Fullscreen Viewer) -->
-        <div v-if="proofModal.isOpen.value && proofModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
-            <div class="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+        <div v-if="proofModal.isOpen.value && proofModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+            <div class="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 my-auto animate-fade-in">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Payment Proof Preview</h3>
@@ -352,8 +352,8 @@ function isPdf(path) {
         </div>
 
         <!-- Approve Confirmation Modal -->
-        <div v-if="approveModal.isOpen.value && approveModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-200 text-xs">
+        <div v-if="approveModal.isOpen.value && approveModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-xs my-auto animate-fade-in">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -412,8 +412,8 @@ function isPdf(path) {
         </div>
 
         <!-- Reject Reason Modal -->
-        <div v-if="rejectionModal.isOpen.value && rejectionModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-            <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg border border-slate-200 text-xs">
+        <div v-if="rejectionModal.isOpen.value && rejectionModal.activeItem.value" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-xs my-auto animate-fade-in">
                 <h3 class="text-base font-bold text-slate-900 mb-1">Reject Payment Proof</h3>
                 <p class="text-slate-500 mb-3">Please specify the reason for rejecting this payment proof file.</p>
 

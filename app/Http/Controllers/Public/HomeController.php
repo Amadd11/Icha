@@ -20,6 +20,7 @@ class HomeController extends Controller
             'speakers',
             'timelines',
             'sponsors' => fn($q) => $q->where('is_active', true),
+            'journalPartners',
         ])
             ->where('is_active', true)
             ->first();

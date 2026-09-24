@@ -37,6 +37,7 @@ class ConferenceController extends Controller
             'speakers',
             'timelines',
             'sponsors' => fn($q) => $q->where('is_active', true),
+            'journalPartners',
         ]);
 
         $availableConferences = Conference::where('status', '!=', 'draft')
@@ -44,7 +45,7 @@ class ConferenceController extends Controller
             ->orderByDesc('year')
             ->get();
 
-        return Inertia::render('Public/Conference/Show', [
+        return Inertia::render('Public/Conferences/Show', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'conference' => $conference,
@@ -67,7 +68,7 @@ class ConferenceController extends Controller
             ->orderByDesc('year')
             ->get();
 
-        return Inertia::render('Public/Conference/Registration', [
+        return Inertia::render('Public/Registration/Index', [
             'canLogin'             => Route::has('login'),
             'canRegister'          => Route::has('register'),
             'activeConference'     => $activeConference,

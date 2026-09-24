@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
@@ -12,6 +12,18 @@ const props = defineProps({
 
 const isModalOpen = ref(false);
 const editingReviewer = ref(null);
+
+watch(isModalOpen, (val) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('overflow-hidden', val);
+    }
+});
+
+onUnmounted(() => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden');
+    }
+});
 
 const {
     isModalOpen: isDeleteModalOpen,
@@ -169,8 +181,8 @@ function submit() {
             </div>
 
             <!-- Reviewer Modal -->
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-                <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg border border-slate-200 text-xs">
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+                <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-xs my-auto animate-fade-in">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                         <h3 class="text-sm font-bold text-slate-900">{{ editingReviewer ? 'Edit Reviewer' : 'Add New Reviewer' }}</h3>
                         <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>

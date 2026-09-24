@@ -143,7 +143,7 @@ function performLogout() {
         </main>
 
         <!-- Minimalist Logout Confirmation Modal -->
-        <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 transition-all">
+        <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 transition-all">
             <div class="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4 animate-fade-in-scale">
                 <div class="flex items-center gap-3.5">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">

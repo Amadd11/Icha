@@ -1,7 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { formatDateTime } from '@/Utils/formatters';
 import { formatRupiah } from '@/Composables/useFormatRupiah';
 
@@ -11,6 +11,18 @@ const props = defineProps({
 
 const proofModalOpen = ref(false);
 const sendingInvoice = ref(false);
+
+watch(proofModalOpen, (val) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('overflow-hidden', val);
+    }
+});
+
+onUnmounted(() => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden');
+    }
+});
 
 function sendInvoiceEmail() {
     if (confirm(`Send invoice email to ${props.registration.user?.email}?`)) {
@@ -133,8 +145,8 @@ function isPdf(path) {
         </div>
 
         <!-- 🖼️ Payment Proof Preview Modal -->
-        <div v-if="proofModalOpen && registration.payment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 overflow-y-auto">
-            <div class="relative w-full max-w-3xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-100 my-8">
+        <div v-if="proofModalOpen && registration.payment" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+            <div class="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fade-in">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-6 py-4">
                     <div>

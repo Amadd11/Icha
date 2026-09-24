@@ -111,6 +111,11 @@ class Conference extends Model
         return $this->hasMany(Sponsor::class)->orderBy('order');
     }
 
+    public function journalPartners(): HasMany
+    {
+        return $this->hasMany(JournalPartner::class);
+    }
+
     public function registrationFees(): HasMany
     {
         return $this->hasMany(RegistrationFee::class);

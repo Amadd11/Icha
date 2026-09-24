@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -39,6 +39,12 @@ const abstractList = computed(() => {
 const activeAbstract = ref(null);
 const isReviewModalOpen = ref(false);
 const isAssignModalOpen = ref(false);
+
+watch([isReviewModalOpen, isAssignModalOpen], ([review, assign]) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('overflow-hidden', !!(review || assign));
+    }
+});
 const lockedReviewerIds = ref([]);
 const activeAssignmentsMap = ref({});
 const activeDropdownItem = ref(null);
@@ -447,8 +453,8 @@ function isDecisionReady(item) {
             </div>
 
             <!-- 👥 Assign Reviewers Modal -->
-            <div v-if="isAssignModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-                <div class="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-200 my-8">
+            <div v-if="isAssignModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+                <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fade-in">
                     <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
                         <div>
                             <h3 class="font-bold text-slate-900 text-sm">Assign Peer Reviewers</h3>
@@ -599,8 +605,8 @@ function isDecisionReady(item) {
             </div>
 
             <!-- ⚖️ Decision Modal (Balanced, Clean & No Backdrop Blur) -->
-            <div v-if="isReviewModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4" @click="isReviewModalOpen = false">
-                <div class="relative w-full max-w-2xl max-h-[88vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200" @click.stop>
+            <div v-if="isReviewModalOpen && activeAbstract" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto" @click="isReviewModalOpen = false">
+                <div class="relative w-full max-w-2xl max-h-[88vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fade-in" @click.stop>
                     <!-- Modal Header -->
                     <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between gap-3 shrink-0">
                         <div class="min-w-0 flex-1">

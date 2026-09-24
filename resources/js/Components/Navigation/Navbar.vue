@@ -232,7 +232,7 @@ function logout() {
     >
         <div v-if="props.isMenuOpen" class="fixed top-16 inset-x-0 bottom-0 z-40 lg:hidden flex flex-col">
             <!-- Backdrop: Click to close -->
-            <div class="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-xs" @click="emit('close-menu')"></div>
+            <div class="fixed inset-0 top-16 bg-slate-950/70" @click="emit('close-menu')"></div>
 
             <!-- Drawer Content Panel -->
             <div class="relative bg-sidebar border-t border-purple-800/60 px-6 py-6 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto z-10">

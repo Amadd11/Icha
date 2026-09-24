@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 export function useDeleteConfirm() {
@@ -8,6 +8,18 @@ export function useDeleteConfirm() {
     const deleteMessage = ref('Are you sure you want to delete this item?');
     const deleteUrl = ref('');
     const isDeleting = ref(false);
+
+    watch(isModalOpen, (val) => {
+        if (typeof document !== 'undefined') {
+            document.body.classList.toggle('overflow-hidden', !!val);
+        }
+    });
+
+    onUnmounted(() => {
+        if (typeof document !== 'undefined' && isModalOpen.value) {
+            document.body.classList.remove('overflow-hidden');
+        }
+    });
 
     function openDeleteModal({ item = null, title = 'Confirm Deletion', message = '', url = '' }) {
         itemToDelete.value = item;

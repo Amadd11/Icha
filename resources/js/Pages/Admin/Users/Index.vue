@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -39,6 +39,18 @@ function clearSearch() {
 
 const isModalOpen = ref(false);
 const editingUser = ref(null);
+
+watch(isModalOpen, (val) => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.toggle('overflow-hidden', val);
+    }
+});
+
+onUnmounted(() => {
+    if (typeof document !== 'undefined') {
+        document.body.classList.remove('overflow-hidden');
+    }
+});
 
 const {
     isModalOpen: isDeleteModalOpen,
@@ -317,8 +329,8 @@ function formatDate(dateStr) {
             </div>
 
             <!-- Simple Modal for Create & Edit -->
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 overflow-y-auto">
-                <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden border border-slate-200 my-8">
+            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
+                <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fade-in">
                     
                     <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/70">
                         <div>

@@ -190,9 +190,9 @@ function isPdf(path) {
         <!-- 📄 Invoice Detail Modal (Original Compact Design) -->
         <div
             v-if="isInvoiceModalOpen && selectedRegistration"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto"
         >
-            <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-6 animate-fade-in-scale">
+            <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-6 animate-fade-in my-auto">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>

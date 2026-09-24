@@ -106,7 +106,7 @@ function performLogout() {
         >
             <div v-if="isMobileOpen" class="fixed top-16 inset-x-0 bottom-0 z-40 md:hidden flex flex-col">
                 <!-- Backdrop -->
-                <div class="fixed inset-0 top-16 bg-slate-950/70 backdrop-blur-xs" @click="isMobileOpen = false"></div>
+                <div class="fixed inset-0 top-16 bg-slate-950/70" @click="isMobileOpen = false"></div>
 
                 <!-- Menu Panel -->
                 <div class="relative bg-sidebar text-white p-5 border-b border-purple-800 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto z-10">
@@ -151,7 +151,7 @@ function performLogout() {
         </div>
 
         <!-- Minimalist Logout Confirmation Modal -->
-        <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 transition-all">
+        <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 transition-all">
             <div class="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4 animate-fade-in-scale">
                 <div class="flex items-center gap-3.5">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">

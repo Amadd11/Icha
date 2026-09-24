@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\{
     CertificateController as AdminCertificateController,
     ConferenceController as AdminConferenceController,
     DashboardController as AdminDashboardController,
+    JournalPartnerController,
     PaymentController,
     RegistrationController as AdminRegistrationController,
     RegistrationFeeController,
@@ -26,6 +27,7 @@ use App\Http\Controllers\Participant\{
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\ConferenceController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\JournalPartnerController as PublicJournalPartnerController;
 use App\Http\Controllers\Reviewer\DashboardController as ReviewerDashboardController;
 use App\Http\Controllers\Reviewer\ReviewSubmissionController;
 use App\Models\Conference;
@@ -37,6 +39,7 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/conferences', [ConferenceController::class, 'index'])->name('conferences.index');
 Route::get('/conferences/{conference:slug}', [ConferenceController::class, 'show'])->name('conferences.show');
 Route::get('/registration', [ConferenceController::class, 'registration'])->name('registration');
+Route::get('/journal-partners', [PublicJournalPartnerController::class, 'index'])->name('journal-partners.index');
 
 // Dynamic XML Sitemap for Search Engines
 Route::get('/sitemap.xml', function () {
@@ -125,6 +128,7 @@ Route::prefix('admin')
 
         Route::resource('conferences', AdminConferenceController::class)->except(['show']);
         Route::resource('speakers', SpeakerController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('journal-partners', JournalPartnerController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('sponsors', SponsorController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('timelines', TimelineController::class)->only(['index', 'store', 'update', 'destroy']);

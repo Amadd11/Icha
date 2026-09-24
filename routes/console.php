@@ -3,6 +3,7 @@
 use App\Models\AbstractSubmission;
 use App\Models\Certificate;
 use App\Models\Conference;
+use App\Models\JournalPartner;
 use App\Models\Payment;
 use App\Models\Speaker;
 use App\Models\Sponsor;
@@ -62,6 +63,7 @@ Artisan::command('storage:prune-orphans {--force : Actually delete the orphaned 
             Speaker::withTrashed()->whereNotNull('photo')->pluck('photo')
         );
     }
+
 
     $referencedSet = $referencedFiles
         ->map(fn($f) => str_replace('\\', '/', $f))

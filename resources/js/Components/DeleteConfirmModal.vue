@@ -45,7 +45,7 @@ const emit = defineEmits(['close', 'confirm']);
         >
             <div
                 v-if="show"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
                 @click.self="!loading && emit('close')"
             >
                 <Transition
