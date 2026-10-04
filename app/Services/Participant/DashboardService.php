@@ -52,22 +52,23 @@ class DashboardService
             ->exists();
 
         // 6. Evaluate Presenter vs General Participant Track
-        $isPresenterPackage = $activeRegistration?->registrationFee?->type === 'presenter';
-        $isPaidPresenter = $isPresenterPackage && $isPaid;
+        $isNonPresenter = ($user->profile?->participation_type === 'non_presenter')
+            || ($activeRegistration?->registrationFee?->type === 'non_presenter');
 
         // 7. Assemble Actionable Guidance and Stages
         $nextAction = $this->resolveNextAction(
             activeConference: $activeConference,
-            isRegistered: $isRegistered,
-            paymentStatus: $paymentStatus,
-            isPaidPresenter: $isPaidPresenter,
-            hasCertificate: $hasCertificate,
-            abstractStatus: $abstractStatus
+            isRegistered:     $isRegistered,
+            paymentStatus:    $paymentStatus,
+            isNonPresenter:   $isNonPresenter,
+            hasCertificate:   $hasCertificate,
+            abstract:         $abstract,
+            abstractStatus:   $abstractStatus
         );
 
-        $stages = $isPaidPresenter
-            ? $this->buildPresenterStages($isRegistered, $isPaid, $paymentStatus, $abstract, $abstractStatus, $hasCertificate)
-            : $this->buildGeneralStages($isRegistered, $isPaid, $paymentStatus, $hasCertificate);
+        $stages = $isNonPresenter
+            ? $this->buildGeneralStages($isRegistered, $isPaid, $paymentStatus, $hasCertificate)
+            : $this->buildPresenterStages($isRegistered, $isPaid, $paymentStatus, $abstract, $abstractStatus, $hasCertificate);
 
         $nearestDeadline = $this->resolveNearestDeadline($activeConference);
 
@@ -108,24 +109,100 @@ class DashboardService
         ?Conference $activeConference,
         bool $isRegistered,
         string $paymentStatus,
-        bool $isPaidPresenter,
+        bool $isNonPresenter,
         bool $hasCertificate,
+        ?AbstractSubmission $abstract,
         string $abstractStatus
     ): array {
-        if (!$isRegistered) {
+        // Track 1: Non-Presenter (Audience / General Attendee)
+        if ($isNonPresenter) {
+            if ($paymentStatus === 'unpaid') {
+                return [
+                    'title'        => 'Complete Non-Presenter Payment',
+                    'description'  => 'Upload your payment receipt to complete your conference attendance registration.',
+                    'button_label' => 'Upload Payment Receipt',
+                    'url'          => route('participant.registration.create'),
+                ];
+            }
+
+            if ($paymentStatus === 'waiting_verification') {
+                return [
+                    'title'        => 'Payment Verification Pending',
+                    'description'  => 'Your payment receipt has been submitted and is currently being verified by admin.',
+                    'button_label' => 'View Payment Status',
+                    'url'          => route('participant.registration.create'),
+                ];
+            }
+
+            if ($paymentStatus === 'rejected') {
+                return [
+                    'title'        => 'Payment Receipt Rejected',
+                    'description'  => 'Your payment receipt was rejected. Please re-upload a valid transfer proof.',
+                    'button_label' => 'Re-upload Receipt',
+                    'url'          => route('participant.registration.create'),
+                ];
+            }
+
+            if ($hasCertificate) {
+                return [
+                    'title'        => 'Download E-Certificate',
+                    'description'  => 'Your official verified E-Certificate is issued and ready for download!',
+                    'button_label' => 'Get Certificate',
+                    'url'          => route('participant.certificate.index'),
+                ];
+            }
+
             return [
-                'title'        => 'Complete Registration',
-                'description'  => 'Choose your category to register for ' . ($activeConference?->title ?? 'the conference') . '.',
-                'button_label' => 'Register Now',
+                'title'        => 'Access Conference Pass',
+                'description'  => 'Your payment is verified. You can now download your invoice and attend sessions.',
+                'button_label' => 'View Registration Details',
                 'url'          => route('participant.registration.create'),
             ];
         }
 
+        // Track 2: Presenter Track (Scientific Author)
+        if (!$abstract || $abstractStatus === 'not_submitted') {
+            return [
+                'title'        => 'Submit Your Abstract',
+                'description'  => 'Submit your paper abstract for ' . ($activeConference?->title ?? 'the conference') . ' to enter the peer review selection.',
+                'button_label' => 'Submit Abstract',
+                'url'          => route('participant.submission.index'),
+            ];
+        }
+
+        if ($abstractStatus === 'pending' || $abstractStatus === 'under_review') {
+            return [
+                'title'        => 'Abstract Under Peer Review',
+                'description'  => 'Your abstract is currently being evaluated by the scientific committee and peer reviewers. Payment will be unlocked once accepted.',
+                'button_label' => 'View Submission Status',
+                'url'          => route('participant.submission.index'),
+            ];
+        }
+
+        if ($abstractStatus === 'revision_required') {
+            return [
+                'title'        => 'Abstract Revision Required',
+                'description'  => 'Reviewers requested revisions on your abstract. Please check feedback and upload your revised draft.',
+                'button_label' => 'Upload Revised Abstract',
+                'url'          => route('participant.submission.index'),
+            ];
+        }
+
+        if ($abstractStatus === 'rejected') {
+            return [
+                'title'        => 'Abstract Not Accepted',
+                'description'  => 'Your abstract was not accepted for oral/poster presentation. You can still attend the conference as a Non-Presenter audience.',
+                'button_label' => 'Register as Non-Presenter',
+                'url'          => route('participant.registration.create'),
+            ];
+        }
+
+        // Abstract is ACCEPTED!
         if ($paymentStatus === 'unpaid') {
             return [
-                'title'        => 'Complete Payment',
-                'description'  => 'Upload your payment receipt to complete registration.',
-                'button_label' => 'Upload Payment Receipt',
+                'title'        => 'Abstract Accepted - Complete Payment',
+                'description'  => 'Congratulations! Your abstract has been accepted. Please select your presenter package and upload proof of payment.',
+                'button_label' => 'Complete Presenter Payment',
                 'url'          => route('participant.registration.create'),
             ];
         }
@@ -133,7 +210,7 @@ class DashboardService
         if ($paymentStatus === 'waiting_verification') {
             return [
                 'title'        => 'Payment Verification Pending',
-                'description'  => 'Your payment receipt has been submitted and is currently being verified by admin.',
+                'description'  => 'Your presenter payment receipt has been submitted and is currently being verified by admin.',
                 'button_label' => 'View Payment Status',
                 'url'          => route('participant.registration.create'),
             ];
@@ -148,44 +225,6 @@ class DashboardService
             ];
         }
 
-        // For General Participants (Non-Presenter)
-        if (!$isPaidPresenter) {
-            if ($hasCertificate) {
-                return [
-                    'title'        => 'Download E-Certificate',
-                    'description'  => 'Your official verified E-Certificate is issued and ready for download!',
-                    'button_label' => 'Get Certificate',
-                    'url'          => route('participant.certificate.index'),
-                ];
-            }
-
-            return [
-                'title'        => 'Access Conference Pass',
-                'description'  => 'Your payment is verified. You can now download your invoice and attend sessions.',
-                'button_label' => 'View Registration Details',
-                'url'          => route('dashboard'),
-            ];
-        }
-
-        // Paid Presenter Scientific Track Flow
-        if ($abstractStatus === 'not_submitted') {
-            return [
-                'title'        => 'Submit Abstract',
-                'description'  => 'Submit your abstract before the upcoming submission deadline.',
-                'button_label' => 'Submit Abstract',
-                'url'          => route('participant.submission.index'),
-            ];
-        }
-
-        if ($abstractStatus === 'revision_required') {
-            return [
-                'title'        => 'Upload Revised Abstract',
-                'description'  => 'Your abstract requires revisions based on peer reviewer feedback.',
-                'button_label' => 'Upload Revision',
-                'url'          => route('participant.submission.index'),
-            ];
-        }
-
         if ($hasCertificate) {
             return [
                 'title'        => 'Download E-Certificate',
@@ -196,9 +235,9 @@ class DashboardService
         }
 
         return [
-            'title'        => 'Abstract Under Review',
-            'description'  => 'Your abstract submission is currently being reviewed by peer reviewers.',
-            'button_label' => 'View Submission Status',
+            'title'        => 'Presentation Pass Confirmed',
+            'description'  => 'Your presenter registration is confirmed and verified. You are scheduled for presentation.',
+            'button_label' => 'View Submission & Presentation',
             'url'          => route('participant.submission.index'),
         ];
     }
@@ -215,15 +254,15 @@ class DashboardService
         return [
             [
                 'key'    => 'registration',
-                'label'  => 'Registration',
+                'label'  => 'Ticket Selection',
                 'status' => $isRegistered ? 'completed' : 'current',
-                'desc'   => $isRegistered ? 'Registered' : 'Not Registered',
+                'desc'   => $isRegistered ? 'Package Selected' : 'Choose Ticket',
             ],
             [
                 'key'    => 'payment',
                 'label'  => 'Payment',
                 'status' => $isPaid ? 'completed' : ($isRegistered ? 'current' : 'pending'),
-                'desc'   => $isPaid ? 'Paid' : ($paymentStatus === 'waiting_verification' ? 'Waiting Verification' : ($paymentStatus === 'rejected' ? 'Rejected' : 'Unpaid')),
+                'desc'   => $isPaid ? 'Paid & Verified' : ($paymentStatus === 'waiting_verification' ? 'Waiting Verification' : ($paymentStatus === 'rejected' ? 'Rejected' : 'Unpaid')),
             ],
             [
                 'key'    => 'attendance',
@@ -241,7 +280,7 @@ class DashboardService
     }
 
     /**
-     * Build complete 5-stage journey for verified paid presenters.
+     * Build complete 5-stage journey for Presenters (Review-First Flow).
      */
     private function buildPresenterStages(
         bool $isRegistered,
@@ -251,34 +290,74 @@ class DashboardService
         string $abstractStatus,
         bool $hasCertificate
     ): array {
+        // Stage 2: Abstract & Review
+        $abstractStepStatus = 'current';
+        $abstractStepDesc = 'Not Submitted';
+
+        if ($abstract) {
+            if ($abstractStatus === 'accepted') {
+                $abstractStepStatus = 'completed';
+                $abstractStepDesc = 'Accepted';
+            } elseif ($abstractStatus === 'rejected') {
+                $abstractStepStatus = 'rejected';
+                $abstractStepDesc = 'Rejected';
+            } elseif ($abstractStatus === 'revision_required') {
+                $abstractStepStatus = 'current';
+                $abstractStepDesc = 'Revision Required';
+            } else {
+                $abstractStepStatus = 'current';
+                $abstractStepDesc = 'Under Review';
+            }
+        }
+
+        // Stage 3: Payment (Unlocked after abstract accepted)
+        $paymentStepStatus = 'pending';
+        $paymentStepDesc = 'Locked until Accepted';
+
+        if ($abstractStatus === 'accepted') {
+            if ($isPaid) {
+                $paymentStepStatus = 'completed';
+                $paymentStepDesc = 'Paid & Verified';
+            } elseif ($paymentStatus === 'waiting_verification') {
+                $paymentStepStatus = 'current';
+                $paymentStepDesc = 'Waiting Verification';
+            } elseif ($paymentStatus === 'rejected') {
+                $paymentStepStatus = 'current';
+                $paymentStepDesc = 'Receipt Rejected';
+            } else {
+                $paymentStepStatus = 'current';
+                $paymentStepDesc = 'Payment Unlocked';
+            }
+        }
+
         return [
             [
                 'key'    => 'registration',
                 'label'  => 'Registration',
-                'status' => $isRegistered ? 'completed' : 'current',
-                'desc'   => $isRegistered ? 'Registered' : 'Not Registered',
-            ],
-            [
-                'key'    => 'payment',
-                'label'  => 'Payment',
-                'status' => $isPaid ? 'completed' : ($isRegistered ? 'current' : 'pending'),
-                'desc'   => $isPaid ? 'Paid' : ($paymentStatus === 'waiting_verification' ? 'Waiting Verification' : ($paymentStatus === 'rejected' ? 'Rejected' : 'Unpaid')),
+                'status' => 'completed',
+                'desc'   => 'Account Created',
             ],
             [
                 'key'    => 'abstract',
-                'label'  => 'Abstract',
-                'status' => $abstract ? ($abstractStatus === 'accepted' ? 'completed' : 'current') : 'pending',
-                'desc'   => $abstract ? ucfirst(str_replace('_', ' ', $abstractStatus)) : 'Not Submitted',
+                'label'  => 'Abstract & Review',
+                'status' => $abstractStepStatus,
+                'desc'   => $abstractStepDesc,
+            ],
+            [
+                'key'    => 'payment',
+                'label'  => 'Conference Fee',
+                'status' => $paymentStepStatus,
+                'desc'   => $paymentStepDesc,
             ],
             [
                 'key'    => 'presentation',
                 'label'  => 'Presentation',
-                'status' => $abstractStatus === 'accepted' ? 'current' : 'pending',
-                'desc'   => $abstractStatus === 'accepted' ? 'Ready' : 'Pending',
+                'status' => ($isPaid && $abstractStatus === 'accepted') ? 'current' : 'pending',
+                'desc'   => ($isPaid && $abstractStatus === 'accepted') ? 'Ready' : 'Pending Payment',
             ],
             [
                 'key'    => 'certificate',
-                'label'  => 'Certificate',
+                'label'  => 'E-Certificate',
                 'status' => $hasCertificate ? 'completed' : 'pending',
                 'desc'   => $hasCertificate ? 'Issued' : 'Not Issued',
             ],

@@ -58,7 +58,7 @@ class ParticipantWorkflowTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_unregistered_participant_cannot_access_submission(): void
+    public function test_participant_can_access_submission_portal_without_prior_registration_or_payment(): void
     {
         $user = User::where('email', 'participant@icha.com')->first();
 
@@ -66,85 +66,16 @@ class ParticipantWorkflowTest extends TestCase
         Registration::where('user_id', $user->id)->delete();
 
         $response = $this->actingAs($user)->get('/my/submission');
-        $response->assertRedirect('/my/registration');
-    }
-
-    public function test_participant_can_register_and_create_invoice(): void
-    {
-        $user = User::where('email', 'participant@icha.com')->first();
-
-        // Clean up previous registration for clean idempotent test
-        Registration::where('user_id', $user->id)->forceDelete();
-
-        $payload = [
-            'registration_fee_id' => $this->presenterFee->id,
-            'notes'               => 'Automated test registration',
-        ];
-
-        $response = $this->actingAs($user)->post('/my/registration', $payload);
-        $response->assertRedirect('/my/registration');
-
-        $this->assertDatabaseHas('registrations', [
-            'user_id'             => $user->id,
-            'conference_id'       => $this->conference->id,
-            'registration_fee_id' => $this->presenterFee->id,
-            'status'              => 'pending',
-        ]);
-    }
-
-    public function test_participant_can_upload_payment_proof(): void
-    {
-        Storage::fake('public');
-        $user = User::where('email', 'participant@icha.com')->first();
-        $registration = Registration::where('user_id', $user->id)->first();
-
-        $file = UploadedFile::fake()->image('payment_receipt.jpg');
-
-        $payload = [
-            'registration_id' => $registration->id,
-            'payment_method'  => 'Bank Transfer (Bank JATIM)',
-            'proof_file'      => $file,
-        ];
-
-        $response = $this->actingAs($user)->post('/my/payment', $payload);
-        $response->assertRedirect('/my/registration');
-
-        $this->assertDatabaseHas('payments', [
-            'registration_id' => $registration->id,
-            'status'          => 'pending',
-        ]);
-    }
-
-    public function test_unverified_payment_participant_cannot_access_submission(): void
-    {
-        $user = User::where('email', 'participant@icha.com')->first();
-
-        // Payment is still 'pending' (not verified)
-        $response = $this->actingAs($user)->get('/my/submission');
-        $response->assertRedirect('/my/registration');
-    }
-
-    public function test_verified_presenter_can_access_submission_portal(): void
-    {
-        $user = User::where('email', 'participant@icha.com')->first();
-        $registration = Registration::where('user_id', $user->id)->first();
-
-        // Simulate admin approving payment
-        $payment = Payment::where('registration_id', $registration->id)->first();
-        $payment->update([
-            'status'      => 'verified',
-            'verified_at' => now(),
-        ]);
-        $registration->update(['status' => 'paid']);
-
-        $response = $this->actingAs($user)->get('/my/submission');
         $response->assertStatus(200);
     }
 
-    public function test_verified_presenter_can_submit_abstract(): void
+    public function test_participant_can_submit_abstract_without_prior_payment(): void
     {
         Storage::fake('public');
         $user = User::where('email', 'participant@icha.com')->first();
+
+        // Clean up previous abstracts
+        \App\Models\AbstractSubmission::where('user_id', $user->id)->forceDelete();
 
         $file = UploadedFile::fake()->create('test_abstract.docx', 500, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
@@ -174,6 +105,95 @@ class ParticipantWorkflowTest extends TestCase
             'title'   => 'Healthcare Quality and AI Leadership in Modern Hospitals',
             'status'  => 'under_review',
         ]);
+    }
+
+    public function test_non_presenter_can_register_and_create_invoice(): void
+    {
+        $user = User::where('email', 'participant@icha.com')->first();
+
+        // Clean up previous registration for clean idempotent test
+        Registration::where('user_id', $user->id)->forceDelete();
+
+        $payload = [
+            'registration_fee_id' => $this->nonPresenterFee->id,
+            'notes'               => 'Non presenter test registration',
+        ];
+
+        $response = $this->actingAs($user)->post('/my/registration', $payload);
+        $response->assertRedirect('/my/registration');
+
+        $this->assertDatabaseHas('registrations', [
+            'user_id'             => $user->id,
+            'conference_id'       => $this->conference->id,
+            'registration_fee_id' => $this->nonPresenterFee->id,
+            'status'              => 'pending',
+        ]);
+    }
+
+    public function test_participant_can_upload_payment_proof(): void
+    {
+        Storage::fake('public');
+        $user = User::where('email', 'participant@icha.com')->first();
+        $registration = Registration::where('user_id', $user->id)->first();
+
+        $file = UploadedFile::fake()->image('payment_receipt.jpg');
+
+        $payload = [
+            'registration_id' => $registration->id,
+            'payment_method'  => 'Bank Transfer (Bank JATIM)',
+            'proof_file'      => $file,
+        ];
+
+        $response = $this->actingAs($user)->post('/my/payment', $payload);
+        $response->assertRedirect('/my/registration');
+
+        $this->assertDatabaseHas('payments', [
+            'registration_id' => $registration->id,
+            'status'          => 'pending',
+        ]);
+    }
+
+    public function test_presenter_fee_registration_requires_accepted_abstract(): void
+    {
+        $user = User::where('email', 'participant@icha.com')->first();
+        Registration::where('user_id', $user->id)->forceDelete();
+
+        // Ensure user has abstract in review (not accepted)
+        \App\Models\AbstractSubmission::where('user_id', $user->id)->update(['status' => 'under_review']);
+
+        $payload = [
+            'registration_fee_id' => $this->presenterFee->id,
+            'notes'               => 'Premature presenter registration',
+        ];
+
+        $response = $this->actingAs($user)->post('/my/registration', $payload);
+        $response->assertStatus(422);
+
+        // Now simulate abstract accepted by committee
+        \App\Models\AbstractSubmission::where('user_id', $user->id)->update(['status' => 'accepted']);
+
+        $response = $this->actingAs($user)->post('/my/registration', $payload);
+        $response->assertRedirect('/my/registration');
+
+        $this->assertDatabaseHas('registrations', [
+            'user_id'             => $user->id,
+            'registration_fee_id' => $this->presenterFee->id,
+            'status'              => 'pending',
+        ]);
+    }
+
+    public function test_paid_non_presenter_cannot_access_submission(): void
+    {
+        $user = User::where('email', 'participant@icha.com')->first();
+        $registration = Registration::where('user_id', $user->id)->first();
+        $registration->update([
+            'registration_fee_id' => $this->nonPresenterFee->id,
+            'status'              => 'paid',
+        ]);
+        Payment::where('registration_id', $registration->id)->update(['status' => 'verified']);
+
+        $response = $this->actingAs($user)->get('/my/submission');
+        $response->assertRedirect('/dashboard');
     }
 
     public function test_participant_can_view_and_update_profile(): void

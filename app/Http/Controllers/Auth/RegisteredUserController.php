@@ -33,14 +33,15 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'first_name'  => 'nullable|string|max:255',
-            'last_name'   => 'nullable|string|max:255',
-            'name'        => 'nullable|string|max:255',
-            'country'     => 'nullable|string|max:255',
-            'institution' => 'nullable|string|max:255',
-            'phone'       => 'nullable|string|max:50',
-            'email'       => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
-            'password'    => ['required', 'confirmed', Rules\Password::defaults()],
+            'participation_type' => ['required', 'string', 'in:presenter,non_presenter'],
+            'first_name'         => 'nullable|string|max:255',
+            'last_name'          => 'nullable|string|max:255',
+            'name'               => 'nullable|string|max:255',
+            'country'            => 'nullable|string|max:255',
+            'institution'        => 'nullable|string|max:255',
+            'phone'              => 'nullable|string|max:50',
+            'email'              => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
+            'password'           => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         // Construct full name if first_name / last_name provided, fallback to request->name or Participant
@@ -57,9 +58,10 @@ class RegisteredUserController extends Controller
 
         // Create Profile record
         $user->profile()->create([
-            'phone' => $request->phone,
-            'institution' => $request->institution,
-            'country' => $request->country ?? 'Indonesia',
+            'participation_type' => $request->participation_type ?? 'presenter',
+            'phone'              => $request->phone,
+            'institution'        => $request->institution,
+            'country'            => $request->country ?? 'Indonesia',
         ]);
 
         event(new Registered($user));

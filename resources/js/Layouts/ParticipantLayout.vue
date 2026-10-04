@@ -12,8 +12,8 @@ const navigation = computed(() => {
 
     return [
         { name: 'Dashboard', routeName: 'dashboard' },
-        { name: 'Registration & Payment', routeName: 'participant.registration.create' },
         ...(isPresenter ? [{ name: 'Submission', routeName: 'participant.submission.index' }] : []),
+        { name: 'Registration & Payment', routeName: 'participant.registration.create' },
         { name: 'Certificate', routeName: 'participant.certificate.index' },
         { name: 'Profile', routeName: 'participant.profile.edit' },
     ];

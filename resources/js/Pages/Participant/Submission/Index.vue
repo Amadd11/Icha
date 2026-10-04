@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 
 const props = defineProps({
@@ -92,31 +92,8 @@ function downloadTemplate() {
                 </button>
             </div>
 
-            <!-- Locked State if Payment Not Verified -->
-            <div v-if="!props.isPaid" class="bg-white rounded-2xl p-8 border border-amber-200 shadow-2xs text-center space-y-4">
-                <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
-                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-slate-900">Submission Portal Locked</h3>
-                    <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                        Payment verification is required before you can submit abstracts. Please complete registration and upload your payment receipt for admin verification.
-                    </p>
-                </div>
-                <div>
-                    <Link
-                        :href="route('participant.payment.index')"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition"
-                    >
-                        Upload Payment Receipt &rarr;
-                    </Link>
-                </div>
-            </div>
-
             <!-- Main Content Area: Left Form + Guideline | Right User Summary -->
-            <div v-else class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
                 <!-- Main Form & Guideline Section (Col-span 3) -->
                 <div class="lg:col-span-3 space-y-6">
@@ -132,13 +109,63 @@ function downloadTemplate() {
 
                         <!-- STATE 1: ALREADY UPLOADED -->
                         <div v-if="props.statusChecklist?.hasUploadedAbstract && props.abstracts.length > 0 && !isRevising" class="space-y-6">
-                            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col md:flex-row gap-6 items-center">
-                                <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                                    <span class="material-symbols-outlined text-3xl">check_circle</span>
+                            <!-- 1. ACCEPTED STATE -->
+                            <div v-if="props.abstracts[0].status === 'accepted'" class="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-xs">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-2xs">
+                                        <span class="material-symbols-outlined text-3xl">check_circle</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-extrabold text-emerald-950 mb-0.5">Abstract Accepted for {{ props.abstracts[0].presentation_type === 'poster' ? 'Poster' : 'Oral' }} Presentation</h3>
+                                        <p class="text-xs text-emerald-800 leading-relaxed">
+                                            Congratulations! Your paper has passed peer review. Please proceed to the registration portal to choose your presenter package and complete payment.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link
+                                    :href="route('participant.registration.create')"
+                                    class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 text-xs font-bold shadow-xs transition hover:-translate-y-0.5"
+                                >
+                                    Proceed to Payment &rarr;
+                                </Link>
+                            </div>
+
+                            <!-- 2. REJECTED STATE -->
+                            <div v-else-if="props.abstracts[0].status === 'rejected'" class="rounded-2xl border border-rose-300 bg-rose-50/90 p-6 space-y-3 shadow-xs">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                                        <span class="material-symbols-outlined text-2xl">cancel</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-extrabold text-rose-950">Abstract Not Accepted for Presentation</h3>
+                                        <p class="text-xs text-rose-800">
+                                            Thank you for submitting your abstract. The scientific committee decided that this submission cannot be accepted for presentation. No presenter payment is required.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div v-if="props.abstracts[0].review_notes" class="p-3 bg-white rounded-xl border border-rose-200 text-xs text-rose-900 leading-relaxed">
+                                    <strong>Committee Decision Note:</strong> {{ props.abstracts[0].review_notes }}
+                                </div>
+                                <div class="pt-2 flex items-center gap-3">
+                                    <Link
+                                        :href="route('participant.registration.create')"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 text-xs font-bold transition shadow-xs"
+                                    >
+                                        Attend as Non-Presenter Audience &rarr;
+                                    </Link>
+                                </div>
+                            </div>
+
+                            <!-- 3. UNDER REVIEW / PENDING -->
+                            <div v-else-if="props.abstracts[0].status === 'pending' || props.abstracts[0].status === 'under_review'" class="rounded-2xl border border-blue-200 bg-blue-50/80 p-6 flex flex-col md:flex-row gap-5 items-center">
+                                <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0 shadow-2xs">
+                                    <span class="material-symbols-outlined text-3xl">hourglass_top</span>
                                 </div>
                                 <div class="flex-1">
-                                    <h3 class="text-lg font-bold text-emerald-900 mb-1">Abstract Submitted Successfully</h3>
-                                    <p class="text-sm text-emerald-700">You have already submitted your abstract for this conference. You can only submit one abstract per registration.</p>
+                                    <h3 class="text-base font-extrabold text-blue-950 mb-0.5">Abstract Under Peer Review</h3>
+                                    <p class="text-xs text-blue-800 leading-relaxed">
+                                        Your abstract is currently being evaluated by the peer review committee. You do not need to make any payment while under review. Once a decision is finalized, you will receive notification and payment options.
+                                    </p>
                                 </div>
                             </div>
 
@@ -514,7 +541,9 @@ function downloadTemplate() {
                                 <span v-if="props.statusChecklist?.hasPaid" class="flex items-center gap-1 text-emerald-400 font-bold">
                                     Done <span class="material-symbols-outlined text-[16px]">check_circle</span>
                                 </span>
-                                <span v-else class="text-rose-300 font-bold">Pending</span>
+                                <span v-else class="text-purple-300 font-medium text-[11px]">
+                                    {{ props.statusChecklist?.isAbstractAccepted ? 'Payment Due' : 'After Acceptance' }}
+                                </span>
                             </div>
 
                             <div class="flex items-center justify-between text-xs font-semibold">

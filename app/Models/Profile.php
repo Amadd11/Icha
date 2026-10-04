@@ -11,6 +11,7 @@ class Profile extends Model
     use SoftDeletes;
     protected $fillable = [
         'user_id',
+        'participation_type',
         'phone',
         'institution',
         'country',

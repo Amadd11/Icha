@@ -56,10 +56,15 @@ class HandleInertiaRequests extends Middleware
         }
 
         $user = $request->user();
-        $isPresenter = false;
+        $canSubmitAbstract = true;
         $isPaidPresenter = false;
 
         if ($user && $user->role === 'participant') {
+            $user->loadMissing('profile');
+            if ($user->profile?->participation_type === 'non_presenter') {
+                $canSubmitAbstract = false;
+            }
+
             $activeConfId = $activeConference?->id;
             $reg = Registration::with(['registrationFee', 'payment'])
                 ->where('user_id', $user->id)
@@ -67,10 +72,13 @@ class HandleInertiaRequests extends Middleware
                 ->latest()
                 ->first();
 
+            if ($reg && $reg->registrationFee?->type === 'non_presenter') {
+                $canSubmitAbstract = false;
+            }
+
             if ($reg && $reg->registrationFee) {
-                $isPresenter = ($reg->registrationFee->type === 'presenter');
                 $isPaid = ($reg->status === 'paid' || $reg->payment?->status === 'verified');
-                $isPaidPresenter = ($isPresenter && $isPaid);
+                $isPaidPresenter = ($reg->registrationFee->type === 'presenter' && $isPaid);
             }
         }
 
@@ -78,11 +86,12 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? [
-                    'id'           => $user->id,
-                    'name'         => $user->name,
-                    'email'        => $user->email,
-                    'role'         => $user->role,
-                    'is_presenter' => $isPaidPresenter,
+                    'id'                => $user->id,
+                    'name'              => $user->name,
+                    'email'             => $user->email,
+                    'role'              => $user->role,
+                    'is_presenter'      => $canSubmitAbstract,
+                    'is_paid_presenter' => $isPaidPresenter,
                 ] : null,
             ],
             'activeConference' => $activeConference,

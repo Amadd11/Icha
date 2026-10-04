@@ -242,6 +242,26 @@ const inputClass = 'block w-full text-xs rounded-xl border border-slate-200 bg-s
                             </div>
                         </div>
 
+                        <!-- Participation Track (Locked / Read-Only) -->
+                        <div class="sm:col-span-2">
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Jalur Keikutsertaan (Participation Role)</label>
+                            <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/80">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">{{ props.profile?.participation_type === 'non_presenter' ? '🎟️' : '🎤' }}</span>
+                                    <div>
+                                        <span class="text-xs font-extrabold text-slate-900 block">
+                                            {{ props.profile?.participation_type === 'non_presenter' ? 'Peserta Umum (Non-Presenter)' : 'Pemakalah (Presenter)' }}
+                                        </span>
+                                        <span class="text-[11px] text-slate-500 block mt-0.5">
+                                            {{ props.profile?.participation_type === 'non_presenter' 
+                                                ? 'Terdaftar sebagai peserta seminar/webinar (tanpa naskah ilmiah).' 
+                                                : 'Terdaftar untuk mengirim dan mempresentasikan naskah ilmiah.' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Institution -->
                         <div class="sm:col-span-2">
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">

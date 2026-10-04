@@ -22,7 +22,11 @@ class SubmissionController extends Controller
 
     public function index(Request $request): Response|RedirectResponse
     {
-        $user = $request->user();
+        $user = $request->user()->loadMissing('profile');
+        if ($user->profile?->participation_type === 'non_presenter') {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda terdaftar sebagai Peserta Umum (Non-Presenter). Menu pengiriman naskah ilmiah khusus untuk Pemakalah (Presenter).');
+        }
+
         $activeConference = Conference::where('is_active', true)->first() ?? Conference::latest()->first();
 
         $registration = Registration::with(['registrationFee', 'payment'])
@@ -31,17 +35,8 @@ class SubmissionController extends Controller
             ->latest()
             ->first();
 
-        if (!$registration) {
-            return redirect()->route('participant.registration.create')->with('error', 'Please complete your conference registration with a Presenter package to access the Submission portal.');
-        }
-
-        if ($registration->registrationFee && $registration->registrationFee->type === 'non_presenter') {
-            return redirect()->route('dashboard')->with('error', 'The Call for Papers / Submission portal is exclusively available for Presenter ticket holders.');
-        }
-
-        $isPaid = ($registration->status === 'paid' || $registration->payment?->status === 'verified');
-        if (!$isPaid) {
-            return redirect()->route('participant.registration.create')->with('error', 'Please complete and verify your Presenter registration payment to access the Submission portal.');
+        if ($registration && $registration->registrationFee?->type === 'non_presenter' && ($registration->status === 'paid' || $registration->payment?->status === 'verified')) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda saat ini terdaftar sebagai tiket Non-Presenter (Audience). Menu pengiriman naskah ilmiah khusus untuk Pemakalah (Presenter).');
         }
 
         $data = $this->submissionService->getSubmissionData($user);
@@ -51,9 +46,14 @@ class SubmissionController extends Controller
 
     public function storeAbstract(StoreAbstractRequest $request): RedirectResponse
     {
+        $user = $request->user()->loadMissing('profile');
+        if ($user->profile?->participation_type === 'non_presenter') {
+            return redirect()->route('dashboard')->with('error', 'Peserta Non-Presenter tidak diizinkan mengirimkan naskah.');
+        }
+
         try {
             $this->submissionService->submitAbstract(
-                $request->user(),
+                $user,
                 $request->validated(),
                 $request->file('file')
             );

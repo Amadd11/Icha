@@ -12,7 +12,7 @@ defineProps({
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-6">Conference Journey Progress</h3>
 
         <!-- Horizontal Step Tracker for Desktop, Stacked for Mobile -->
-        <div :class="stages.length <= 4 ? 'grid grid-cols-2 gap-3 sm:grid-cols-4' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6'">
+        <div :class="stages.length <= 4 ? 'grid grid-cols-2 gap-3 sm:grid-cols-4' : (stages.length === 5 ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6')">
             <div
                 v-for="(stage, index) in stages"
                 :key="stage.key"
@@ -20,6 +20,7 @@ defineProps({
                 :class="{
                     'border-emerald-500 bg-emerald-50/40 text-emerald-950': stage.status === 'completed',
                     'border-purple-600 bg-purple-50 text-purple-950 ring-2 ring-purple-600/20': stage.status === 'current',
+                    'border-rose-400 bg-rose-50 text-rose-950': stage.status === 'rejected',
                     'border-slate-200 bg-slate-50/50 text-slate-400': stage.status === 'pending'
                 }"
             >
@@ -28,11 +29,15 @@ defineProps({
                     :class="{
                         'bg-emerald-600 text-white': stage.status === 'completed',
                         'bg-purple-700 text-gold': stage.status === 'current',
+                        'bg-rose-600 text-white': stage.status === 'rejected',
                         'bg-slate-200 text-slate-600': stage.status === 'pending'
                     }"
                 >
                     <svg v-if="stage.status === 'completed'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg v-else-if="stage.status === 'rejected'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                     <span v-else>{{ index + 1 }}</span>
                 </div>

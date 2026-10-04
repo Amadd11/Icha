@@ -32,6 +32,17 @@ class RegistrationService
             throw new SubmissionException('Paket pendaftaran tidak valid untuk konferensi yang sedang aktif.', 422);
         }
 
+        if ($fee->type === 'presenter') {
+            $hasAcceptedAbstract = \App\Models\AbstractSubmission::where('user_id', $user->id)
+                ->where('conference_id', $activeConference->id)
+                ->where('status', 'accepted')
+                ->exists();
+
+            if (!$hasAcceptedAbstract) {
+                throw new SubmissionException('Paket Pemakalah (Presenter) hanya dapat dipilih setelah abstrak naskah Anda dinyatakan DITERIMA (Accepted) oleh reviewer.', 422);
+            }
+        }
+
         $confId = $activeConference->id;
 
         // Atomic lock per user per conference prevents duplicate registrations on double-click
@@ -55,6 +66,7 @@ class RegistrationService
                             'notes'               => $data['notes'] ?? $existing->notes,
                         ])->save();
                     }
+
                     return $existing;
                 }
 

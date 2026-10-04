@@ -11,6 +11,7 @@ const showPassword = ref(false);
 const showPasswordConfirmation = ref(false);
 
 const form = useForm({
+    participation_type: 'presenter',
     first_name: '',
     last_name: '',
     country: 'Indonesia',
@@ -51,6 +52,84 @@ const labelClass = 'text-xs font-semibold text-slate-600 mb-1';
             </div>
 
             <form @submit.prevent="submit" class="space-y-6">
+                <!-- Section: Role / Participation Type Selection -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-primary">Jalur Keikutsertaan / Role</label>
+                        <span class="text-[10px] text-slate-400 font-semibold">🔒 Permanen / Tidak dapat diubah</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Presenter Option -->
+                        <label
+                            :class="[
+                                'relative flex cursor-pointer flex-col rounded-2xl border-2 p-4 transition-all duration-200',
+                                form.participation_type === 'presenter'
+                                    ? 'border-purple-600 bg-purple-50/70 shadow-sm ring-1 ring-purple-600/30'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                            ]"
+                        >
+                            <input
+                                type="radio"
+                                name="participation_type"
+                                value="presenter"
+                                v-model="form.participation_type"
+                                class="sr-only"
+                            />
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">🎤</span>
+                                    <span class="text-xs font-black text-slate-900">Pemakalah (Presenter)</span>
+                                </div>
+                                <span
+                                    v-if="form.participation_type === 'presenter'"
+                                    class="h-4 w-4 rounded-full bg-purple-700 text-gold text-[10px] font-black flex items-center justify-center"
+                                >✓</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                                Submit naskah ilmiah (Oral/Poster). Tagihan paket presenter aktif setelah naskah diterima (<strong>Accepted</strong>).
+                            </p>
+                        </label>
+
+                        <!-- Non-Presenter Option -->
+                        <label
+                            :class="[
+                                'relative flex cursor-pointer flex-col rounded-2xl border-2 p-4 transition-all duration-200',
+                                form.participation_type === 'non_presenter'
+                                    ? 'border-purple-600 bg-purple-50/70 shadow-sm ring-1 ring-purple-600/30'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                            ]"
+                        >
+                            <input
+                                type="radio"
+                                name="participation_type"
+                                value="non_presenter"
+                                v-model="form.participation_type"
+                                class="sr-only"
+                            />
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">🎟️</span>
+                                    <span class="text-xs font-black text-slate-900">Peserta Umum (Non-Presenter)</span>
+                                </div>
+                                <span
+                                    v-if="form.participation_type === 'non_presenter'"
+                                    class="h-4 w-4 rounded-full bg-purple-700 text-gold text-[10px] font-black flex items-center justify-center"
+                                >✓</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                                Menghadiri seminar/webinar & memperoleh sertifikat. Langsung memilih tiket dan bayar tanpa submit naskah.
+                            </p>
+                        </label>
+                    </div>
+                    <InputError class="mt-1" :message="form.errors.participation_type" />
+                    <p class="text-[11px] text-slate-400 italic">
+                        * Pastikan pilihan Anda benar. Jalur keikutsertaan tidak dapat diubah setelah akun dibuat.
+                    </p>
+                </div>
+
+                <div class="border-t border-slate-100"></div>
+
                 <!-- Section: Personal Information -->
                 <div class="space-y-4">
                     <h2 class="text-[11px] font-bold uppercase tracking-wider text-primary">Personal Information</h2>

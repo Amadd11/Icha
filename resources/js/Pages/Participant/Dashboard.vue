@@ -89,7 +89,7 @@ const props = defineProps({
                         style="animation-delay: 280ms"
                         title="Payment Receipt"
                         :status="props.paymentStatus || 'unpaid'"
-                        :description="props.paymentStatus === 'verified' ? ('Approved: ' + (props.payment?.verified_at ? formatDateTime(props.payment.verified_at) : 'Confirmed')) : (props.paymentStatus === 'pending' ? ('Submitted: ' + formatDateTime(props.payment?.paid_at || props.payment?.created_at)) : 'Upload payment receipt to verify')"
+                        :description="props.paymentStatus === 'verified' ? ('Approved: ' + (props.payment?.verified_at ? formatDateTime(props.payment.verified_at) : 'Confirmed')) : (props.paymentStatus === 'pending' ? ('Submitted: ' + formatDateTime(props.payment?.paid_at || props.payment?.created_at)) : (props.abstract?.status === 'accepted' ? 'Payment Unlocked - Select package & pay' : (props.activeRegistration ? 'Upload payment receipt to verify' : ($page.props.auth?.user?.is_presenter ? 'Unlocked after abstract acceptance' : 'Select ticket package & proceed to payment'))))"
                         :variant="props.paymentStatus === 'verified' ? 'success' : (props.paymentStatus === 'pending' ? 'warning' : 'default')"
                     />
 
@@ -106,10 +106,10 @@ const props = defineProps({
                         <StatusCard
                             class="table-row-stagger"
                             style="animation-delay: 540ms"
-                            title="Full Paper"
-                            :status="props.fullPaper ? props.fullPaper.status.replace('_', ' ') : 'not submitted'"
-                            :description="props.fullPaper ? ('Code: ' + props.fullPaper.paper_code) : (props.abstract?.status === 'accepted' ? 'Ready to submit full paper' : 'Requires accepted abstract')"
-                            :variant="props.fullPaper?.status === 'accepted' ? 'success' : (props.fullPaper ? 'warning' : 'default')"
+                            title="Review Decision"
+                            :status="props.abstract ? (props.abstract.status === 'revision_required' ? 'Revision Required' : (props.abstract.status === 'accepted' ? 'Accepted' : (props.abstract.status === 'rejected' ? 'Rejected' : 'Under Review'))) : 'Pending Submission'"
+                            :description="props.abstract?.status === 'accepted' ? 'Abstract Accepted - Ready for Payment' : (props.abstract?.status === 'revision_required' ? 'Revisions Requested by Reviewers' : (props.abstract?.status === 'rejected' ? 'Abstract Not Accepted' : 'Awaiting Peer Review Decision'))"
+                            :variant="props.abstract?.status === 'accepted' ? 'success' : (props.abstract?.status === 'revision_required' ? 'warning' : (props.abstract?.status === 'rejected' ? 'danger' : 'default'))"
                         />
                         <StatusCard
                             class="table-row-stagger"

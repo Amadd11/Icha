@@ -11,6 +11,42 @@ const props = defineProps({
     payment: Object,
     registrationFees: Array,
     userProfile: Object,
+    abstract: Object,
+    isAbstractAccepted: Boolean,
+    abstractStatus: String,
+});
+
+const presenterFees = computed(() => {
+    return (props.registrationFees || []).filter(f => f.type === 'presenter');
+});
+
+const nonPresenterFees = computed(() => {
+    return (props.registrationFees || []).filter(f => f.type === 'non_presenter');
+});
+
+const isNonPresenterUser = computed(() => {
+    return props.userProfile?.participation_type === 'non_presenter';
+});
+
+const invoiceAmount = computed(() => {
+    const raw = props.existingRegistration?.amount 
+        ?? props.existingRegistration?.total_amount 
+        ?? props.existingRegistration?.registration_fee?.price 
+        ?? props.existingRegistration?.registrationFee?.price 
+        ?? 0;
+    return Number(raw) || 0;
+});
+
+const selectedPackageName = computed(() => {
+    return props.existingRegistration?.registration_fee?.name 
+        ?? props.existingRegistration?.registrationFee?.name 
+        ?? '-';
+});
+
+const selectedPackageMode = computed(() => {
+    return props.existingRegistration?.registration_fee?.mode 
+        ?? props.existingRegistration?.registrationFee?.mode 
+        ?? 'General';
 });
 
 const { copyItem, copiedKey } = useClipboard();
@@ -26,6 +62,18 @@ const regForm = useForm({
     notes:               '',
 });
 
+const selectedFee = computed(() => {
+    return (props.registrationFees || []).find(f => f.id === regForm.registration_fee_id) || null;
+});
+
+// Auto-select package for smooth UX if not selected
+if (!regForm.registration_fee_id) {
+    if (isNonPresenterUser.value && nonPresenterFees.value.length > 0) {
+        regForm.registration_fee_id = nonPresenterFees.value[0].id;
+    } else if (props.isAbstractAccepted && presenterFees.value.length > 0) {
+        regForm.registration_fee_id = presenterFees.value[0].id;
+    }
+}
 
 function submitRegistration() {
     regForm.post(route('participant.registration.store'), {
@@ -116,89 +164,327 @@ function isPdf(path) {
                 </div>
             </div>
 
-            <!-- STEP 1: REGISTRATION FORM (If not registered yet) -->
-            <div v-if="!existingRegistration" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs max-w-3xl space-y-6">
-                <div>
-                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Step 1: Choose Registration Fee Package</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">{{ activeConference?.title }} — {{ activeConference?.theme }}</p>
+            <!-- Contextual Flow Advisory Banners -->
+            <div v-if="!existingRegistration" class="space-y-4">
+                <!-- Non-Presenter Hero Advisory Banner -->
+                <div v-if="isNonPresenterUser" class="relative overflow-hidden rounded-3xl bg-linear-to-r from-purple-950 via-purple-900 to-indigo-950 p-6 sm:p-7 text-white shadow-md border border-purple-800/40">
+                    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-1.5 max-w-2xl">
+                            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-gold backdrop-blur-xs border border-white/10">
+                                <span>🎟️</span>
+                                <span>Jalur Peserta Umum (Non-Presenter)</span>
+                            </div>
+                            <h2 class="text-lg sm:text-xl font-black text-white tracking-tight">Pilih Paket Kehadiran & Dapatkan Invoice</h2>
+                            <p class="text-xs text-purple-200/90 leading-relaxed">
+                                Sebagai peserta umum, Anda tidak perlu mengirimkan naskah abstrak. Cukup pilih paket kehadiran di bawah (Offline Onsite atau Online Webinar) untuk menerbitkan nomor invoice resmi dan tiket masuk seminar.
+                            </p>
+                        </div>
+                        <div class="shrink-0 flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>Direct Ticketing Aktif</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
-                <form @submit.prevent="submitRegistration" class="space-y-5">
-                    <!-- Fee Package Cards -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">Registration Package <span class="text-red-500">*</span></label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label
-                                v-for="fee in registrationFees"
-                                :key="fee.id"
-                                :class="[
-                                    'relative flex cursor-pointer flex-col rounded-xl border p-4 transition-all duration-300 transform',
-                                    regForm.registration_fee_id === fee.id
-                                        ? 'border-purple-600 bg-purple-50/70 shadow-md ring-2 ring-purple-600/30 scale-[1.02] -translate-y-0.5'
-                                        : 'border-slate-200 bg-white hover:bg-slate-50/80 hover:border-purple-200 hover:-translate-y-0.5'
-                                ]"
-                            >
-                                <input
-                                    type="radio"
-                                    :value="fee.id"
-                                    v-model="regForm.registration_fee_id"
-                                    class="sr-only"
-                                    required
-                                />
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-900">{{ fee.name }}</span>
-                                    <div class="flex items-center gap-1.5">
-                                        <span
-                                            :class="[
-                                                'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-                                                fee.mode === 'offline' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
-                                            ]"
-                                        >
-                                            {{ fee.mode }}
-                                        </span>
-                                        <span v-if="regForm.registration_fee_id === fee.id" class="rounded-full bg-purple-700 text-gold text-[10px] font-black px-1.5 py-0.2 animate-fade-in-scale">
-                                            ✓
-                                        </span>
-                                    </div>
-                                </div>
-                                <p class="text-sm font-black text-slate-900 mt-2">
-                                    Rp {{ Number(fee.price).toLocaleString('id-ID') }}
-                                </p>
-                                <p v-if="fee.description" class="text-xs text-slate-500 leading-relaxed mt-1">
-                                    {{ fee.description }}
-                                </p>
-                            </label>
+                <!-- Presenter Track Banners -->
+                <template v-else>
+                    <!-- Abstract Accepted Banner -->
+                    <div v-if="props.isAbstractAccepted" class="rounded-3xl border border-emerald-300 bg-emerald-50/90 p-5 text-emerald-950 shadow-xs">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-black">✓</span>
+                            <span>Naskah Abstrak Resmi DITERIMA (Accepted)</span>
                         </div>
-
-                        <p v-if="regForm.errors.registration_fee_id" class="text-xs text-red-600 font-semibold mt-1">
-                            {{ regForm.errors.registration_fee_id }}
+                        <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            Selamat! Naskah Anda <strong>({{ props.abstract?.abstract_code }}: {{ props.abstract?.title }})</strong> telah resmi diterima. Silakan pilih salah satu paket <strong>Presenter</strong> di bawah untuk menyelesaikan pendaftaran dan membuka akses jadwal presentasi.
                         </p>
                     </div>
 
+                    <!-- Abstract Under Review Banner -->
+                    <div v-else-if="props.abstractStatus === 'under_review' || props.abstractStatus === 'pending'" class="rounded-3xl border border-blue-200 bg-blue-50/90 p-5 text-blue-950 shadow-xs">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-black">⏳</span>
+                            <span>Naskah Abstrak Sedang Ditelaah Reviewer</span>
+                        </div>
+                        <p class="text-xs text-blue-800 mt-1 leading-relaxed">
+                            Naskah Anda <strong>({{ props.abstract?.abstract_code }})</strong> saat ini sedang dievaluasi oleh tim peer reviewer. Tagihan paket Presenter akan otomatis terbuka setelah naskah Anda dinyatakan <strong>Accepted</strong>. Anda belum perlu membayar apapun saat ini.
+                        </p>
+                        <div class="mt-2.5">
+                            <Link :href="route('participant.submission.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-950 underline hover:text-blue-800">
+                                Pantau Status Review Naskah →
+                            </Link>
+                        </div>
+                    </div>
+
+                    <!-- Abstract Revision Required Banner -->
+                    <div v-else-if="props.abstractStatus === 'revision_required'" class="rounded-3xl border border-amber-300 bg-amber-50/90 p-5 text-amber-950 shadow-xs">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-white text-[10px] font-black">⚠️</span>
+                            <span>Naskah Abstrak Memerlukan Revisi</span>
+                        </div>
+                        <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+                            Reviewer meminta revisi naskah. Silakan unggah perbaikan abstrak Anda. Tagihan paket Presenter akan aktif setelah naskah revisi disetujui.
+                        </p>
+                        <div class="mt-2.5">
+                            <Link :href="route('participant.submission.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-950 hover:text-amber-800">
+                                Lihat Catatan Reviewer & Unggah Revisi 
+                            </Link>
+                        </div>
+                    </div>
+
+                    <!-- Abstract Rejected Banner -->
+                    <div v-else-if="props.abstractStatus === 'rejected'" class="rounded-3xl border border-rose-200 bg-rose-50/90 p-5 text-rose-950 shadow-xs">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-white text-[10px] font-black">✕</span>
+                            <span>Naskah Tidak Lolos untuk Presentasi</span>
+                        </div>
+                        <p class="text-xs text-rose-800 mt-1 leading-relaxed">
+                            Anda tidak perlu membayar biaya presenter. Namun, Anda tetap dipersilakan menghadiri seluruh sesi seminar dan webinar serta memperoleh sertifikat peserta dengan memilih <strong>Paket Non-Presenter</strong> di bawah.
+                        </p>
+                    </div>
+
+                    <!-- No Abstract Yet Guidance Banner -->
+                    <div v-else class="rounded-3xl border border-purple-200 bg-purple-50/80 p-5 text-purple-950 shadow-xs">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-purple-700 text-gold text-[10px] font-black">ℹ️</span>
+                            <span>Petunjuk Pemakalah (Presenter)</span>
+                        </div>
+                        <p class="text-xs text-purple-800 mt-1 leading-relaxed">
+                            Sebagai Pemakalah, silakan submit naskah abstrak Anda terlebih dahulu melalui menu <strong>Submission</strong> tanpa dipungut biaya di awal. Paket tagihan presenter akan terbuka setelah naskah Anda dinyatakan <strong>Accepted</strong>.
+                        </p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- STEP 1: REGISTRATION & TICKET SELECTION (2-Column Checkout Layout) -->
+            <div v-if="!existingRegistration" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Left Column: Package Options (col-span-8) -->
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-7 shadow-xs space-y-6">
+                        <!-- Clean Unified Header -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
+                            <div>
+                                <h2 class="text-base sm:text-lg font-bold text-slate-900">
+                                    {{ isNonPresenterUser ? 'Pilihan Paket Tiket Seminar & Webinar' : 'Pilihan Paket Biaya Registrasi' }}
+                                </h2>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    {{ activeConference?.title }} — {{ activeConference?.theme }}
+                                </p>
+                            </div>
+                            <span v-if="isNonPresenterUser" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-center">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>Pendaftaran Langsung</span>
+                            </span>
+                        </div>
+
+                        <!-- Presenter Packages (If Presenter) -->
+                        <div v-if="!isNonPresenterUser && presenterFees.length > 0" class="space-y-4">
+                            <!-- Notice if abstract not yet accepted -->
+                            <div v-if="!props.isAbstractAccepted" class="rounded-2xl bg-amber-50/80 border border-amber-200/90 p-4 text-xs text-amber-900 space-y-1.5">
+                                <div class="flex items-center gap-2 font-bold">
+                                    <span>🔒</span>
+                                    <span>Paket Presenter Terkunci Sementara</span>
+                                </div>
+                                <p class="text-xs text-amber-800 leading-relaxed">
+                                    Paket Presenter hanya dapat dipilih setelah naskah abstrak Anda dinyatakan <strong>DITERIMA (Accepted)</strong> oleh reviewer. Silakan pantau atau kirim naskah di menu <strong>Submission</strong> terlebih dahulu.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <label
+                                    v-for="fee in presenterFees"
+                                    :key="fee.id"
+                                    :class="[
+                                        'group relative flex flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-300',
+                                        !props.isAbstractAccepted
+                                            ? 'opacity-50 cursor-not-allowed bg-slate-50/80 border-dashed border-slate-300'
+                                            : (regForm.registration_fee_id === fee.id
+                                                ? 'cursor-pointer border-purple-600 bg-purple-50/50 shadow-md ring-2 ring-purple-600/30 scale-[1.01]'
+                                                : 'cursor-pointer border-slate-200 bg-white hover:border-purple-300 hover:shadow-sm')
+                                    ]"
+                                >
+                                    <input
+                                        type="radio"
+                                        :value="fee.id"
+                                        :disabled="!props.isAbstractAccepted"
+                                        v-model="regForm.registration_fee_id"
+                                        class="sr-only"
+                                        required
+                                    />
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span
+                                                :class="[
+                                                    'rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+                                                    fee.mode === 'offline' ? 'bg-purple-100 text-purple-900' : 'bg-teal-100 text-teal-900'
+                                                ]"
+                                            >
+                                                {{ fee.mode === 'offline' ? '📍 Onsite' : '💻 Online' }}
+                                            </span>
+                                            <div
+                                                class="h-5 w-5 rounded-full border flex items-center justify-center transition-colors"
+                                                :class="regForm.registration_fee_id === fee.id ? 'border-purple-600 bg-purple-700 text-gold' : 'border-slate-300 bg-white'"
+                                            >
+                                                <span v-if="regForm.registration_fee_id === fee.id" class="text-[10px] font-black">✓</span>
+                                            </div>
+                                        </div>
+
+                                        <h3 class="text-sm font-bold text-slate-900 group-hover:text-purple-950 transition-colors">
+                                            {{ fee.name }}
+                                        </h3>
+                                        <p class="text-xl font-black text-purple-950 font-mono mt-1.5">
+                                            Rp {{ Number(fee.price).toLocaleString('id-ID') }}
+                                        </p>
+                                        <p v-if="fee.description" class="text-xs text-slate-500 leading-relaxed mt-2 border-t border-slate-100 pt-2">
+                                            {{ fee.description }}
+                                        </p>
+                                    </div>
+
+                                    <div v-if="!props.isAbstractAccepted" class="mt-3 pt-2 border-t border-dashed border-slate-200">
+                                        <span class="text-[10px] text-amber-700 font-semibold flex items-center gap-1">
+                                            🔒 Aktif setelah naskah diterima
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Non-Presenter Packages (Direct Ticketing) -->
+                        <div v-if="nonPresenterFees.length > 0 && (isNonPresenterUser || props.abstractStatus === 'rejected')" class="space-y-4">
+                            <div v-if="!isNonPresenterUser" class="rounded-xl bg-purple-50 p-3 text-xs text-purple-900">
+                                <strong>Paket Alternatif:</strong> Sebagai opsi alternatif, Anda dapat memilih tiket peserta umum untuk tetap menghadiri seminar konferensi.
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <label
+                                    v-for="fee in nonPresenterFees"
+                                    :key="fee.id"
+                                    :class="[
+                                        'group relative flex flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-300 cursor-pointer',
+                                        regForm.registration_fee_id === fee.id
+                                            ? 'border-purple-600 bg-purple-50/60 shadow-md ring-2 ring-purple-600/30 scale-[1.01]'
+                                            : 'border-slate-200 bg-white hover:border-purple-300 hover:shadow-sm'
+                                    ]"
+                                >
+                                    <input
+                                        type="radio"
+                                        :value="fee.id"
+                                        v-model="regForm.registration_fee_id"
+                                        class="sr-only"
+                                        required
+                                    />
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span
+                                                :class="[
+                                                    'rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+                                                    fee.mode === 'offline' ? 'bg-purple-100 text-purple-900' : 'bg-teal-100 text-teal-900'
+                                                ]"
+                                            >
+                                                {{ fee.mode === 'offline' ? '📍 Offline Onsite' : '💻 Online Webinar' }}
+                                            </span>
+                                            <div
+                                                class="h-5 w-5 rounded-full border flex items-center justify-center transition-colors"
+                                                :class="regForm.registration_fee_id === fee.id ? 'border-purple-600 bg-purple-700 text-gold' : 'border-slate-300 bg-white'"
+                                            >
+                                                <span v-if="regForm.registration_fee_id === fee.id" class="text-[10px] font-black">✓</span>
+                                            </div>
+                                        </div>
+
+                                        <h3 class="text-sm font-bold text-slate-900 group-hover:text-purple-950 transition-colors">
+                                            {{ fee.name }}
+                                        </h3>
+                                        <p class="text-2xl font-black text-purple-950 font-mono mt-1.5">
+                                            Rp {{ Number(fee.price).toLocaleString('id-ID') }}
+                                        </p>
+                                        <p v-if="fee.description" class="text-xs text-slate-500 leading-relaxed mt-2 border-t border-slate-100 pt-2">
+                                            {{ fee.description }}
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <p v-if="regForm.errors.registration_fee_id" class="text-xs text-red-600 font-semibold">
+                            {{ regForm.errors.registration_fee_id }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right Column: Order Summary & Checkout Card (col-span-4) -->
+                <div class="lg:col-span-4 sticky top-6">
+                    <form @submit.prevent="submitRegistration" class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs space-y-5">
+                        <div class="border-b border-slate-100 pb-3">
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">RINGKASAN PESANAN</span>
+                            <h3 class="text-sm font-bold text-slate-900 mt-0.5">Konfirmasi Pendaftaran</h3>
+                        </div>
+
+                        <!-- Selected Fee Preview Card -->
+                        <div v-if="selectedFee" class="rounded-2xl bg-purple-50/70 border border-purple-100 p-4 space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-purple-900 block">Paket Terpilih</span>
+                                    <h4 class="text-xs font-bold text-slate-900 mt-0.5 leading-snug">{{ selectedFee.name }}</h4>
+                                </div>
+                                <span
+                                    :class="[
+                                        'rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0',
+                                        selectedFee.mode === 'offline' ? 'bg-purple-200 text-purple-900' : 'bg-teal-200 text-teal-900'
+                                    ]"
+                                >
+                                    {{ selectedFee.mode }}
+                                </span>
+                            </div>
+
+                            <div class="border-t border-purple-200/60 pt-2.5 flex items-baseline justify-between">
+                                <span class="text-xs text-slate-600 font-medium">Total Tagihan:</span>
+                                <span class="text-lg font-black font-mono text-purple-950">
+                                    Rp {{ Number(selectedFee.price).toLocaleString('id-ID') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div v-else class="rounded-2xl bg-slate-50 border border-slate-200/60 p-4 text-center text-xs text-slate-400">
+                            Pilih salah satu paket di samping untuk melihat rincian biaya.
+                        </div>
+
                         <!-- Notes (Optional) -->
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Additional Notes (Optional)</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
                             <textarea
                                 v-model="regForm.notes"
-                                rows="2"
-                                placeholder="Dietary requirements, special accessibility needs, or invoice notes..."
-                                class="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-3 focus:bg-white focus:border-purple-600 focus:outline-none"
+                                rows="3"
+                                placeholder="Instansi pada kuitansi..."
+                                class="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/70 p-3 focus:bg-white focus:border-purple-600 focus:outline-none transition resize-none placeholder:text-slate-400"
                             ></textarea>
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="flex items-center justify-end pt-2">
-                            <button
-                                type="submit"
-                                :disabled="regForm.processing || !regForm.registration_fee_id"
-                                class="inline-flex items-center gap-2 rounded-2xl bg-gold hover:bg-gold-dark px-8 py-3.5 text-xs font-black text-slate-950 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            >
-                                <span>{{ regForm.processing ? 'Generating Invoice...' : 'Generate Invoice & Continue to Payment' }}</span>
-                                <span>→</span>
-                            </button>
+                        <button
+                            type="submit"
+                            :disabled="regForm.processing || !regForm.registration_fee_id || (!isNonPresenterUser && !props.isAbstractAccepted)"
+                            class="w-full rounded-2xl bg-purple-900 hover:bg-purple-950 text-gold font-extrabold text-xs py-3.5 px-4 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                        >
+                            <span v-if="regForm.processing" class="animate-spin text-sm">⏳</span>
+                            <span>{{ regForm.processing ? 'Menerbitkan Invoice...' : 'Terbitkan Invoice & Bayar →' }}</span>
+                        </button>
+
+                        <!-- Safety notes -->
+                        <div class="border-t border-slate-100 pt-3 space-y-2 text-[11px] text-slate-500">
+                            <div class="flex items-center gap-2">
+                                <span class="text-emerald-600 text-xs">✓</span>
+                                <span>Rekening transfer resmi universitas</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-purple-600 text-xs">✓</span>
+                                <span>Nomor invoice diterbitkan seketika</span>
+                            </div>
                         </div>
                     </form>
                 </div>
+            </div>
 
             <!-- ========================================== -->
             <!-- STEP 2: INVOICE & PAYMENT PROOF UPLOAD     -->
@@ -224,15 +510,34 @@ function isPdf(path) {
                                 </button>
                             </div>
                         </div>
-                        <span :class="[
-                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border',
-                            payment?.status === 'verified' || existingRegistration.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            payment?.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                            payment?.status === 'pending' || existingRegistration.status === 'waiting_verification' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                            'bg-amber-50 text-amber-700 border-amber-200'
-                        ]">
-                            {{ payment?.status ? (payment.status === 'pending' ? 'Waiting Verification' : payment.status.replace('_', ' ')) : 'Unpaid' }}
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span :class="[
+                                'inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider border',
+                                payment?.status === 'verified' || existingRegistration.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                payment?.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                                payment?.status === 'pending' || existingRegistration.status === 'waiting_verification' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                'bg-amber-50 text-amber-700 border-amber-200'
+                            ]">
+                                {{ payment?.status ? (payment.status === 'pending' ? 'Waiting Verification' : payment.status.replace('_', ' ')) : 'Unpaid' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Summary Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 text-xs">
+                        <div class="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Paket Pilihan</span>
+                            <span class="font-bold text-slate-900 block mt-0.5">{{ selectedPackageName }}</span>
+                            <span class="inline-block mt-1 text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-purple-100 text-purple-800">
+                                {{ selectedPackageMode }}
+                            </span>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Total Tagihan</span>
+                            <span class="font-black text-purple-950 text-base font-mono block mt-0.5">
+                                Rp {{ invoiceAmount.toLocaleString('id-ID') }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -265,6 +570,21 @@ function isPdf(path) {
                                 </div>
 
                                 <p><span class="text-slate-400 font-sans">Account Name:</span> <strong>{{ activeConference?.bank_account_holder || 'MARS FK UMSURA' }}</strong></p>
+
+                                <div class="flex items-center gap-2 pt-1 border-t border-slate-200">
+                                    <p><span class="text-slate-400 font-sans">Amount:</span> <strong class="text-purple-950 font-mono text-sm">Rp {{ invoiceAmount.toLocaleString('id-ID') }}</strong></p>
+                                    <button
+                                        type="button"
+                                        @click="copyItem('amount', String(invoiceAmount))"
+                                        class="inline-flex items-center gap-1 text-slate-400 hover:text-purple-800 transition cursor-pointer p-0.5"
+                                        title="Copy Amount"
+                                    >
+                                        <span class="material-symbols-outlined text-[16px] leading-none">
+                                             {{ copiedKey === 'amount' ? 'check' : 'content_copy' }}
+                                        </span>
+                                        <span v-if="copiedKey === 'amount'" class="text-emerald-600 font-bold text-[10px]">Copied!</span>
+                                    </button>
+                                </div>
                             </div>
                             <p v-if="activeConference?.bank_instructions" class="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
                                 {{ activeConference.bank_instructions }}
@@ -292,7 +612,7 @@ function isPdf(path) {
                                 <span>{{ formatDateTime(payment.verified_at) }}</span>
                             </div>
 
-                            <p class="pt-1 text-slate-600">Your registration is confirmed. You can now submit your abstract and attend the event.</p>
+                            <p class="pt-1 text-slate-600">Your registration is confirmed. You can now attend the event and download your certificate once the conference concludes.</p>
                             <div v-if="payment?.proof_file" class="pt-2">
                                 <button
                                     @click="isProofModalOpen = true"

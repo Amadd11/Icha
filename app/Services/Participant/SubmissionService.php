@@ -108,22 +108,15 @@ class SubmissionService
     {
         $activeConference = $this->getActiveConference();
 
-        // 1. Verify Payment
+        // 1. Check if user is already registered & paid exclusively as a Non-Presenter
         $registration = Registration::with('registrationFee')
             ->where('user_id', $user->id)
             ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
             ->latest()
             ->first();
 
-        $isPaid = $registration && Payment::where('registration_id', $registration->id)->where('status', 'verified')->exists();
-
-        if (!$isPaid) {
-            throw new SubmissionException('Payment verification is required before submitting an abstract.', 403);
-        }
-
-        // 2. Verify Presenter Ticket Type (Business Rule Section 2)
-        if ($registration->registrationFee && $registration->registrationFee->type === 'non_presenter') {
-            throw new SubmissionException('Peserta dengan tiket Non-Presenter tidak memiliki akses pengunggahan abstrak.', 403);
+        if ($registration && $registration->registrationFee?->type === 'non_presenter' && Payment::where('registration_id', $registration->id)->where('status', 'verified')->exists()) {
+            throw new SubmissionException('Peserta dengan tiket Non-Presenter tidak memiliki akses pengunggahan naskah abstrak.', 403);
         }
 
         // 3. Verify Category exists and belongs to active conference

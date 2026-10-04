@@ -36,12 +36,20 @@ class RegistrationController extends Controller
             ? RegistrationFee::where('conference_id', $activeConference->id)->get()
             : RegistrationFee::all();
 
+        $abstract = \App\Models\AbstractSubmission::where('user_id', $user->id)
+            ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
+            ->latest()
+            ->first();
+
         return Inertia::render('Participant/Registration/Form', [
             'activeConference'     => $activeConference,
             'existingRegistration' => $existingRegistration,
             'payment'              => $existingRegistration?->payment,
             'registrationFees'     => $registrationFees,
             'userProfile'          => $user->profile,
+            'abstract'             => $abstract,
+            'isAbstractAccepted'   => $abstract?->status === 'accepted',
+            'abstractStatus'       => $abstract?->status ?? 'not_submitted',
         ]);
     }
 
