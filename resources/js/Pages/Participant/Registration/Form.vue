@@ -72,6 +72,8 @@ if (!regForm.registration_fee_id) {
         regForm.registration_fee_id = nonPresenterFees.value[0].id;
     } else if (props.isAbstractAccepted && presenterFees.value.length > 0) {
         regForm.registration_fee_id = presenterFees.value[0].id;
+    } else if (props.abstractStatus === 'rejected' && nonPresenterFees.value.length > 0) {
+        regForm.registration_fee_id = nonPresenterFees.value[0].id;
     }
 }
 
@@ -135,7 +137,17 @@ function formatStorageUrl(path) {
 }
 
 function isPdf(path) {
-    return path && (path.toLowerCase().endsWith('.pdf') || path.includes('application/pdf') || (paymentForm.proof_file?.type === 'application/pdf'));
+    if (!path && !paymentForm.proof_file) return false;
+    if (typeof path === 'string') {
+        const lower = path.toLowerCase();
+        if (lower.endsWith('.pdf') || lower.includes('.pdf?') || lower.includes('application/pdf')) {
+            return true;
+        }
+    }
+    if (path === proofPreview.value && paymentForm.proof_file?.type === 'application/pdf') {
+        return true;
+    }
+    return false;
 }
 </script>
 
@@ -227,8 +239,8 @@ function isPdf(path) {
                             Reviewer meminta revisi naskah. Silakan unggah perbaikan abstrak Anda. Tagihan paket Presenter akan aktif setelah naskah revisi disetujui.
                         </p>
                         <div class="mt-2.5">
-                            <Link :href="route('participant.submission.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-950 hover:text-amber-800">
-                                Lihat Catatan Reviewer & Unggah Revisi 
+                            <Link :href="route('participant.submission.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-950 underline hover:text-amber-800">
+                                Lihat Catatan Reviewer & Unggah Revisi →
                             </Link>
                         </div>
                     </div>
@@ -464,7 +476,7 @@ function isPdf(path) {
                         <!-- Submit Button -->
                         <button
                             type="submit"
-                            :disabled="regForm.processing || !regForm.registration_fee_id || (!isNonPresenterUser && !props.isAbstractAccepted)"
+                            :disabled="regForm.processing || !regForm.registration_fee_id || (selectedFee?.type === 'presenter' && !props.isAbstractAccepted)"
                             class="w-full rounded-2xl bg-purple-900 hover:bg-purple-950 text-gold font-extrabold text-xs py-3.5 px-4 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                         >
                             <span v-if="regForm.processing" class="animate-spin text-sm">⏳</span>
@@ -528,7 +540,7 @@ function isPdf(path) {
                         <div class="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
                             <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Paket Pilihan</span>
                             <span class="font-bold text-slate-900 block mt-0.5">{{ selectedPackageName }}</span>
-                            <span class="inline-block mt-1 text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-purple-100 text-purple-800">
+                            <span class="inline-block mt-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
                                 {{ selectedPackageMode }}
                             </span>
                         </div>

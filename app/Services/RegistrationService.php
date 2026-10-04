@@ -32,6 +32,11 @@ class RegistrationService
             throw new SubmissionException('Paket pendaftaran tidak valid untuk konferensi yang sedang aktif.', 422);
         }
 
+        $user->loadMissing('profile');
+        if ($user->profile?->participation_type === 'non_presenter' && $fee->type === 'presenter') {
+            throw new SubmissionException('Akun Anda terdaftar sebagai Peserta Umum (Non-Presenter) dan tidak dapat memilih paket Pemakalah.', 422);
+        }
+
         if ($fee->type === 'presenter') {
             $hasAcceptedAbstract = \App\Models\AbstractSubmission::where('user_id', $user->id)
                 ->where('conference_id', $activeConference->id)
