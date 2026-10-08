@@ -38,18 +38,17 @@ function performLogout() {
         <!-- Sidebar Desktop (Rounded & Purple/Gold Theme) -->
         <aside class="hidden w-80 shrink-0 bg-sidebar text-white md:flex flex-col md:rounded-r-[2rem] shadow-2xl border-r border-purple-900/50 sticky top-0 h-screen overflow-hidden">
             <!-- Brand Header -->
-            <div class="flex h-18 items-center px-6 border-b border-purple-800/50 gap-3">
-                <Link href="/" class="flex items-center gap-3 transition hover:opacity-95 group">
-                    <div class="h-11 w-11 rounded-xl bg-white/10 p-1.5 shrink-0 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform">
-                        <img
-                            src="/assets/logo/logo-icha.png"
-                            alt="ICHA"
-                            class="h-full w-full object-contain drop-shadow-sm"
-                        />
-                    </div>
-                    <div>
-                        <span class="font-extrabold text-base tracking-tight text-white block leading-tight group-hover:text-gold transition-colors">ICHA 2026</span>
-                        <span class="text-[11px] text-purple-200/80 font-medium block mt-0.5">Reviewer Portal</span>
+            <div class="flex h-22 items-center px-6 border-b border-purple-800/50">
+                <Link href="/" class="w-full flex items-center justify-between gap-3 group">
+                    <img
+                        src="/assets/logo/logo-icha-10th.png"
+                        alt="ICHA 10th Logo"
+                        class="h-11 w-auto object-contain drop-shadow-md group-hover:scale-102 transition-transform"
+                    />
+                    <div class="text-right shrink-0">
+                        <span class="inline-block px-2.5 py-1 rounded-lg bg-gold/15 text-gold text-[10px] font-black uppercase tracking-wider border border-gold/30">
+                            Reviewer
+                        </span>
                     </div>
                 </Link>
             </div>
@@ -90,14 +89,11 @@ function performLogout() {
 
         <!-- Mobile Header Bar -->
         <div class="md:hidden flex items-center justify-between bg-sidebar px-4 py-3 text-white sticky top-0 z-40 shadow-md">
-            <Link href="/" class="flex items-center gap-2.5">
-                <div class="h-8 w-8 rounded-lg bg-white/10 p-1 shrink-0 flex items-center justify-center">
-                    <img src="/assets/logo/logo-icha.png" alt="ICHA" class="h-full w-full object-contain" />
-                </div>
-                <div>
-                    <span class="font-extrabold text-white text-xs block leading-tight">ICHA 2026</span>
-                    <span class="text-[10px] text-gold font-bold block">Reviewer Portal</span>
-                </div>
+            <Link href="/" class="flex items-center gap-3">
+                <img src="/assets/logo/logo-icha-10th.png" alt="ICHA 10th Logo" class="h-8 w-auto object-contain" />
+                <span class="text-[10px] text-gold font-bold uppercase tracking-wider bg-gold/10 px-2 py-0.5 rounded-md border border-gold/20">
+                    Reviewer
+                </span>
             </Link>
             <button @click="isMobileOpen = !isMobileOpen" class="text-white hover:text-gold transition">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -88,14 +88,14 @@ onMounted(() => {
         <meta property="og:type" content="website" />
         <meta property="og:title" :content="props.conference?.title ? `${props.conference.title} - ${props.conference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA - International Conference on Healthcare Administration'" />
         <meta property="og:description" :content="props.conference?.description || props.conference?.theme || 'Join the International Conference on Healthcare Administration (ICHA).'" />
-        <meta property="og:image" :content="props.conference?.logo ? '/storage/' + props.conference.logo : '/assets/logo/logo-icha.png'" />
+        <meta property="og:image" :content="props.conference?.logo ? '/storage/' + props.conference.logo : '/assets/logo/logo-icha-10th.png'" />
         <meta property="og:site_name" :content="props.conference?.title || 'ICHA Conference'" />
 
         <!-- Twitter Card -->
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" :content="props.conference?.title ? `${props.conference.title} - ${props.conference.tagline || 'International Conference on Healthcare Administration'}` : 'ICHA - International Conference on Healthcare Administration'" />
         <meta name="twitter:description" :content="props.conference?.description || props.conference?.theme || 'The International Conference on Healthcare Administration (ICHA).'" />
-        <meta name="twitter:image" :content="props.conference?.logo ? '/storage/' + props.conference.logo : '/assets/logo/logo-icha.png'" />
+        <meta name="twitter:image" :content="props.conference?.logo ? '/storage/' + props.conference.logo : '/assets/logo/logo-icha-10th.png'" />
     </Head>
 
     <PublicLayout

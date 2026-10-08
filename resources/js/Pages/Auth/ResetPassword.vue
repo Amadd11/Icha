@@ -44,13 +44,11 @@ const submit = () => {
 
             <!-- Prominent Logo & Badge -->
             <div class="mb-6 flex flex-col items-center justify-center text-center">
-                <div class="h-20 w-20 rounded-2xl bg-white p-2 shadow-lg shadow-purple-900/10 border border-slate-100 flex items-center justify-center hover:scale-105 transition-transform duration-300 mb-3">
-                    <img 
-                        src="/assets/logo/logo-icha.png" 
-                        alt="ICHA 10th Logo" 
-                        class="h-full w-full object-contain" 
-                    />
-                </div>
+                <img 
+                    src="/assets/logo/logo-icha-10th.png" 
+                    alt="ICHA 10th Logo" 
+                    class="h-13 sm:h-15 w-auto object-contain mb-3 hover:scale-103 transition-transform duration-300" 
+                />
                 <span class="inline-block px-3.5 py-1 rounded-full bg-purple-50 text-primary text-[11px] font-black uppercase tracking-wider border border-purple-100">
                     Security Update
                 </span>

@@ -26,17 +26,20 @@ const props = defineProps({
     <ParticipantLayout>
         <div class="space-y-6">
             <!-- Welcome Header Banner -->
-            <div class="animate-fade-in-up rounded-3xl bg-gradient-to-r from-sidebar via-purple-900 to-primary p-6 md:p-8 text-white shadow-xl shadow-purple-950/20 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-purple-800/40 relative overflow-hidden group">
-                <div class="relative z-10">
-                    <span class="inline-block rounded-full bg-gold/20 px-3 py-1 text-[11px] font-black text-gold border border-gold/40 mb-2 uppercase tracking-wider shadow-xs">
-                        {{ props.activeConference?.title || 'ICHA 2026' }} Participant Portal
-                    </span>
-                    <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">
-                        Welcome back, {{ props.user?.name || 'Participant' }}!
-                    </h1>
-                    <p class="mt-1 text-xs md:text-sm text-purple-100/90 max-w-xl font-medium">
-                        {{ props.activeConference?.theme || 'Healthcare Administration for a Sustainable Future' }}
-                    </p>
+            <div class="animate-fade-in-up rounded-3xl bg-gradient-to-r from-sidebar via-purple-900 to-primary p-6 md:p-8 text-white shadow-xl shadow-purple-950/20 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border border-purple-800/40 relative overflow-hidden group">
+                <div class="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5">
+                    <img src="/assets/logo/logo-icha-10th.png" alt="ICHA 10th Logo" class="h-12 sm:h-14 md:h-16 w-auto object-contain shrink-0 drop-shadow-md" />
+                    <div>
+                        <span class="inline-block rounded-full bg-gold/20 px-3 py-1 text-[11px] font-black text-gold border border-gold/40 mb-2 uppercase tracking-wider shadow-xs">
+                            {{ props.activeConference?.title || 'ICHA 2026' }} Participant Portal
+                        </span>
+                        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">
+                            Welcome back, {{ props.user?.name || 'Participant' }}!
+                        </h1>
+                        <p class="mt-1 text-xs md:text-sm text-purple-100/90 max-w-xl font-medium">
+                            {{ props.activeConference?.theme || 'Healthcare Administration for a Sustainable Future' }}
+                        </p>
+                    </div>
                 </div>
 
                 <div v-if="props.nearestDeadline" class="relative z-10 shrink-0 rounded-2xl bg-white/10 p-4.5 border border-white/15 text-center md:text-right backdrop-blur-xs transition-all group-hover:bg-white/15">

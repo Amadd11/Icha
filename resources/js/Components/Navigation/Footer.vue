@@ -18,14 +18,36 @@ function scrollToTop() {
                 
                 <!-- Col 1: Brand & Logo -->
                 <div class="space-y-5">
-                    <div class="flex items-center gap-2.5 sm:gap-3 bg-white/10 p-3 rounded-2xl border border-white/10 w-fit">
-                        <img src="/assets/logo/logo-icha.png" alt="ICHA 10th Logo" class="h-11 w-auto object-contain drop-shadow-sm" />
-                        <div class="w-px h-8 bg-white/20"></div>
-                        <img src="/assets/logo/logo-pipmarsi.png" alt="PIP MARSI" class="h-9 w-auto object-contain opacity-90" />
-                        <div class="w-px h-8 bg-white/20"></div>
-                        <img src="/assets/logo/logo-umsura.png" alt="UMSURA" class="h-9 w-auto object-contain opacity-90" />
-                        <div class="w-px h-8 bg-white/20"></div>
-                        <img src="/assets/logo/logo-ub.png" alt="Universitas Brawijaya" class="h-9 w-auto object-contain opacity-90" />
+                    <div class="space-y-4">
+                        <!-- Main ICHA Logo -->
+                        <div>
+                            <img
+                                src="/assets/logo/logo-icha-10th.png"
+                                alt="ICHA 10th Logo"
+                                class="h-11 sm:h-12 w-auto object-contain drop-shadow-sm"
+                            />
+                        </div>
+
+                        <!-- Partner / Host Logos below ICHA -->
+                        <div class="flex items-center gap-3 sm:gap-3.5 pt-0.5">
+                            <img
+                                src="/assets/logo/logo-pipmarsi.png"
+                                alt="PIP MARSI"
+                                class="h-8 sm:h-9 w-auto object-contain opacity-95 hover:opacity-100 transition-opacity"
+                            />
+                            <div class="w-px h-6 bg-white/25"></div>
+                            <img
+                                src="/assets/logo/logo-umsura.png"
+                                alt="UMSURA"
+                                class="h-8 sm:h-9 w-auto object-contain opacity-95 hover:opacity-100 transition-opacity"
+                            />
+                            <div class="w-px h-6 bg-white/25"></div>
+                            <img
+                                src="/assets/logo/logo-ub.png"
+                                alt="Universitas Brawijaya"
+                                class="h-8 sm:h-9 w-auto object-contain opacity-95 hover:opacity-100 transition-opacity"
+                            />
+                        </div>
                     </div>
 
                     <div>

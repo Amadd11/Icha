@@ -103,7 +103,7 @@ class ParticipantWorkflowTest extends TestCase
         $this->assertDatabaseHas('abstracts', [
             'user_id' => $user->id,
             'title'   => 'Healthcare Quality and AI Leadership in Modern Hospitals',
-            'status'  => 'under_review',
+            'status'  => 'pending',
         ]);
     }
 

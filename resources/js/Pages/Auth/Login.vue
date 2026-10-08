@@ -36,25 +36,15 @@ const submit = () => {
             <!-- Decorative Top Gradient Line -->
             <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-gold to-primary"></div>
 
-            <!-- Prominent Large Logo Strip with Hover Micro-Animations -->
-            <div class="mb-8 flex items-center justify-center gap-4 sm:gap-6 rounded-2xl bg-slate-50/70 p-4 border border-slate-100 shadow-xs">
-                <img 
-                    src="/assets/logo/logo-pipmarsi.png" 
-                    alt="PIP MARSI" 
-                    class="h-10 sm:h-14 w-auto object-contain transition-all duration-300 hover:scale-108 filter drop-shadow-xs" 
-                />
-                <div class="h-8 w-px bg-slate-200"></div>
-                <img 
-                    src="/assets/logo/logo-umsura.png" 
-                    alt="UMSURA" 
-                    class="h-10 sm:h-14 w-auto object-contain transition-all duration-300 hover:scale-108 filter drop-shadow-xs" 
-                />
-                <div class="h-8 w-px bg-slate-200"></div>
-                <img 
-                    src="/assets/logo/logo-ub.png" 
-                    alt="Universitas Brawijaya" 
-                    class="h-10 sm:h-14 w-auto object-contain transition-all duration-300 hover:scale-108 filter drop-shadow-xs" 
-                />
+            <!-- Prominent ICHA Logo -->
+            <div class="mb-8 flex items-center justify-center text-center">
+                <Link href="/" class="inline-block transition-transform duration-300 hover:scale-103">
+                    <img 
+                        src="/assets/logo/logo-icha-10th.png" 
+                        alt="ICHA 10th Logo" 
+                        class="h-16 sm:h-20 w-auto object-contain drop-shadow-xs" 
+                    />
+                </Link>
             </div>
 
             <!-- Heading -->

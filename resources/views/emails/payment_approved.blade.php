@@ -113,7 +113,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ asset('assets/logo/logo-icha.png') }}" alt="ICHA 10th Logo" style="height: 52px; width: auto; margin-bottom: 12px; display: inline-block;">
+            <img src="{{ asset('assets/logo/logo-icha-10th.png') }}" alt="ICHA 10th Logo" style="height: 52px; width: auto; margin-bottom: 12px; display: inline-block;">
             <br>
             <h1>{{ $conference->title ?? 'ICHA Conference' }}</h1>
             <p>Official Payment Receipt & Verified Invoice</p>

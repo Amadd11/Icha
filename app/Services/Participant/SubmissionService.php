@@ -177,7 +177,7 @@ class SubmissionService
                             'keywords'          => $data['keywords'] ?? $existingAbstract->keywords,
                             'presentation_type' => $data['presentation_type'] ?? $existingAbstract->presentation_type,
                             'file_path'         => $filePath ?? $existingAbstract->file_path,
-                            'status'            => 'under_review',
+                            'status'            => $isRevision ? 'under_review' : $existingAbstract->status,
                         ]);
 
                         if ($isRevision) {

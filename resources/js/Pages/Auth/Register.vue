@@ -38,11 +38,15 @@ const labelClass = 'text-xs font-semibold text-slate-600 mb-1';
         <Head title="Register" />
 
         <div class="rounded-2xl bg-white p-6 sm:p-8 shadow-xl shadow-purple-950/25 border border-white/60">
-            <!-- Logo strip -->
-             <div class="mb-6 flex items-center justify-center gap-4 sm:gap-6 rounded-2xl px-6 py-4">
-                <img src="/assets/logo/logo-pipmarsi.png" alt="PIP MARSI" class="h-10 sm:h-14 w-auto object-contain transition-transform hover:scale-105" />
-                <img src="/assets/logo/logo-umsura.png" alt="UMSURA" class="h-10 sm:h-14 w-auto object-contain transition-transform hover:scale-105" />
-                <img src="/assets/logo/logo-ub.png" alt="Universitas Brawijaya" class="h-10 sm:h-14 w-auto object-contain transition-transform hover:scale-105" />
+            <!-- Prominent ICHA Logo -->
+            <div class="mb-6 flex items-center justify-center text-center">
+                <Link href="/" class="inline-block transition-transform duration-300 hover:scale-103">
+                    <img 
+                        src="/assets/logo/logo-icha-10th.png" 
+                        alt="ICHA 10th Logo" 
+                        class="h-16 sm:h-20 w-auto object-contain drop-shadow-xs" 
+                    />
+                </Link>
             </div>
 
             <!-- Heading -->

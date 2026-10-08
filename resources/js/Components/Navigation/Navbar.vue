@@ -92,20 +92,15 @@ function logout() {
 </script>
 
 <template>
-    <nav class="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-sidebar/95 backdrop-blur-md px-5 shadow-lg md:px-10 border-b border-purple-900/40">
+    <nav class="fixed top-0 left-0 right-0 z-50 flex h-18 sm:h-20 items-center justify-between bg-sidebar/95 backdrop-blur-md px-5 shadow-lg md:px-10 border-b border-purple-900/40">
         <!-- Logo + Title as a unified click-to-home Link -->
-        <Link href="/" class="flex items-center gap-2.5 sm:gap-3 text-white transition hover:opacity-95 group">
-            <div class="flex items-center gap-2 sm:gap-2.5 p-1 rounded-lg">
-                <!-- Main ICHA Official Logo -->
-                <img
-                    src="/assets/logo/logo-icha.png"
-                    alt="ICHA 10th Logo"
-                    class="h-9 sm:h-10 md:h-11 w-auto object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
-                />
-            </div>
-            <span class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white group-hover:text-gold transition-colors">
-                {{ props.conference?.title || 'ICHA 2026' }}
-            </span>
+        <Link href="/" class="flex items-center gap-3 text-white transition hover:opacity-95 group shrink-0">
+            <!-- Main ICHA Official Logo -->
+            <img
+                src="/assets/logo/logo-icha-10th.png"
+                alt="ICHA 10th Logo"
+                class="h-11 sm:h-13 md:h-15 w-auto object-contain group-hover:scale-102 transition-transform duration-300 drop-shadow-sm"
+            />
         </Link>
 
         <!-- Navigation Links (Desktop) -->

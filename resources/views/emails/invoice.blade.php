@@ -283,7 +283,7 @@
         <div class="container">
             <!-- Header -->
             <div class="header">
-                <img src="{{ asset('assets/logo/logo-icha.png') }}" alt="ICHA 10th Logo" style="height: 56px; width: auto; margin-bottom: 12px; display: inline-block;">
+                <img src="{{ asset('assets/logo/logo-icha-10th.png') }}" alt="ICHA 10th Logo" style="height: 56px; width: auto; margin-bottom: 12px; display: inline-block;">
                 <br>
                 <span class="header-badge">Official Conference Invoice</span>
                 <h1>{{ $conference->title ?? 'International Conference on Healthcare Administration (ICHA)' }}</h1>
