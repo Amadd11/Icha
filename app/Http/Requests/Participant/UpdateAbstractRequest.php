@@ -26,7 +26,7 @@ class UpdateAbstractRequest extends FormRequest
                     }
                 }),
             ],
-            'file'              => ['nullable', 'file', 'mimes:doc,docx,pdf', 'max:10240'], // Opsional saat revisi
+            'file'              => ['nullable', 'file', 'mimes:pdf', 'max:10240'], // Opsional saat revisi
             'presentation_type' => ['nullable', 'in:oral,poster'],
             'keywords'          => ['nullable', 'string', 'max:255'],
             'abstract_text'     => ['nullable', 'string'],
@@ -41,7 +41,7 @@ class UpdateAbstractRequest extends FormRequest
             'category_id.required' => 'Topik/kategori ilmiah wajib dipilih.',
             'category_id.exists'   => 'Topik ilmiah yang dipilih tidak valid untuk konferensi yang sedang aktif.',
             'file.file'            => 'Berkas yang diunggah tidak valid.',
-            'file.mimes'           => 'Format berkas abstrak harus berupa .doc, .docx, atau .pdf.',
+            'file.mimes'           => 'Format berkas abstrak harus berupa PDF (.pdf).',
             'file.max'             => 'Ukuran berkas abstrak maksimal 10MB.',
         ];
     }

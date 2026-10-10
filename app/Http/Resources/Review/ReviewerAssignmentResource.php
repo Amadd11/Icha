@@ -31,13 +31,24 @@ class ReviewerAssignmentResource extends JsonResource
             'name' => $submission?->category?->name ?? 'General Track',
         ];
 
+        $roundNumber = $round?->round_number ?? 1;
+        $completedReviewsCount = $round?->assignments ? $round->assignments->where('status', 'completed')->count() : 0;
+        $isSlotFull = ($roundNumber === 1) && ($completedReviewsCount >= 3);
+        $userHasReviewed = $this->status === 'completed';
+        $isCoi = ($submission?->user_id === $request->user()?->id);
+
         return [
-            'id'              => $this->id,
-            'review_round_id' => $this->review_round_id,
-            'reviewer_id'     => $this->reviewer_id,
-            'status'          => $this->status,
-            'is_decided'      => (bool) $isDecided,
-            'submission'      => [
+            'id'                => $this->id,
+            'review_round_id'   => $this->review_round_id,
+            'reviewer_id'       => $this->reviewer_id,
+            'status'            => $this->status,
+            'is_decided'        => (bool) $isDecided,
+            'reviewed_by_count' => $completedReviewsCount,
+            'is_slot_full'      => $isSlotFull,
+            'user_has_reviewed' => $userHasReviewed,
+            'is_coi'            => (bool) $isCoi,
+            'can_review'        => !$isDecided && !$isCoi && (!$isSlotFull || $userHasReviewed),
+            'submission'        => [
                 'id'            => $submission?->id,
                 'status'        => $submission?->status,
                 'abstract_code' => $abstractCode,

@@ -15,13 +15,25 @@ class UpdateRegistrationFeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'conference_id' => [
-                'required',
-                Rule::exists('conferences', 'id')->where(fn($query) => $query->where('is_active', true)),
-            ],
+            'conference_id' => ['required', 'exists:conferences,id'],
             'name'          => ['required', 'string', 'max:255'],
+            'type'          => ['required', 'in:presenter,non_presenter'],
             'mode'          => ['required', 'in:offline,online'],
+            'category'      => ['nullable', 'string', 'max:50'],
             'price'         => ['required', 'numeric', 'min:0'],
+            'is_active'     => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'conference_id.required' => 'Konferensi wajib dipilih.',
+            'name.required'          => 'Nama paket biaya wajib diisi.',
+            'type.required'          => 'Tipe peserta (Presenter / Non-Presenter) wajib dipilih.',
+            'mode.required'          => 'Mode kehadiran (Offline / Online) wajib dipilih.',
+            'price.required'         => 'Nominal harga registrasi wajib diisi.',
+            'price.min'              => 'Nominal harga tidak boleh kurang dari 0.',
         ];
     }
 }

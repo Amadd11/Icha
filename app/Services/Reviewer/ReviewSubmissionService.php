@@ -11,7 +11,7 @@ class ReviewSubmissionService
 {
     public function submitReview(ReviewAssignment $assignment, array $data): Review
     {
-        return Cache::lock("submit_review_assignment_{$assignment->id}", 10)->block(5, function () use ($assignment, $data) {
+        return Cache::lock("submit_review_round_{$assignment->review_round_id}", 10)->block(5, function () use ($assignment, $data) {
             return DB::transaction(function () use ($assignment, $data) {
                 $assignment->loadMissing(['round.abstractSubmission']);
                 $round = $assignment->round;
@@ -23,6 +23,18 @@ class ReviewSubmissionService
 
                 if ($isDecided || !in_array($assignment->status, ['assigned', 'completed'], true)) {
                     throw new \DomainException('Review assignment is not available for submission.');
+                }
+
+                // Atomic slot limit check inside transaction to prevent race conditions
+                if (($round?->round_number ?? 1) === 1 && $assignment->status !== 'completed') {
+                    $otherCompletedCount = $round->assignments()
+                        ->where('status', 'completed')
+                        ->where('id', '!=', $assignment->id)
+                        ->count();
+
+                    if ($otherCompletedCount >= 3) {
+                        throw new \DomainException('Maaf, slot review untuk naskah ini sudah penuh (3/3 telah diisi oleh reviewer lain).');
+                    }
                 }
 
                 if ($round->status === 'pending') {
@@ -41,10 +53,13 @@ class ReviewSubmissionService
                     default => ($totalScore >= 5 ? 'ORAL' : 'POSTER'),
                 };
 
-                // Check existing review with lockForUpdate to guarantee uniqueness
-                $review = Review::where('review_assignment_id', $assignment->id)->lockForUpdate()->first();
+                // Check existing review with lockForUpdate to guarantee uniqueness (handling soft-deletes safely)
+                $review = Review::withTrashed()->where('review_assignment_id', $assignment->id)->lockForUpdate()->first();
 
                 if ($review) {
+                    if ($review->trashed()) {
+                        $review->restore();
+                    }
                     $review->update([
                         'score_criteria_1' => $data['score_criteria_1'],
                         'score_criteria_2' => $data['score_criteria_2'],
@@ -72,17 +87,9 @@ class ReviewSubmissionService
                     $round->abstractSubmission->update(['status' => 'under_review']);
                 }
 
-                // Locking Logic: If all assignments in round are completed, lock round
-                $totalAssignments = $round->assignments()->count();
-                $completedAssignments = $round->assignments()->where('status', 'completed')->count();
-
-                $requiredReviewers = ($round->submission_type === 'full_paper') ? 2 : 3;
-                $isReadyToLock = ($round->round_number === 1)
-                    ? ($totalAssignments === $requiredReviewers && $completedAssignments === $requiredReviewers)
-                    : ($totalAssignments > 0 && $completedAssignments === $totalAssignments);
-
-                if ($isReadyToLock && $round->status === 'open') {
-                    $round->update(['status' => 'locked']);
+                // Automatic system decision when round criteria is completed (Round 1: 3 reviews, Round > 1: all revision reviews)
+                if ($round) {
+                    $round->applyAutoDecision();
                 }
 
                 return $review;

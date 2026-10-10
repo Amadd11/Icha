@@ -28,6 +28,7 @@ class DashboardController extends Controller
             'submissionType' => 'abstract',
             'stats'          => $this->dashboardService->getStats($assignments, 'abstract'),
             'assignments'    => ReviewerAssignmentResource::collection($assignments)->resolve(),
+            'categories'     => $request->user()?->categories()->get(['id', 'name']) ?? [],
         ]);
     }
 }

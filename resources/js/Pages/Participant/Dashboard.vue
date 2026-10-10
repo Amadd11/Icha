@@ -12,7 +12,6 @@ const props = defineProps({
     payment: Object,
     paymentStatus: String,
     abstract: Object,
-    fullPaper: Object,
     hasCertificate: Boolean,
     stages: Array,
     nextAction: Object,

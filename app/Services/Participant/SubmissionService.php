@@ -12,6 +12,7 @@ use App\Models\Registration;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewRound;
 use App\Models\User;
+use App\Services\Admin\ReviewAssignmentService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -193,7 +194,7 @@ class SubmissionService
 
                     // Database-agnostic & collision-free sequential code generation (ABS-001, ABS-002, ...)
                     // Atomic creation inside lock eliminates TOCTOU race conditions.
-                    return CodeGenerator::create(AbstractSubmission::class, 'abstract_code', 'ABS', [
+                    $newAbstract = CodeGenerator::create(AbstractSubmission::class, 'abstract_code', 'ABS', [
                         'user_id'           => $user->id,
                         'conference_id'     => $activeConference?->id,
                         'category_id'       => $data['category_id'],
@@ -204,6 +205,11 @@ class SubmissionService
                         'file_path'         => $filePath,
                         'status'            => 'pending',
                     ]);
+
+                    // Automatically assign all reviewers in this topic category
+                    app(ReviewAssignmentService::class)->autoAssignCategoryReviewers($newAbstract);
+
+                    return $newAbstract;
                 });
             });
         } catch (\Throwable $e) {
@@ -273,8 +279,13 @@ class SubmissionService
         $revisingReviewerIds = [];
 
         if ($latestRound && $latestRound->assignments->isNotEmpty()) {
+            // Only consider assignments that were actually completed (or have a submitted review) in the previous round
+            $completedAssignments = $latestRound->assignments->filter(function ($a) {
+                return $a->status === 'completed' || $a->review !== null;
+            });
+
             // 1. Primary: Only reviewers who explicitly recommended REVISION / REVISION_REQUIRED
-            foreach ($latestRound->assignments as $assignment) {
+            foreach ($completedAssignments as $assignment) {
                 $recommendation = strtoupper(trim((string) ($assignment->review?->recommendation ?? '')));
                 if (in_array($recommendation, ['REVISION', 'REVISION_REQUIRED'], true)) {
                     $revisingReviewerIds[] = $assignment->reviewer_id;
@@ -283,7 +294,7 @@ class SubmissionService
 
             // 2. Fallback: If no reviewer specifically recommended revision, include reviewers who did NOT accept
             if (empty($revisingReviewerIds)) {
-                foreach ($latestRound->assignments as $assignment) {
+                foreach ($completedAssignments as $assignment) {
                     $recommendation = strtoupper(trim((string) ($assignment->review?->recommendation ?? '')));
                     $alreadyAccepted = in_array($recommendation, ['ORAL', 'POSTER', 'ACCEPT', 'ACCEPTED'], true);
                     if (!$alreadyAccepted) {
@@ -292,9 +303,9 @@ class SubmissionService
                 }
             }
 
-            // 3. Fallback: If still empty (e.g. all reviewers said accepted, but admin decided revision), re-assign all previous reviewers
-            if (empty($revisingReviewerIds)) {
-                $revisingReviewerIds = $latestRound->assignments->pluck('reviewer_id')->toArray();
+            // 3. Fallback: If still empty (e.g. all reviewers said accepted, but admin decided revision), re-assign reviewers who completed reviews
+            if (empty($revisingReviewerIds) && $completedAssignments->isNotEmpty()) {
+                $revisingReviewerIds = $completedAssignments->pluck('reviewer_id')->toArray();
             }
 
             $revisingReviewerIds = array_values(array_unique($revisingReviewerIds));

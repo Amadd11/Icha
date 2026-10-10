@@ -2,13 +2,20 @@
 
 namespace App\Services\Reviewer;
 
+use App\Models\AbstractSubmission;
 use App\Models\ReviewAssignment;
+use App\Models\ReviewRound;
 use App\Models\User;
+use App\Services\Admin\ReviewAssignmentService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardService
 {
+    public function __construct(
+        protected ReviewAssignmentService $assignmentService
+    ) {}
+
     /**
      * Get dashboard statistics for the currently logged-in reviewer based on consolidated submissions.
      */
@@ -48,8 +55,22 @@ class DashboardService
             return collect();
         }
 
+        // Auto-assign any pending or under_review abstracts matching this reviewer's categories
+        $reviewerCategoryIds = $user->categories()->pluck('categories.id')->toArray();
+        if (!empty($reviewerCategoryIds)) {
+            $categoryAbstracts = AbstractSubmission::whereIn('category_id', $reviewerCategoryIds)
+                ->where('user_id', '!=', $user->id)
+                ->whereIn('status', ['pending', 'under_review'])
+                ->get();
+
+            foreach ($categoryAbstracts as $abs) {
+                $this->assignmentService->autoAssignCategoryReviewers($abs);
+            }
+        }
+
         $allAssignments = ReviewAssignment::with([
             'round.abstractSubmission.category',
+            'round.assignments',
             'review',
         ])
             ->where('reviewer_id', $user->id)

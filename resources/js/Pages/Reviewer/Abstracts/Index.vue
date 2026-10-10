@@ -8,11 +8,14 @@ import AnimatedCounter from '@/Components/UI/AnimatedCounter.vue';
 const props = defineProps({
     stats: Object,
     assignments: [Array, Object],
+    categories: Array,
 });
 
 const isModalOpen = ref(false);
 const activeAssignment = ref(null);
 const activeAbstract = ref(null);
+const selectedCategoryId = ref('all');
+const searchQuery = ref('');
 
 watch(isModalOpen, (val) => {
     if (typeof document !== 'undefined') {
@@ -71,20 +74,56 @@ const assignmentList = computed(() => {
 
 const currentTab = ref('all');
 
-const filteredAssignments = computed(() => {
-    const list = assignmentList.value;
-    if (currentTab.value === 'pending') {
-        return list.filter(a => a.status === 'assigned');
-    }
-    if (currentTab.value === 'completed') {
-        return list.filter(a => a.status === 'completed');
-    }
-    return list;
-});
-
 function getSubmission(assignment) {
     return assignment?.submission || assignment?.round?.submission || {};
 }
+
+const reviewerCategories = computed(() => {
+    if (props.categories && props.categories.length > 0) return props.categories;
+    const cats = new Map();
+    assignmentList.value.forEach(a => {
+        const c = getSubmission(a).category;
+        if (c && c.id) cats.set(c.id, c);
+    });
+    return Array.from(cats.values());
+});
+
+const filteredAssignments = computed(() => {
+    let list = assignmentList.value;
+
+    if (selectedCategoryId.value !== 'all') {
+        list = list.filter(a => getSubmission(a).category?.id === selectedCategoryId.value);
+    }
+
+    if (currentTab.value === 'pending') {
+        list = list.filter(a => a.status === 'assigned' && !a.is_slot_full);
+    } else if (currentTab.value === 'completed') {
+        list = list.filter(a => a.status === 'completed');
+    }
+
+    if (searchQuery.value.trim()) {
+        const q = searchQuery.value.toLowerCase();
+        list = list.filter(a => {
+            const sub = getSubmission(a);
+            return (sub.title && sub.title.toLowerCase().includes(q)) ||
+                   (sub.abstract_code && sub.abstract_code.toLowerCase().includes(q));
+        });
+    }
+
+    return list;
+});
+
+const computedStats = computed(() => {
+    const list = selectedCategoryId.value === 'all'
+        ? assignmentList.value
+        : assignmentList.value.filter(a => getSubmission(a).category?.id === selectedCategoryId.value);
+
+    return {
+        total_assigned: list.length,
+        pending_reviews: list.filter(a => a.status === 'assigned' && !a.is_slot_full).length,
+        completed_reviews: list.filter(a => a.status === 'completed').length,
+    };
+});
 
 function openReviewModal(assignment) {
     activeAssignment.value = assignment;
@@ -93,7 +132,16 @@ function openReviewModal(assignment) {
     if (assignment.review) {
         form.score_criteria_1 = assignment.review.score_criteria_1 || '';
         form.score_criteria_2 = assignment.review.score_criteria_2 || '';
-        const REC_MAP = { POSTER: 'POSTER', REVISION: 'REVISION', REVISION_REQUIRED: 'REVISION', REJECT: 'REJECT', REJECTED: 'REJECT' };
+        const REC_MAP = {
+            ORAL: 'ORAL',
+            POSTER: 'POSTER',
+            ACCEPT: 'ORAL',
+            ACCEPTED: 'ORAL',
+            REVISION: 'REVISION',
+            REVISION_REQUIRED: 'REVISION',
+            REJECT: 'REJECT',
+            REJECTED: 'REJECT',
+        };
         form.recommendation = REC_MAP[(assignment.review.recommendation || '').toUpperCase()] ?? 'ORAL';
         form.summary = assignment.review.summary || '';
     } else {
@@ -121,12 +169,13 @@ function submitReview() {
     <Head title="Abstract Reviews - Reviewer" />
 
     <ReviewerLayout>
+        <!-- Page Header (Restored previous design) -->
         <div class="mb-8 animate-fade-in-up">
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">
                 Abstract Reviews
             </h1>
             <p class="text-slate-500 text-xs mt-1 font-medium">
-                Selamat datang, {{ $page.props.auth.user.name }}! Tinjau naskah abstrak ilmiah yang ditugaskan kepada Anda.
+                Selamat datang, {{ $page.props.auth.user.name }}! Tinjau naskah abstrak ilmiah yang ditugaskan kepada Anda sesuai bidang kepakaran.
             </p>
         </div>
 
@@ -139,31 +188,31 @@ function submitReview() {
                 class="animate-fade-in-up animation-delay-100 bg-white rounded-3xl p-6 shadow-sm border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
                 :class="currentTab === 'all' ? 'border-purple-600 ring-2 ring-purple-600/20 shadow-md' : 'border-slate-200/80 hover:border-purple-300'"
             >
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Ditugaskan</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Naskah Tersedia</span>
                 <div class="flex items-baseline gap-2 mt-2">
                     <span class="text-3xl font-black text-slate-900">
-                        <AnimatedCounter :value="stats?.total_assigned ?? 0" />
+                        <AnimatedCounter :value="computedStats.total_assigned" />
                     </span>
                     <span class="text-xs font-bold text-primary">Abstracts</span>
                 </div>
             </div>
 
-            <!-- Pending -->
+            <!-- Pending / Slot Terbuka -->
             <div
                 @click="currentTab = 'pending'"
                 class="animate-fade-in-up animation-delay-200 bg-white rounded-3xl p-6 shadow-sm border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
                 :class="currentTab === 'pending' ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md' : 'border-slate-200/80 hover:border-amber-300'"
             >
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Perlu Dinilai</span>
-                    <span v-if="(stats?.pending_reviews ?? 0) > 0" class="relative flex h-2.5 w-2.5">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Perlu Dinilai / Slot Terbuka</span>
+                    <span v-if="computedStats.pending_reviews > 0" class="relative flex h-2.5 w-2.5">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                     </span>
                 </div>
                 <div class="flex items-baseline gap-2 mt-2">
                     <span class="text-3xl font-black text-amber-600">
-                        <AnimatedCounter :value="stats?.pending_reviews ?? 0" />
+                        <AnimatedCounter :value="computedStats.pending_reviews" />
                     </span>
                     <span class="text-xs font-bold text-amber-600">Menunggu Review</span>
                 </div>
@@ -178,7 +227,7 @@ function submitReview() {
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Selesai Dinilai</span>
                 <div class="flex items-baseline gap-2 mt-2">
                     <span class="text-3xl font-extrabold text-emerald-600">
-                        <AnimatedCounter :value="stats?.completed_reviews ?? 0" />
+                        <AnimatedCounter :value="computedStats.completed_reviews" />
                     </span>
                     <span class="text-xs font-semibold text-emerald-600">Tersimpan</span>
                 </div>
@@ -186,9 +235,39 @@ function submitReview() {
 
         </div>
 
-        <!-- Assigned Submissions Table with Filter Tabs -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <!-- Category Selector Pills (Shown when reviewer has multiple categories) -->
+        <div v-if="reviewerCategories.length > 1" class="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+            <button
+                type="button"
+                @click="selectedCategoryId = 'all'"
+                :class="[
+                    'px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-2xs',
+                    selectedCategoryId === 'all'
+                        ? 'bg-purple-700 text-white border-purple-700'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                ]"
+            >
+                Semua Kategori ({{ assignmentList.length }})
+            </button>
+            <button
+                v-for="cat in reviewerCategories"
+                :key="cat.id"
+                type="button"
+                @click="selectedCategoryId = cat.id"
+                :class="[
+                    'px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-2xs',
+                    selectedCategoryId === cat.id
+                        ? 'bg-purple-700 text-white border-purple-700'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                ]"
+            >
+                {{ cat.name }} ({{ assignmentList.filter(a => getSubmission(a).category?.id === cat.id).length }})
+            </button>
+        </div>
+
+        <!-- Assigned Submissions Table with Filter Tabs (Restored Previous Rich Design) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                     <h3 class="font-bold text-sm text-slate-900">
                         Assigned Scientific Abstracts
@@ -198,83 +277,115 @@ function submitReview() {
                     </p>
                 </div>
                 
-                <!-- Filter Tabs -->
-                <div class="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60">
-                    <button
-                        type="button"
-                        @click="currentTab = 'all'"
-                        :class="[
-                            'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5',
-                            currentTab === 'all'
-                                ? 'bg-white text-purple-900 shadow-xs border border-purple-200/60'
-                                : 'text-slate-600 hover:text-slate-900'
-                        ]"
-                    >
-                        <span>Semua</span>
-                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-slate-200 text-slate-700">
-                            {{ stats?.total_assigned ?? 0 }}
-                        </span>
-                    </button>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-56">
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari Code / Judul..."
+                            class="w-full text-xs rounded-xl border border-slate-200 pl-8 pr-3 py-1.5 focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
+                        />
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
 
-                    <button
-                        type="button"
-                        @click="currentTab = 'pending'"
-                        :class="[
-                            'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5',
-                            currentTab === 'pending'
-                                ? 'bg-white text-amber-900 shadow-xs border border-amber-200/60'
-                                : 'text-slate-600 hover:text-slate-900'
-                        ]"
-                    >
-                        <span>🟡 Perlu Dinilai</span>
-                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
-                            {{ stats?.pending_reviews ?? 0 }}
-                        </span>
-                    </button>
+                    <!-- Filter Tabs -->
+                    <div class="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60 shrink-0">
+                        <button
+                            type="button"
+                            @click="currentTab = 'all'"
+                            :class="[
+                                'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5',
+                                currentTab === 'all'
+                                    ? 'bg-white text-purple-900 shadow-xs border border-purple-200/60'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            ]"
+                        >
+                            <span>Semua</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-slate-200 text-slate-700">
+                                {{ computedStats.total_assigned }}
+                            </span>
+                        </button>
 
-                    <button
-                        type="button"
-                        @click="currentTab = 'completed'"
-                        :class="[
-                            'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5',
-                            currentTab === 'completed'
-                                ? 'bg-white text-emerald-900 shadow-xs border border-emerald-200/60'
-                                : 'text-slate-600 hover:text-slate-900'
-                        ]"
-                    >
-                        <span>🟢 Riwayat Selesai</span>
-                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                            {{ stats?.completed_reviews ?? 0 }}
-                        </span>
-                    </button>
+                        <button
+                            type="button"
+                            @click="currentTab = 'pending'"
+                            :class="[
+                                'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5',
+                                currentTab === 'pending'
+                                    ? 'bg-white text-amber-900 shadow-xs border border-amber-200/60'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            ]"
+                        >
+                            <span>🟡 Perlu Dinilai</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
+                                {{ computedStats.pending_reviews }}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="currentTab = 'completed'"
+                            :class="[
+                                'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5',
+                                currentTab === 'completed'
+                                    ? 'bg-white text-emerald-900 shadow-xs border border-emerald-200/60'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            ]"
+                        >
+                            <span>🟢 Riwayat Selesai</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                                {{ computedStats.completed_reviews }}
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
             
             <!-- Empty State -->
             <div v-if="!filteredAssignments || filteredAssignments.length === 0" class="p-12 text-center">
                 <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400 font-bold text-lg">
-                    {{ currentTab === 'pending' ? '🎉' : '📝' }}
+                    {{ searchQuery.trim() ? '🔍' : (currentTab === 'pending' ? '🎉' : '📝') }}
                 </div>
                 <h3 class="text-sm font-bold text-slate-800 mb-1">
-                    {{ currentTab === 'pending' ? 'Semua naskah abstrak telah selesai dinilai!' : currentTab === 'completed' ? 'Belum ada naskah yang selesai dinilai.' : 'Tidak ada naskah yang ditugaskan.' }}
+                    {{
+                        searchQuery.trim()
+                            ? `Tidak ada naskah yang cocok dengan pencarian "${searchQuery}".`
+                            : reviewerCategories.length === 0 && assignmentList.length === 0
+                                ? 'Belum ada bidang kepakaran yang ditetapkan untuk akun Anda.'
+                                : currentTab === 'pending'
+                                    ? 'Semua naskah abstrak telah selesai dinilai!'
+                                    : currentTab === 'completed'
+                                        ? 'Belum ada naskah yang selesai dinilai.'
+                                        : 'Tidak ada naskah yang ditemukan.'
+                    }}
                 </h3>
                 <p class="text-slate-500 text-xs">
-                    {{ currentTab === 'pending' ? 'Tidak ada tugas telaah abstrak yang menunggu tindakan Anda saat ini.' : 'Naskah abstrak yang telah selesai Anda beri skor akan tercatat di tab ini.' }}
+                    {{
+                        searchQuery.trim()
+                            ? 'Coba periksa kembali kata kunci judul atau kode naskah abstrak yang Anda cari.'
+                            : reviewerCategories.length === 0 && assignmentList.length === 0
+                                ? 'Silakan hubungi Administrator untuk menetapkan kategori topik telaah ilmiah pada akun Anda.'
+                                : currentTab === 'pending'
+                                    ? 'Tidak ada tugas telaah abstrak yang menunggu tindakan Anda saat ini.'
+                                    : 'Naskah abstrak yang telah selesai Anda beri skor akan tercatat di tab ini.'
+                    }}
                 </p>
             </div>
 
-            <!-- Table -->
+            <!-- Table (Previous Rich Design) -->
             <div v-else class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 border-b border-slate-100">
                         <tr>
                             <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase">Code & Track</th>
                             <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase">Title</th>
-                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase whitespace-nowrap">
-                                Document
-                            </th>
-                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase text-center">Penilaian</th>
-                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase text-right">Action</th>
+                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase whitespace-nowrap">Document</th>
+                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase text-center whitespace-nowrap">Slot Review</th>
+                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase text-center whitespace-nowrap">Penilaian</th>
+                            <th class="px-5 py-3 font-bold text-slate-500 text-[11px] uppercase text-right whitespace-nowrap">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -284,6 +395,7 @@ function submitReview() {
                             class="table-row-stagger hover:bg-slate-50/50 transition"
                             :style="{ animationDelay: `${Math.min(index * 90 + 200, 900)}ms` }"
                         >
+                            <!-- Code & Track -->
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="font-mono text-xs font-bold text-purple-900">{{ getSubmission(assignment).abstract_code }}</span>
@@ -297,11 +409,19 @@ function submitReview() {
                                 </div>
                                 <div class="text-[10px] text-purple-600 font-semibold mt-0.5">{{ getSubmission(assignment).category?.name || 'Scientific Track' }}</div>
                             </td>
-                            <td class="px-5 py-3.5 max-w-md">
-                                <div class="font-bold text-slate-900 text-xs line-clamp-2" :title="getSubmission(assignment).title">
+
+                            <!-- Title (Full title, no cut-off) -->
+                            <td class="px-5 py-3.5 min-w-[220px]">
+                                <div
+                                    class="font-bold text-slate-900 text-xs break-words whitespace-normal leading-relaxed hover:text-purple-700 transition cursor-pointer"
+                                    @click="assignment.can_review ? openReviewModal(assignment) : null"
+                                    :title="getSubmission(assignment).title"
+                                >
                                     {{ getSubmission(assignment).title }}
                                 </div>
                             </td>
+
+                            <!-- Document -->
                             <td class="px-5 py-3.5 whitespace-nowrap">
                                 <a
                                     v-if="getSubmission(assignment).file_path"
@@ -313,6 +433,40 @@ function submitReview() {
                                 </a>
                                 <span v-else class="text-xs text-slate-400 italic">No file</span>
                             </td>
+
+                            <!-- Slot Review / Tahap Telaah -->
+                            <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                <div v-if="(assignment.round?.round_number ?? 1) > 1" class="inline-flex flex-col items-center">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border shadow-2xs bg-amber-50 text-amber-800 border-amber-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Tahap Revisi {{ (assignment.round?.round_number ?? 2) - 1 }}
+                                    </span>
+                                    <span class="text-[9px] text-slate-400 mt-0.5">Penelaahan Ulang</span>
+                                </div>
+                                <div v-else class="inline-flex flex-col items-center">
+                                    <span
+                                        :class="[
+                                            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border shadow-2xs',
+                                            assignment.is_slot_full
+                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                : assignment.reviewed_by_count > 0
+                                                    ? 'bg-sky-50 text-sky-800 border-sky-200'
+                                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                                        ]"
+                                    >
+                                        <span class="w-1.5 h-1.5 rounded-full" :class="assignment.is_slot_full ? 'bg-emerald-500' : assignment.reviewed_by_count > 0 ? 'bg-sky-500' : 'bg-slate-400'"></span>
+                                        {{ assignment.reviewed_by_count ?? 0 }}/3 Terisi
+                                    </span>
+                                    <span v-if="assignment.user_has_reviewed" class="text-[10px] text-emerald-600 font-bold mt-0.5">
+                                        ✓ Anda telah menilai
+                                    </span>
+                                    <span v-else-if="assignment.is_slot_full" class="text-[10px] text-slate-400 font-medium mt-0.5">
+                                        Slot penuh
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Penilaian -->
                             <td class="px-5 py-3.5 text-center whitespace-nowrap">
                                 <div v-if="assignment.status === 'completed' && assignment.review" class="inline-flex flex-col items-center">
                                     <span
@@ -332,6 +486,20 @@ function submitReview() {
                                     </span>
                                 </div>
                                 <span
+                                    v-else-if="assignment.is_coi"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border bg-slate-100 text-slate-500 border-slate-200"
+                                >
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    Penulis Sendiri (COI)
+                                </span>
+                                <span
+                                    v-else-if="assignment.is_slot_full"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border bg-slate-100 text-slate-500 border-slate-200"
+                                >
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    Slot Penuh (3/3)
+                                </span>
+                                <span
                                     v-else
                                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border bg-amber-50/80 text-amber-700 border-amber-200/80"
                                 >
@@ -339,23 +507,68 @@ function submitReview() {
                                     Belum Dinilai
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5 text-right">
+
+                            <!-- Action -->
+                            <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                <!-- Slot Penuh & belum dinilai -->
                                 <button
-                                    @click="openReviewModal(assignment)"
-                                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shadow-2xs cursor-pointer"
-                                    :class="assignment.status === 'completed' ? 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' : 'bg-purple-50 text-purple-700 border border-purple-200/90 hover:bg-purple-100'"
+                                    v-if="assignment.is_slot_full && !assignment.user_has_reviewed"
+                                    disabled
+                                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed inline-flex items-center gap-1"
+                                    title="Slot review sudah penuh (3/3 telah diisi oleh reviewer lain)"
                                 >
-                                    {{ assignment.status === 'completed' ? (assignment.is_decided ? 'Lihat Nilai' : 'Edit Nilai') : 'Nilai Sekarang' }}
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                    <span>Slot Penuh</span>
+                                </button>
+
+                                <!-- COI -->
+                                <button
+                                    v-else-if="assignment.is_coi"
+                                    disabled
+                                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                                    title="Conflict of Interest: Naskah milik Anda sendiri"
+                                >
+                                    COI
+                                </button>
+
+                                <!-- Sudah dinilai -->
+                                <button
+                                    v-else-if="assignment.user_has_reviewed"
+                                    @click="openReviewModal(assignment)"
+                                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shadow-2xs cursor-pointer bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
+                                >
+                                    {{ assignment.is_decided ? 'Lihat Nilai' : 'Edit Nilai' }}
+                                </button>
+
+                                <!-- Slot terbuka -->
+                                <button
+                                    v-else
+                                    @click="openReviewModal(assignment)"
+                                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shadow-2xs cursor-pointer bg-purple-50 text-purple-700 border border-purple-200/90 hover:bg-purple-100"
+                                >
+                                    Nilai Sekarang
                                 </button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Footer Note -->
+            <div class="px-6 py-3.5 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-500">
+                <span class="text-[11px] text-slate-500">
+                    ℹ️ <strong>Sistem Review Terbuka:</strong> Maksimal 3 reviewer per naskah (siapa cepat mengisi slot review). Kuota akan terisi otomatis setelah reviewer men-submit nilai.
+                </span>
+                <span class="text-[11px] text-slate-400 italic">
+                    First-come, first-served
+                </span>
+            </div>
         </div>
 
         <!-- 📝 Abstract Review Modal -->
-        <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto">
+        <div v-if="isModalOpen" @click.self="isModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto">
             <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fade-in">
                 
                 <!-- Modal Header -->
@@ -416,15 +629,12 @@ function submitReview() {
                             <p class="text-xs text-slate-800 font-semibold">{{ activeAbstract.keywords }}</p>
                         </div>
 
-                        <div>
+                        <div v-if="activeAbstract?.abstract_text">
                             <span class="text-[11px] font-bold text-slate-500 block mb-1">
                                 Abstract Content:
                             </span>
-                            <div v-if="activeAbstract?.abstract_text" class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-700 leading-relaxed border border-slate-200 max-h-56 overflow-y-auto whitespace-pre-wrap">
+                            <div class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-700 leading-relaxed border border-slate-200 max-h-56 overflow-y-auto whitespace-pre-wrap">
                                 {{ activeAbstract.abstract_text }}
-                            </div>
-                            <div v-else class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-400 italic border border-slate-200">
-                                Abstract content is provided in the attached document. Please download and review the file above.
                             </div>
                         </div>
 

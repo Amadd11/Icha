@@ -37,37 +37,188 @@ class ReviewRound extends Model
         $this->update(['status' => $status]);
     }
 
-    public function finalRecommendation(): ?string
+    public function recommendedPresentationType(): string
     {
         $assignments = $this->assignments()->with('review')->get();
-        $total = $assignments->count();
-        $completed = $assignments->where('status', 'completed')->count();
+        $completedAssignments = $assignments->filter(function ($a) {
+            return $a->status === 'completed' || $a->review !== null;
+        });
 
-        if ($total === 0 || $completed < $total) {
+        if ($this->round_number > 1) {
+            $allRounds = self::where('submission_type', $this->submission_type)
+                ->where('submission_id', $this->submission_id)
+                ->where('round_number', '<=', $this->round_number)
+                ->orderBy('round_number')
+                ->with('assignments.review')
+                ->get();
+
+            $evalAssignments = [];
+            foreach ($allRounds as $r) {
+                foreach ($r->assignments as $a) {
+                    if ($a->status === 'completed' || $a->review !== null) {
+                        $evalAssignments[$a->reviewer_id] = $a;
+                    }
+                }
+            }
+        } else {
+            $evalAssignments = $completedAssignments;
+        }
+
+        $oralVotes = 0;
+        $posterVotes = 0;
+
+        foreach ($evalAssignments as $a) {
+            $rec = strtoupper((string) ($a->review?->recommendation ?? ''));
+            if (in_array($rec, ['ORAL', 'ACCEPT', 'ACCEPTED'], true)) {
+                $oralVotes++;
+            } elseif ($rec === 'POSTER') {
+                $posterVotes++;
+            }
+        }
+
+        if ($posterVotes > $oralVotes) {
+            return 'poster';
+        }
+
+        return 'oral';
+    }
+
+    /**
+     * Determine automatic decision outcome based on completed reviews:
+     * Returns: ['status' => 'accepted'|'revision_required'|'rejected', 'presentation_type' => 'oral'|'poster'|null, 'notes' => string|null]
+     */
+    public function autoDecisionOutcome(): ?array
+    {
+        $assignments = $this->assignments()->with(['review', 'reviewer'])->get();
+        $completedAssignments = $assignments->filter(function ($a) {
+            return $a->status === 'completed' || $a->review !== null;
+        });
+
+        $count = $completedAssignments->count();
+        $target = min(3, max(1, $assignments->count()));
+        $isReady = ($this->round_number === 1)
+            ? ($assignments->count() > 0 && $count >= $target)
+            : ($assignments->count() > 0 && $count >= $assignments->count());
+
+        if (!$isReady) {
             return null;
         }
 
-        $requiredCount = 3;
-        if ($this->round_number === 1 && $total !== $requiredCount) {
-            return null;
+        // When round > 1, aggregate the latest reviews of all unique reviewers across rounds.
+        // Reviewers who accepted in round 1 will still have their Oral/Poster recommendation counted!
+        if ($this->round_number > 1) {
+            $allRounds = self::where('submission_type', $this->submission_type)
+                ->where('submission_id', $this->submission_id)
+                ->where('round_number', '<=', $this->round_number)
+                ->orderBy('round_number')
+                ->with(['assignments.review', 'assignments.reviewer'])
+                ->get();
+
+            $evalAssignments = [];
+            foreach ($allRounds as $r) {
+                foreach ($r->assignments as $a) {
+                    if ($a->status === 'completed' || $a->review !== null) {
+                        $evalAssignments[$a->reviewer_id] = $a;
+                    }
+                }
+            }
+        } else {
+            $evalAssignments = $completedAssignments;
         }
 
-        $recommendations = $assignments->map(function ($assignment) {
-            return match (strtoupper((string) $assignment->review?->recommendation)) {
-                'ACCEPTED', 'ACCEPT', 'ORAL' => 'ORAL',
-                'POSTER' => 'POSTER',
-                'REVISION', 'REVISION_REQUIRED' => 'REVISION',
-                'REJECT', 'REJECTED' => 'REJECT',
-                default => null,
-            };
-        })->filter();
+        $oralVotes = 0;
+        $posterVotes = 0;
+        $revisionVotes = 0;
+        $rejectVotes = 0;
+        $comments = [];
 
-        if ($recommendations->count() !== $total) {
-            return null;
+        foreach ($evalAssignments as $a) {
+            $rec = strtoupper((string) ($a->review?->recommendation ?? ''));
+            $name = $a->reviewer?->name ?? 'Reviewer';
+            $summary = trim((string) ($a->review?->summary ?? ''));
+            $score = $a->review?->total_score;
+
+            if (in_array($rec, ['REVISION', 'REVISION_REQUIRED'], true)) {
+                $revisionVotes++;
+                $label = 'Revisi';
+            } elseif (in_array($rec, ['REJECT', 'REJECTED'], true)) {
+                $rejectVotes++;
+                $label = 'Ditolak';
+            } elseif ($rec === 'POSTER') {
+                $posterVotes++;
+                $label = 'Poster';
+            } else {
+                $oralVotes++;
+                $label = 'Oral';
+            }
+
+            if (!empty($summary)) {
+                $scoreStr = $score !== null ? " (Skor: {$score}/10)" : '';
+                $comments[] = "• {$name} [{$label}]{$scoreStr}: {$summary}";
+            }
         }
 
-        $counts = $recommendations->countBy()->sortDesc();
+        if ($revisionVotes > 0) {
+            $status = 'revision_required';
+            $presentationType = null;
+        } elseif ($rejectVotes >= 2 || ($rejectVotes > ($oralVotes + $posterVotes))) {
+            $status = 'rejected';
+            $presentationType = null;
+        } else {
+            $status = 'accepted';
+            $presentationType = ($posterVotes > $oralVotes) ? 'poster' : 'oral';
+        }
 
-        return $counts->keys()->first() ?? null;
+        return [
+            'status'            => $status,
+            'presentation_type' => $presentationType,
+            'notes'             => !empty($comments) ? implode("\n", $comments) : null,
+        ];
+    }
+
+    public function applyAutoDecision(): bool
+    {
+        $outcome = $this->autoDecisionOutcome();
+        if (!$outcome) {
+            return false;
+        }
+
+        $submission = $this->abstractSubmission;
+        if (!$submission) {
+            return false;
+        }
+
+        // If submission is already finalized (e.g. by Admin override), preserve Admin's decision
+        if (in_array($submission->status, ['accepted', 'revision_required', 'rejected'], true)) {
+            if ($this->status !== 'completed') {
+                $this->update(['status' => 'completed']);
+            }
+            return false;
+        }
+
+        $updateData = [
+            'status'      => $outcome['status'],
+            'reviewed_at' => now(),
+        ];
+
+        if ($outcome['status'] === 'accepted') {
+            $updateData['presentation_type'] = $outcome['presentation_type'];
+        }
+
+        $updateData['review_notes'] = !empty($outcome['notes']) ? $outcome['notes'] : null;
+
+        $submission->update($updateData);
+        $this->update(['status' => 'completed']);
+
+        return true;
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (ReviewRound $round) {
+            $round->assignments()->each(function ($assignment) {
+                $assignment->delete();
+            });
+        });
     }
 }

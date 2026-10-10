@@ -35,9 +35,9 @@ class ReviewAssignmentService
             ]);
         }
 
-        if (count($reviewerIds) !== 3) {
+        if ($isRound1 && count($reviewerIds) !== 3) {
             throw ValidationException::withMessages([
-                'reviewer_ids' => 'Tepat tiga reviewer harus ditugaskan untuk telaah awal.',
+                'reviewer_ids' => 'Tepat 3 reviewer harus dipilih untuk penugasan tahap awal.',
             ]);
         }
 
@@ -155,5 +155,73 @@ class ReviewAssignmentService
                 }
             });
         });
+    }
+
+    /**
+     * Automatically ensure Round 1 exists and assign all category-matching reviewers to an abstract.
+     * Prevents author self-review (conflict of interest).
+     */
+    public function autoAssignCategoryReviewers(AbstractSubmission $abstract): void
+    {
+        if (!$abstract->category_id) {
+            return;
+        }
+
+        // 1. Ensure Round 1 exists
+        $round = ReviewRound::where('submission_type', 'abstract')
+            ->where('submission_id', $abstract->id)
+            ->where('round_number', 1)
+            ->first();
+
+        if (!$round) {
+            $round = ReviewRound::create([
+                'submission_type' => 'abstract',
+                'submission_id'   => $abstract->id,
+                'round_number'    => 1,
+                'status'          => 'open',
+            ]);
+        }
+
+        // 2. Assign category reviewers to this round (placeholders so they can view and claim a review slot)
+        $reviewers = User::where('role', 'reviewer')
+            ->where('id', '!=', $abstract->user_id)
+            ->whereHas('categories', function ($query) use ($abstract) {
+                $query->where('categories.id', $abstract->category_id);
+            })
+            ->get();
+
+        foreach ($reviewers as $reviewer) {
+            $assignment = ReviewAssignment::withTrashed()
+                ->where('review_round_id', $round->id)
+                ->where('reviewer_id', $reviewer->id)
+                ->first();
+
+            if ($assignment) {
+                if ($assignment->trashed()) {
+                    $assignment->restore();
+                }
+                if ($assignment->status !== 'completed') {
+                    $assignment->update(['status' => 'assigned']);
+                }
+            } else {
+                ReviewAssignment::create([
+                    'review_round_id' => $round->id,
+                    'reviewer_id'     => $reviewer->id,
+                    'status'          => 'assigned',
+                ]);
+            }
+        }
+
+        // Clean up uncompleted placeholder assignments for users who are no longer valid category reviewers
+        $validReviewerIds = $reviewers->pluck('id')->toArray();
+        ReviewAssignment::where('review_round_id', $round->id)
+            ->whereNotIn('reviewer_id', $validReviewerIds)
+            ->where('status', 'assigned')
+            ->whereDoesntHave('review')
+            ->delete();
+
+        if ($round->assignments()->count() > 0 && $abstract->status === 'pending') {
+            $abstract->update(['status' => 'under_review']);
+        }
     }
 }

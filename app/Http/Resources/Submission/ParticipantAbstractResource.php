@@ -17,6 +17,7 @@ class ParticipantAbstractResource extends JsonResource
             'keywords' => $this->keywords,
             'presentation_type' => $this->presentation_type,
             'status' => $this->status,
+            'review_notes' => $this->review_notes,
             'file_path' => $this->file_path,
             'category' => $this->whenLoaded('category', function () {
                 return [

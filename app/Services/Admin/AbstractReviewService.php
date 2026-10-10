@@ -4,18 +4,39 @@ namespace App\Services\Admin;
 
 use App\Models\AbstractSubmission;
 use App\Models\Conference;
-use App\Models\User;
 use App\Models\ReviewRound;
+use App\Models\User;
+use App\Services\Admin\ReviewAssignmentService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
 class AbstractReviewService
 {
+    public function __construct(
+        protected ReviewAssignmentService $assignmentService
+    ) {}
+
     /**
      * Get abstract submissions filtered by status with pagination.
      */
     public function getAbstracts(?string $status = null, int $perPage = 15): LengthAwarePaginator
     {
+        // Auto-assign any pending abstracts to category reviewers
+        $pendingAbstracts = AbstractSubmission::where('status', 'pending')
+            ->whereNotNull('category_id')
+            ->get();
+        foreach ($pendingAbstracts as $abs) {
+            $this->assignmentService->autoAssignCategoryReviewers($abs);
+        }
+
+        // Auto-decide any submissions that reached required completed reviews
+        $undecidedRounds = ReviewRound::where('submission_type', 'abstract')
+            ->whereIn('status', ['open', 'locked'])
+            ->get();
+        foreach ($undecidedRounds as $round) {
+            $round->applyAutoDecision();
+        }
+
         $confId = request()->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
         $query = AbstractSubmission::with([
@@ -52,13 +73,13 @@ class AbstractReviewService
         if ($data['status'] === 'accepted') {
             $presentationType = !empty($data['presentation_type'])
                 ? strtolower($data['presentation_type'])
-                : ($round ? strtolower((string) $round->finalRecommendation()) : 'oral');
+                : ($round ? strtolower((string) $round->recommendedPresentationType()) : 'oral');
             $updateData['presentation_type'] = in_array($presentationType, ['oral', 'poster'], true) ? $presentationType : 'oral';
         }
 
         $updated = $abstract->update($updateData);
 
-        if ($round && $round->status === 'locked') {
+        if ($round && in_array($round->status, ['locked', 'open'], true)) {
             $round->update(['status' => 'completed']);
         }
 
@@ -85,27 +106,30 @@ class AbstractReviewService
         $totalAssignments = $round->assignments()->count();
         $completedAssignments = $round->assignments()->where('status', 'completed')->count();
 
-        if ($round->round_number === 1) {
-            if ($totalAssignments !== 3 || $completedAssignments !== 3) {
-                throw ValidationException::withMessages([
-                    'status' => 'Final decision memerlukan tepat 3 reviewer yang telah menyelesaikan review.',
-                ]);
-            }
-        } else {
-            if ($totalAssignments === 0 || $completedAssignments < $totalAssignments) {
-                throw ValidationException::withMessages([
-                    'status' => 'Final decision memerlukan seluruh reviewer pada round revisi ini menyelesaikan review.',
-                ]);
+        // Admin has full right to override / change an already decided submission
+        $isModifyingExistingDecision = in_array($abstract->status, ['accepted', 'revision_required', 'rejected'], true);
+
+        // Require 3 reviewers to complete review before final decision (unless desk rejected by admin or modifying existing decision)
+        if (!$isModifyingExistingDecision && $status !== 'rejected') {
+            if ($round->round_number === 1) {
+                $expectedReviews = min(3, max(1, $totalAssignments));
+                if ($completedAssignments < $expectedReviews) {
+                    throw ValidationException::withMessages([
+                        'status' => "Final decision memerlukan 3 reviewer menyelesaikan telaah (saat ini baru {$completedAssignments}/{$expectedReviews} reviewer yang selesai).",
+                    ]);
+                }
+            } else {
+                if ($totalAssignments === 0 || $completedAssignments < $totalAssignments) {
+                    throw ValidationException::withMessages([
+                        'status' => "Final decision memerlukan seluruh reviewer pada tahap revisi ini menyelesaikan telaah (saat ini: {$completedAssignments}/{$totalAssignments}).",
+                    ]);
+                }
             }
         }
 
         // Auto-lock if all reviews are completed and round is still open
-        if ($round->status === 'open') {
+        if ($round->status === 'open' && $completedAssignments >= ($round->round_number === 1 ? 3 : $totalAssignments)) {
             $round->update(['status' => 'locked']);
-        } elseif (!in_array($round->status, ['locked', 'completed'], true)) {
-            throw ValidationException::withMessages([
-                'status' => 'Final decision hanya dapat dibuat setelah review round selesai dan terkunci (locked).',
-            ]);
         }
 
         return $round;

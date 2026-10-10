@@ -28,6 +28,12 @@ class ReviewSubmissionController extends Controller
             abort(403, 'Conflict of interest: You cannot review your own submission.');
         }
 
+        // Category Expertise Check: Reviewer must have this topic category
+        $categoryExpertise = Auth::user()?->categories()->where('categories.id', $assignment->round?->abstractSubmission?->category_id)->exists();
+        if ($assignment->round?->abstractSubmission?->category_id && !$categoryExpertise) {
+            abort(403, 'Anda tidak memiliki bidang kepakaran pada kategori abstrak ini.');
+        }
+
         // Check if final decision has already been made by Admin
         $round = $assignment->round;
         $submission = $round?->abstractSubmission;
@@ -37,6 +43,18 @@ class ReviewSubmissionController extends Controller
 
         if ($isDecided) {
             return redirect()->back()->withErrors(['error' => 'Penilaian tidak dapat diubah karena Admin telah menetapkan keputusan final.']);
+        }
+
+        // First-Come, First-Served slot limit check: Max 3 reviewers per abstract on Round 1
+        if (($round?->round_number ?? 1) === 1 && $assignment->status !== 'completed') {
+            $otherCompletedCount = $round->assignments()
+                ->where('status', 'completed')
+                ->where('id', '!=', $assignment->id)
+                ->count();
+
+            if ($otherCompletedCount >= 3) {
+                return redirect()->back()->withErrors(['error' => 'Maaf, slot review untuk naskah ini sudah penuh (3/3 telah diisi oleh reviewer lain).']);
+            }
         }
 
         $this->service->submitReview($assignment, $request->validated());

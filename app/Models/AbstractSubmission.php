@@ -69,7 +69,9 @@ class AbstractSubmission extends Model
     {
         static::deleting(function (AbstractSubmission $abstract) {
             $abstract->reviewRounds()->each(function ($round) {
-                $round->assignments()->delete();
+                $round->assignments()->each(function ($assignment) {
+                    $assignment->delete();
+                });
                 $round->delete();
             });
         });

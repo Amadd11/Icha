@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
 import { useClipboard } from '@/Composables/useClipboard';
-import { formatDateTime } from '@/Utils/formatters';
+import { formatDateTime, formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
     activeConference: Object,
@@ -128,12 +128,11 @@ function submitPayment() {
     });
 }
 
-function formatStorageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/storage/')) return path;
-    if (path.startsWith('storage/')) return '/' + path;
-    return '/storage/' + path;
+function cancelReupload() {
+    showReuploadForm.value = false;
+    paymentForm.reset('proof_file');
+    paymentForm.clearErrors();
+    proofPreview.value = props.payment?.proof_url || (props.payment?.proof_file ? formatStorageUrl(props.payment.proof_file) : null);
 }
 
 function isPdf(path) {
@@ -678,7 +677,7 @@ function isPdf(path) {
 
                             <div v-if="showReuploadForm" class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                                 <span class="text-xs font-bold text-slate-700">Replacing Existing Receipt</span>
-                                <button @click="showReuploadForm = false" type="button" class="text-xs text-slate-500 hover:text-slate-800 underline">Cancel</button>
+                                <button @click="cancelReupload" type="button" class="text-xs text-slate-500 hover:text-slate-800 underline">Cancel</button>
                             </div>
 
                             <div>
@@ -753,7 +752,7 @@ function isPdf(path) {
             </div>
 
             <!-- Receipt Modal -->
-            <div v-if="isProofModalOpen && payment?.proof_file" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+            <div v-if="isProofModalOpen && payment?.proof_file" @click.self="isProofModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
                 <div class="relative max-w-2xl w-full bg-white rounded-2xl p-6 shadow-2xl space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <h4 class="font-bold text-sm text-slate-900">Your Uploaded Receipt</h4>

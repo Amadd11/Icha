@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import ParticipantLayout from '@/Layouts/ParticipantLayout.vue';
+import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
     certificates: Array,
@@ -91,13 +92,13 @@ const props = defineProps({
 
                     <div class="relative z-10 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                         <span class="text-[10px] text-slate-400 font-medium">
-                            Issued: {{ new Date(cert.issued_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                            Issued: {{ cert.issued_at ? new Date(cert.issued_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Verified' }}
                         </span>
 
                         <!-- Download Uploaded PDF -->
                         <a
-                            v-if="cert.file_url"
-                            :href="cert.file_url"
+                            v-if="cert.file_path || cert.file_url"
+                            :href="formatStorageUrl(cert.file_path || cert.file_url)"
                             target="_blank"
                             download
                             class="btn-shimmer inline-flex items-center gap-1.5 bg-gold hover:bg-amber-400 text-slate-950 font-black text-xs py-2.5 px-4 rounded-xl shadow-md transition cursor-pointer"

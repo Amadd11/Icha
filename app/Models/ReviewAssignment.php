@@ -33,4 +33,11 @@ class ReviewAssignment extends Model
     {
         $this->update(['status' => $status]);
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (ReviewAssignment $assignment) {
+            $assignment->review()?->delete();
+        });
+    }
 }

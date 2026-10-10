@@ -56,6 +56,14 @@ class ReviewerManagementService
 
         if (!empty($data['category_ids'])) {
             $user->categories()->sync($data['category_ids']);
+            $abstracts = \App\Models\AbstractSubmission::whereIn('category_id', $data['category_ids'])
+                ->where('user_id', '!=', $user->id)
+                ->whereIn('status', ['pending', 'under_review'])
+                ->get();
+            $assignmentService = app(\App\Services\Admin\ReviewAssignmentService::class);
+            foreach ($abstracts as $abs) {
+                $assignmentService->autoAssignCategoryReviewers($abs);
+            }
         }
 
         return $user;
@@ -80,9 +88,29 @@ class ReviewerManagementService
 
         if (isset($data['category_ids'])) {
             $reviewer->categories()->sync($data['category_ids']);
+            if (!empty($data['category_ids'])) {
+                $abstracts = \App\Models\AbstractSubmission::whereIn('category_id', $data['category_ids'])
+                    ->where('user_id', '!=', $reviewer->id)
+                    ->whereIn('status', ['pending', 'under_review'])
+                    ->get();
+                $assignmentService = app(\App\Services\Admin\ReviewAssignmentService::class);
+                foreach ($abstracts as $abs) {
+                    $assignmentService->autoAssignCategoryReviewers($abs);
+                }
+            }
         } else {
             $reviewer->categories()->detach();
         }
+
+        // Clean up uncompleted placeholder assignments for categories the reviewer no longer belongs to
+        $currentCategoryIds = $reviewer->categories()->pluck('categories.id')->toArray();
+        ReviewAssignment::where('reviewer_id', $reviewer->id)
+            ->where('status', 'assigned')
+            ->whereDoesntHave('review')
+            ->whereHas('round.abstractSubmission', function ($q) use ($currentCategoryIds) {
+                $q->whereNotIn('category_id', $currentCategoryIds);
+            })
+            ->delete();
 
         return $reviewer;
     }
@@ -93,13 +121,21 @@ class ReviewerManagementService
             throw new \InvalidArgumentException('User is not a reviewer.');
         }
 
-        $hasActiveAssignments = ReviewAssignment::where('reviewer_id', $reviewer->id)
-            ->where('status', 'assigned')
+        $hasCompletedReviews = ReviewAssignment::where('reviewer_id', $reviewer->id)
+            ->where(function ($q) {
+                $q->where('status', 'completed')->orWhereHas('review');
+            })
             ->exists();
 
-        if ($hasActiveAssignments) {
-            throw new \InvalidArgumentException('Tidak dapat menghapus reviewer yang masih memiliki tugas penilaian review aktif pada naskah.');
+        if ($hasCompletedReviews) {
+            throw new \InvalidArgumentException('Tidak dapat menghapus reviewer yang telah menyelesaikan penilaian telaah pada naskah.');
         }
+
+        // Clean up unstarted placeholder assignments
+        ReviewAssignment::where('reviewer_id', $reviewer->id)
+            ->where('status', 'assigned')
+            ->whereDoesntHave('review')
+            ->delete();
 
         $reviewer->categories()->detach();
         $reviewer->delete();
