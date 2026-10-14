@@ -7,11 +7,16 @@ use App\Models\Category;
 use App\Models\ReviewAssignment;
 use App\Models\ReviewRound;
 use App\Models\User;
+use App\Services\Admin\ReviewAssignmentService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class ReviewerManagementService
 {
+    public function __construct(
+        protected ReviewAssignmentService $assignmentService
+    ) {}
+
     public function getReviewers(): Collection
     {
         return User::where('role', 'reviewer')
@@ -42,6 +47,15 @@ class ReviewerManagementService
 
             if (!empty($data['category_ids'])) {
                 $existing->categories()->sync($data['category_ids']);
+                $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])
+                    ->where('user_id', '!=', $existing->id)
+                    ->whereIn('status', ['pending', 'under_review'])
+                    ->get();
+                foreach ($abstracts as $abs) {
+                    $this->assignmentService->autoAssignCategoryReviewers($abs);
+                }
+            } else {
+                $existing->categories()->detach();
             }
 
             return $existing;
@@ -56,13 +70,12 @@ class ReviewerManagementService
 
         if (!empty($data['category_ids'])) {
             $user->categories()->sync($data['category_ids']);
-            $abstracts = \App\Models\AbstractSubmission::whereIn('category_id', $data['category_ids'])
+            $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])
                 ->where('user_id', '!=', $user->id)
                 ->whereIn('status', ['pending', 'under_review'])
                 ->get();
-            $assignmentService = app(\App\Services\Admin\ReviewAssignmentService::class);
             foreach ($abstracts as $abs) {
-                $assignmentService->autoAssignCategoryReviewers($abs);
+                $this->assignmentService->autoAssignCategoryReviewers($abs);
             }
         }
 
@@ -89,13 +102,12 @@ class ReviewerManagementService
         if (isset($data['category_ids'])) {
             $reviewer->categories()->sync($data['category_ids']);
             if (!empty($data['category_ids'])) {
-                $abstracts = \App\Models\AbstractSubmission::whereIn('category_id', $data['category_ids'])
+                $abstracts = AbstractSubmission::whereIn('category_id', $data['category_ids'])
                     ->where('user_id', '!=', $reviewer->id)
                     ->whereIn('status', ['pending', 'under_review'])
                     ->get();
-                $assignmentService = app(\App\Services\Admin\ReviewAssignmentService::class);
                 foreach ($abstracts as $abs) {
-                    $assignmentService->autoAssignCategoryReviewers($abs);
+                    $this->assignmentService->autoAssignCategoryReviewers($abs);
                 }
             }
         } else {

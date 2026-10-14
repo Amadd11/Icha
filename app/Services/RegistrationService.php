@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\SubmissionException;
 use App\Helpers\CodeGenerator;
-use App\Mail\InvoiceMail;
+use App\Models\AbstractSubmission;
 use App\Models\Conference;
 use App\Models\Registration;
 use App\Models\RegistrationFee;
@@ -38,7 +38,7 @@ class RegistrationService
         }
 
         if ($fee->type === 'presenter') {
-            $hasAcceptedAbstract = \App\Models\AbstractSubmission::where('user_id', $user->id)
+            $hasAcceptedAbstract = AbstractSubmission::where('user_id', $user->id)
                 ->where('conference_id', $activeConference->id)
                 ->where('status', 'accepted')
                 ->exists();

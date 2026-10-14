@@ -22,7 +22,10 @@ class StoreAbstractRequest extends FormRequest
                 Rule::exists('categories', 'id')->where(function ($query) {
                     $activeConfId = Conference::where('is_active', true)->value('id');
                     if ($activeConfId) {
-                        $query->where('conference_id', $activeConfId);
+                        $query->where(function ($q) use ($activeConfId) {
+                            $q->where('conference_id', $activeConfId)
+                              ->orWhereNull('conference_id');
+                        });
                     }
                 }),
             ],

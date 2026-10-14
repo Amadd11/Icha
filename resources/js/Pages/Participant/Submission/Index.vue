@@ -6,6 +6,7 @@ import { formatStorageUrl } from '@/Utils/formatters';
 
 const props = defineProps({
     activeConference: Object,
+    isSubmissionOpen: Boolean,
     categories: Array,
     abstracts: Array,
     isPaid: Boolean,
@@ -34,6 +35,7 @@ function handleFileChange(e) {
 }
 
 const isRevising = ref(false);
+const isSubmittingNew = ref(false);
 
 function startRevision() {
     if (props.abstracts && props.abstracts.length > 0) {
@@ -42,11 +44,30 @@ function startRevision() {
         abstractForm.keywords = props.abstracts[0].keywords || '';
         abstractForm.abstract_text = props.abstracts[0].abstract_text || '';
     }
+    isSubmittingNew.value = false;
     isRevising.value = true;
 }
 
 function cancelRevision() {
     isRevising.value = false;
+    abstractForm.reset();
+}
+
+function startNewSubmission() {
+    abstractForm.reset();
+    abstractForm.clearErrors();
+    abstractForm.title = '';
+    abstractForm.category_id = props.categories?.[0]?.id || '';
+    abstractForm.presentation_type = 'oral';
+    abstractForm.keywords = '';
+    abstractForm.abstract_text = '';
+    abstractForm.file = null;
+    isRevising.value = false;
+    isSubmittingNew.value = true;
+}
+
+function cancelNewSubmission() {
+    isSubmittingNew.value = false;
     abstractForm.reset();
 }
 
@@ -56,6 +77,7 @@ function submitAbstract() {
         onSuccess: () => {
             abstractForm.reset();
             isRevising.value = false;
+            isSubmittingNew.value = false;
         },
     });
 }
@@ -111,7 +133,7 @@ function downloadTemplate() {
                         </div>
 
                         <!-- STATE 1: ALREADY UPLOADED -->
-                        <div v-if="props.statusChecklist?.hasUploadedAbstract && props.abstracts.length > 0 && !isRevising" class="space-y-6">
+                        <div v-if="props.statusChecklist?.hasUploadedAbstract && props.abstracts.length > 0 && !isRevising && !isSubmittingNew" class="space-y-6">
                             <!-- 1. ACCEPTED STATE -->
                             <div v-if="props.abstracts[0].status === 'accepted'" class="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-xs">
                                 <div class="flex items-center gap-4">
@@ -154,29 +176,81 @@ function downloadTemplate() {
                                 </div>
                             </div>
 
-                            <!-- 2. REJECTED STATE -->
-                            <div v-else-if="props.abstracts[0].status === 'rejected'" class="rounded-2xl border border-rose-300 bg-rose-50/90 p-6 space-y-3 shadow-xs">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                            <!-- 2. REJECTED STATE WITH 2 CHOICES -->
+                            <div v-else-if="props.abstracts[0].status === 'rejected'" class="rounded-2xl border border-rose-300 bg-rose-50/90 p-6 space-y-5 shadow-xs">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0 shadow-2xs">
                                         <span class="material-symbols-outlined text-2xl">cancel</span>
                                     </div>
-                                    <div>
-                                        <h3 class="text-base font-extrabold text-rose-950">Abstract Not Accepted for Presentation</h3>
-                                        <p class="text-xs text-rose-800">
-                                            Thank you for submitting your abstract. The scientific committee decided that this submission cannot be accepted for presentation. No presenter payment is required.
+                                    <div class="space-y-1">
+                                        <h3 class="text-base font-extrabold text-rose-950">Naskah Tidak Diterima untuk Presentasi</h3>
+                                        <p class="text-xs text-rose-800 leading-relaxed">
+                                            Terima kasih atas pengiriman abstrak ilmiah Anda. Berdasarkan hasil evaluasi dewan penilai (*peer-review*), naskah ini belum dapat diterima untuk dipresentasikan. Anda tidak dikenakan biaya tarif pemakalah.
                                         </p>
                                     </div>
                                 </div>
-                                <div v-if="props.abstracts[0].review_notes" class="p-3 bg-white rounded-xl border border-rose-200 text-xs text-rose-900 leading-relaxed">
-                                    <strong>Committee Decision Note:</strong> {{ props.abstracts[0].review_notes }}
+
+                                <!-- Committee Decision Note -->
+                                <div v-if="props.abstracts[0].review_notes" class="p-3.5 bg-white rounded-xl border border-rose-200 text-xs text-rose-900 leading-relaxed space-y-1 shadow-2xs">
+                                    <div class="flex items-center gap-1.5 font-bold text-rose-800">
+                                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                        Catatan Evaluasi Dewan Penilai:
+                                    </div>
+                                    <p class="whitespace-pre-line pl-5">{{ props.abstracts[0].review_notes }}</p>
                                 </div>
-                                <div class="pt-2 flex items-center gap-3">
-                                    <Link
-                                        :href="route('participant.registration.create')"
-                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 text-xs font-bold transition shadow-xs"
-                                    >
-                                        Attend as Non-Presenter Audience &rarr;
-                                    </Link>
+
+                                <!-- 2 Choice Cards -->
+                                <div class="pt-2 border-t border-rose-200/80 space-y-3">
+                                    <span class="text-[11px] font-bold text-rose-900 uppercase tracking-wider block">
+                                        Pilihan Langkah Selanjutnya:
+                                    </span>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                        <!-- Pilihan 1: Hadir sebagai Peserta Umum -->
+                                        <div class="bg-white rounded-2xl p-4 border border-rose-200 shadow-2xs flex flex-col justify-between space-y-3">
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-lg">🎟️</span>
+                                                    <h4 class="font-bold text-xs text-slate-900">Hadir sebagai Peserta Umum</h4>
+                                                </div>
+                                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                                    Tetap ikuti seluruh rangkaian sesi ilmiah konferensi tanpa kewajiban presentasi naskah ilmiah.
+                                                </p>
+                                            </div>
+                                            <Link
+                                                :href="route('participant.registration.create')"
+                                                class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-xs font-bold transition shadow-xs w-full text-center"
+                                            >
+                                                Daftar Peserta Umum &rarr;
+                                            </Link>
+                                        </div>
+
+                                        <!-- Pilihan 2: Ajukan Naskah Baru -->
+                                        <div class="bg-white rounded-2xl p-4 border border-rose-200 shadow-2xs flex flex-col justify-between space-y-3">
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-lg">📝</span>
+                                                    <h4 class="font-bold text-xs text-slate-900">Ajukan Naskah Abstrak Baru</h4>
+                                                </div>
+                                                <p class="text-[11px] text-slate-500 leading-relaxed">
+                                                    Tetap ingin menjadi pemakalah? Anda dapat mengirimkan naskah penelitian dengan topik/judul baru lainnya.
+                                                </p>
+                                            </div>
+
+                                            <div v-if="props.isSubmissionOpen !== false">
+                                                <button
+                                                    type="button"
+                                                    @click="startNewSubmission"
+                                                    class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 text-xs font-bold transition shadow-xs w-full cursor-pointer"
+                                                >
+                                                    <span>+</span>
+                                                    <span>Kirim Naskah Baru &rarr;</span>
+                                                </button>
+                                            </div>
+                                            <div v-else class="p-2 rounded-xl bg-slate-100 text-slate-400 text-center text-[10px] font-semibold border border-slate-200">
+                                                Batas waktu pengumpulan abstrak telah berakhir
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -260,7 +334,7 @@ function downloadTemplate() {
                                 <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Submitted Abstract</h4>
                                     <button
-                                        v-if="props.abstracts[0].status !== 'accepted'"
+                                        v-if="props.abstracts[0].status !== 'accepted' && props.abstracts[0].status !== 'rejected'"
                                         @click="startRevision"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-primary font-bold text-xs transition cursor-pointer"
                                     >
@@ -361,10 +435,13 @@ function downloadTemplate() {
                             <form @submit.prevent="submitAbstract" class="space-y-4">
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="text-xs font-extrabold text-primary uppercase tracking-wider">
-                                        {{ isRevising ? '🔄 Replace / Update Abstract File' : 'Submit Your Abstract Here' }}
+                                        {{ isSubmittingNew ? '📝 Pengajuan Naskah Abstrak Baru' : isRevising ? '🔄 Replace / Update Abstract File' : 'Submit Your Abstract Here' }}
                                     </h3>
                                     <button v-if="isRevising" type="button" @click="cancelRevision" class="text-xs font-bold text-slate-400 hover:text-slate-700">
                                         ✕ Cancel
+                                    </button>
+                                    <button v-else-if="isSubmittingNew" type="button" @click="cancelNewSubmission" class="text-xs font-bold text-slate-400 hover:text-slate-700">
+                                        ✕ Batal
                                     </button>
                                 </div>
 
@@ -382,7 +459,7 @@ function downloadTemplate() {
 
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">
-                                        {{ isRevising ? 'Upload Replacement Abstract File (.pdf)' : 'Upload your Abstract File (.pdf)' }}
+                                        {{ isSubmittingNew ? 'Upload Berkas Naskah Baru (.pdf)' : isRevising ? 'Upload Replacement Abstract File (.pdf)' : 'Upload your Abstract File (.pdf)' }}
                                     </label>
                                     <input
                                         type="file"
@@ -416,14 +493,22 @@ function downloadTemplate() {
                                         Cancel
                                     </button>
                                     <button
+                                        v-else-if="isSubmittingNew"
+                                        type="button"
+                                        @click="cancelNewSubmission"
+                                        class="w-1/3 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs py-3 px-4 rounded-2xl transition cursor-pointer"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
                                         type="submit"
                                         :disabled="abstractForm.processing"
                                         :class="[
                                             'bg-primary hover:bg-primary-dark text-white font-bold text-xs py-3 px-6 rounded-2xl shadow-lg shadow-purple-500/20 transition-all duration-200 disabled:opacity-50 cursor-pointer',
-                                            isRevising ? 'w-2/3' : 'w-full'
+                                            (isRevising || isSubmittingNew) ? 'w-2/3' : 'w-full'
                                         ]"
                                     >
-                                        {{ abstractForm.processing ? 'Saving...' : (isRevising ? 'REPLACE ABSTRACT' : 'SUBMIT ABSTRACT') }}
+                                        {{ abstractForm.processing ? 'Menyimpan...' : (isSubmittingNew ? 'KIRIM NASKAH BARU' : isRevising ? 'REPLACE ABSTRACT' : 'SUBMIT ABSTRACT') }}
                                     </button>
                                 </div>
                             </form>

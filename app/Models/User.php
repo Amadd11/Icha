@@ -68,6 +68,11 @@ class User extends Authenticatable
         return $this->hasMany(AbstractSubmission::class);
     }
 
+    public function abstractSubmissions(): HasMany
+    {
+        return $this->abstracts();
+    }
+
     public function reviewerAssignments(): HasMany
     {
         return $this->hasMany(ReviewAssignment::class, 'reviewer_id');

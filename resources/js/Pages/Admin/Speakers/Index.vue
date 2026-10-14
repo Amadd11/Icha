@@ -1,10 +1,12 @@
 <script setup>
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import DeleteConfirmModal from '@/Components/DeleteConfirmModal.vue';
 import { useDeleteConfirm } from '@/Composables/useDeleteConfirm';
 import { formatStorageUrl } from '@/Utils/formatters';
+import CountrySelect from '@/Components/CountrySelect.vue';
+import { getFlagUrl } from '@/Utils/countries';
 
 const props = defineProps({
     speakers: Array,
@@ -14,6 +16,26 @@ const props = defineProps({
 const isModalOpen = ref(false);
 const editingSpeaker = ref(null);
 const photoPreview = ref(null);
+const tableSearch = ref('');
+const categoryFilter = ref('all');
+
+const filteredSpeakers = computed(() => {
+    let list = props.speakers || [];
+    if (categoryFilter.value !== 'all') {
+        list = list.filter((s) => s.type === categoryFilter.value);
+    }
+    if (tableSearch.value.trim()) {
+        const q = tableSearch.value.trim().toLowerCase();
+        list = list.filter((s) =>
+            (s.name || '').toLowerCase().includes(q) ||
+            (s.institution || '').toLowerCase().includes(q) ||
+            (s.country || '').toLowerCase().includes(q) ||
+            (s.country_code || '').toLowerCase().includes(q) ||
+            (s.title || '').toLowerCase().includes(q)
+        );
+    }
+    return list;
+});
 
 watch(isModalOpen, (val) => {
     if (typeof document !== 'undefined') {
@@ -33,28 +55,6 @@ const typeColor = (type) => ({
     invited: 'bg-indigo-50 text-indigo-700 border-indigo-200',
 }[type] ?? 'bg-slate-100 text-slate-600 border-slate-200');
 
-const countries = [
-    { code: 'ID', name: 'Indonesia' },
-    { code: 'MY', name: 'Malaysia' },
-    { code: 'SG', name: 'Singapore' },
-    { code: 'TH', name: 'Thailand' },
-    { code: 'PH', name: 'Philippines' },
-    { code: 'VN', name: 'Vietnam' },
-    { code: 'BN', name: 'Brunei' },
-    { code: 'JP', name: 'Japan' },
-    { code: 'KR', name: 'South Korea' },
-    { code: 'CN', name: 'China' },
-    { code: 'IN', name: 'India' },
-    { code: 'AU', name: 'Australia' },
-    { code: 'GB', name: 'United Kingdom' },
-    { code: 'US', name: 'United States' },
-    { code: 'NL', name: 'Netherlands' },
-    { code: 'DE', name: 'Germany' },
-    { code: 'SA', name: 'Saudi Arabia' },
-    { code: 'TR', name: 'Turkey' },
-    { code: 'EG', name: 'Egypt' },
-];
-
 const form = useForm({
     conference_id: '',
     name: '',
@@ -69,13 +69,6 @@ const form = useForm({
     photo: null,
 });
 
-function onCountryChange() {
-    const selected = countries.find(c => c.name === form.country);
-    if (selected) {
-        form.country_code = selected.code;
-    }
-}
-
 function onPhotoChange(e) {
     const file = e.target.files[0];
     if (file) {
@@ -84,16 +77,23 @@ function onPhotoChange(e) {
     }
 }
 
+function closeModal() {
+    isModalOpen.value = false;
+    editingSpeaker.value = null;
+    photoPreview.value = null;
+    form.clearErrors();
+    form.reset();
+}
+
 function openCreateModal() {
     editingSpeaker.value = null;
     photoPreview.value = null;
-    form.reset();
     form.clearErrors();
+    form.reset();
     form.conference_id = props.conferences?.[0]?.id || '';
     form.type = 'keynote';
     form.country = 'Indonesia';
     form.country_code = 'ID';
-    form.order = (props.speakers?.length || 0) + 1;
     isModalOpen.value = true;
 }
 
@@ -101,6 +101,7 @@ function openEditModal(s) {
     editingSpeaker.value = s;
     photoPreview.value = formatStorageUrl(s.photo);
     form.clearErrors();
+    form.reset();
     form.conference_id = s.conference_id || (props.conferences?.[0]?.id || '');
     form.name = s.name || '';
     form.title = s.title || '';
@@ -110,22 +111,26 @@ function openEditModal(s) {
     form.bio = s.bio || '';
     form.email = s.email || '';
     form.type = s.type || 'keynote';
-    form.order = s.order ?? 0;
     form.photo = null;
     isModalOpen.value = true;
 }
 
 function submit() {
     if (editingSpeaker.value) {
-        form.transform((data) => ({
-            ...data,
+        router.post(route('admin.speakers.update', editingSpeaker.value.id), {
             _method: 'put',
-        })).post(route('admin.speakers.update', editingSpeaker.value.id), {
+            ...form.data(),
+        }, {
             preserveScroll: true,
             forceFormData: true,
+            onStart: () => { form.processing = true; },
+            onFinish: () => { form.processing = false; },
+            onError: (errors) => {
+                form.clearErrors();
+                form.setError(errors);
+            },
             onSuccess: () => {
-                isModalOpen.value = false;
-                form.reset();
+                closeModal();
             },
         });
     } else {
@@ -133,8 +138,7 @@ function submit() {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
-                isModalOpen.value = false;
-                form.reset();
+                closeModal();
             },
         });
     }
@@ -181,9 +185,38 @@ function destroy(s) {
 
             <!-- Minimalist Speakers Table -->
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Speakers Lineup</h3>
-                    <span class="text-xs text-slate-400 font-semibold">Total: {{ props.speakers ? props.speakers.length : 0 }}</span>
+                <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-slate-50/50">
+                    <div class="flex items-center gap-2.5">
+                        <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Speakers Lineup</h3>
+                        <span class="text-xs text-slate-400 font-semibold">Total: {{ filteredSpeakers.length }}</span>
+                    </div>
+
+                    <!-- Search & Filter Controls -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <!-- Search Box -->
+                        <div class="relative w-full sm:w-60">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                v-model="tableSearch"
+                                type="text"
+                                placeholder="Search speaker, country..."
+                                class="w-full text-xs rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-slate-800 placeholder-slate-400 focus:border-purple-600 focus:outline-hidden focus:ring-1 focus:ring-purple-600 shadow-2xs transition"
+                            />
+                        </div>
+
+                        <!-- Category Filter -->
+                        <select
+                            v-model="categoryFilter"
+                            class="text-xs rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-700 font-semibold focus:border-purple-600 focus:outline-hidden shadow-2xs cursor-pointer"
+                        >
+                            <option value="all">All Categories</option>
+                            <option value="keynote">Keynote</option>
+                            <option value="plenary">Plenary</option>
+                            <option value="invited">Invited</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -194,17 +227,16 @@ function destroy(s) {
                                 <th scope="col" class="px-5 py-3">Category</th>
                                 <th scope="col" class="px-5 py-3">Institution & Country</th>
                                 <th scope="col" class="px-5 py-3">Conference</th>
-                                <th scope="col" class="px-5 py-3">Order</th>
                                 <th scope="col" class="px-5 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-if="!props.speakers || props.speakers.length === 0">
-                                <td colspan="6" class="px-5 py-8 text-center text-xs text-slate-400">
-                                    No speakers added yet. Click "+ Add New Speaker" to add one.
+                            <tr v-if="filteredSpeakers.length === 0">
+                                <td colspan="5" class="px-5 py-8 text-center text-xs text-slate-400">
+                                    {{ tableSearch || categoryFilter !== 'all' ? 'No speakers match your search criteria.' : 'No speakers added yet. Click "+ Add New Speaker" to add one.' }}
                                 </td>
                             </tr>
-                            <tr v-for="s in props.speakers" :key="s.id" class="hover:bg-slate-50/50 transition">
+                            <tr v-for="s in filteredSpeakers" :key="s.id" class="hover:bg-slate-50/50 transition">
                                 <!-- Speaker Name & Avatar -->
                                 <td class="px-5 py-3.5">
                                     <div class="flex items-center gap-3">
@@ -231,12 +263,12 @@ function destroy(s) {
                                 <!-- Institution & Country -->
                                 <td class="px-5 py-3.5">
                                     <p class="font-semibold text-slate-800 text-xs">{{ s.institution || 'Independent' }}</p>
-                                    <div v-if="s.country" class="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                                    <div v-if="s.country" class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
                                         <img
                                             v-if="s.country_code"
-                                            :src="`https://flagcdn.com/w40/${s.country_code.toLowerCase()}.png`"
+                                            :src="getFlagUrl(s.country_code)"
                                             :alt="s.country"
-                                            class="h-3 w-4 rounded-xs object-cover"
+                                            class="h-3 w-4.5 rounded-xs object-cover border border-slate-200 shrink-0 shadow-2xs"
                                         />
                                         <span>{{ s.country }}</span>
                                     </div>
@@ -247,10 +279,7 @@ function destroy(s) {
                                     {{ s.conference?.title }}
                                 </td>
 
-                                <!-- Order -->
-                                <td class="px-5 py-3.5 text-xs font-bold text-slate-500">
-                                    #{{ s.order || 0 }}
-                                </td>
+
 
                                 <!-- Actions -->
                                 <td class="px-5 py-3.5 text-right">
@@ -286,7 +315,7 @@ function destroy(s) {
                             <p class="text-slate-500 text-[11px] mt-0.5">Fill in speaker biography, academic institution, and profile photo.</p>
                         </div>
                         <button
-                            @click="isModalOpen = false"
+                            @click="closeModal"
                             class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition cursor-pointer"
                         >
                             ✕
@@ -357,26 +386,19 @@ function destroy(s) {
 
                             <div>
                                 <label class="mb-1 block font-bold text-slate-700">Country</label>
-                                <select v-model="form.country" @change="onCountryChange" class="admin-input">
-                                    <option value="">Select country...</option>
-                                    <option v-for="cnt in countries" :key="cnt.code" :value="cnt.name">{{ cnt.name }}</option>
-                                </select>
+                                <CountrySelect
+                                    v-model="form.country"
+                                    v-model:country-code="form.country_code"
+                                    placeholder="Cari & pilih negara..."
+                                />
                                 <span v-if="form.errors.country" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.country }}</span>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="mb-1 block font-bold text-slate-700">Contact Email (Optional)</label>
-                                <input v-model="form.email" type="email" placeholder="speaker@university.edu" class="admin-input" />
-                                <span v-if="form.errors.email" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.email }}</span>
-                            </div>
-
-                            <div>
-                                <label class="mb-1 block font-bold text-slate-700">Display Order</label>
-                                <input v-model="form.order" type="number" min="0" class="admin-input" />
-                                <span v-if="form.errors.order" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.order }}</span>
-                            </div>
+                        <div>
+                            <label class="mb-1 block font-bold text-slate-700">Contact Email (Optional)</label>
+                            <input v-model="form.email" type="email" placeholder="speaker@university.edu" class="admin-input" />
+                            <span v-if="form.errors.email" class="text-[10px] text-rose-500 font-bold mt-0.5 block">{{ form.errors.email }}</span>
                         </div>
 
                         <div>
@@ -393,7 +415,7 @@ function destroy(s) {
                         <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
                             <button
                                 type="button"
-                                @click="isModalOpen = false"
+                                @click="closeModal"
                                 class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                             >
                                 Cancel

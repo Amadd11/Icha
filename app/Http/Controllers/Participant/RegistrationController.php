@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Participant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\ConferenceRegistrationRequest;
 use App\Http\Requests\Participant\PaymentProofRequest;
+use App\Models\AbstractSubmission;
 use App\Models\Conference;
 use App\Models\Registration;
 use App\Models\RegistrationFee;
@@ -36,7 +37,7 @@ class RegistrationController extends Controller
             ? RegistrationFee::where('conference_id', $activeConference->id)->get()
             : RegistrationFee::all();
 
-        $abstract = \App\Models\AbstractSubmission::where('user_id', $user->id)
+        $abstract = AbstractSubmission::where('user_id', $user->id)
             ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
             ->latest()
             ->first();

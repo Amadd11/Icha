@@ -32,6 +32,15 @@ const errorInfo = computed(() => {
                 badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
                 dotClass: 'bg-rose-500',
             };
+        case 405:
+            return {
+                code: '405',
+                badge: 'Metode Tidak Diizinkan',
+                title: 'Metode Tidak Didukung',
+                description: 'Metode pengiriman formulir atau permintaan tidak didukung oleh rute sistem.',
+                badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+                dotClass: 'bg-rose-500',
+            };
         case 500:
             return {
                 code: '500',

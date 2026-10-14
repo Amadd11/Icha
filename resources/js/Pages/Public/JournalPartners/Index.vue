@@ -51,7 +51,7 @@ const filteredJournals = computed(() => {
     >
         <!-- Page Header -->
         <header class="border-b border-purple-100 bg-linear-to-b from-purple-50/50 to-white py-10 sm:py-12">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="w-full px-4 sm:px-6 lg:px-10">
                 <nav class="mb-3 flex items-center gap-2 text-xs text-purple-700/80 font-medium">
                     <Link href="/" class="hover:text-primary transition">Home</Link>
                     <span>/</span>
@@ -62,7 +62,7 @@ const filteredJournals = computed(() => {
                         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
                             Official Journal Partners
                         </h1>
-                        <p class="mt-1.5 text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
+                        <p class="mt-1.5 text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
                             Daftar jurnal mitra resmi publikasi konferensi ICHA 2026 beserta kebijakan penerbitan LoA dan ketentuan submission naskah.
                         </p>
                     </div>
@@ -78,7 +78,7 @@ const filteredJournals = computed(() => {
 
         <!-- Main Content: Simple Clean List Table -->
         <main class="bg-slate-50/70 py-8 sm:py-10 min-h-[60vh]">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-4">
+            <div class="w-full px-4 sm:px-6 lg:px-10 space-y-4">
                 <!-- Search & Counter Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                     <div class="relative w-full sm:w-80">
@@ -113,11 +113,11 @@ const filteredJournals = computed(() => {
                             <thead class="bg-linear-to-r from-purple-950 via-primary to-purple-900 text-white text-[11px] uppercase font-bold tracking-wider">
                                 <tr>
                                     <th scope="col" class="py-3.5 px-4 text-center w-12 text-purple-200">#</th>
-                                    <th scope="col" class="py-3.5 px-5 min-w-[200px]">Nama Jurnal</th>
-                                    <th scope="col" class="py-3.5 px-5 min-w-[170px]">Universitas</th>
-                                    <th scope="col" class="py-3.5 px-4 min-w-[100px]">Website</th>
-                                    <th scope="col" class="py-3.5 px-5 min-w-[220px]">Kebijakan LoA</th>
-                                    <th scope="col" class="py-3.5 px-5 min-w-[320px]">Ketentuan Khusus Submission</th>
+                                    <th scope="col" class="py-3.5 px-5 w-[20%] min-w-[200px]">Nama Jurnal</th>
+                                    <th scope="col" class="py-3.5 px-5 w-[16%] min-w-[160px]">Universitas</th>
+                                    <th scope="col" class="py-3.5 px-4 w-[8%] min-w-[90px]">Website</th>
+                                    <th scope="col" class="py-3.5 px-5 w-[22%] min-w-[200px]">Kebijakan LoA</th>
+                                    <th scope="col" class="py-3.5 px-5 w-[34%] min-w-[300px]">Ketentuan Khusus Submission</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">

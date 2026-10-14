@@ -80,6 +80,7 @@ class SubmissionService
 
         return [
             'activeConference' => $activeConference,
+            'isSubmissionOpen' => $activeConference ? $activeConference->isAbstractSubmissionOpen() : true,
             'categories'       => $categories,
             'abstracts'        => $formattedAbstracts,
             'isPaid'           => $isPaid,
@@ -126,20 +127,21 @@ class SubmissionService
             throw new SubmissionException('Kategori ilmiah tidak sesuai dengan konferensi yang sedang aktif.', 422);
         }
 
-        // 4. Block early if abstract submission is closed or deadline passed.
-        if ($activeConference && !$activeConference->isAbstractSubmissionOpen()) {
-            throw new SubmissionException('Penerimaan abstrak saat ini sedang ditutup atau batas waktu (deadline) telah berakhir.', 403);
-        }
-
-        // 5. Block early if an existing abstract is already locked-in as accepted.
-        //    Checked *before* storing the file so we don't leave orphaned uploads.
+        // 4. Check existing active abstract state early (ignoring rejected submissions)
         $existingAbstractPeek = AbstractSubmission::where('user_id', $user->id)
             ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
+            ->whereIn('status', ['pending', 'under_review', 'revision_required', 'accepted'])
             ->latest()
             ->first();
 
         if ($existingAbstractPeek && $existingAbstractPeek->status === 'accepted') {
             throw new SubmissionException('Abstrak Anda telah dinyatakan Diterima (Accepted) dan naskah telah terkunci untuk prosiding.', 403);
+        }
+
+        // 5. Block if abstract submission is closed or deadline passed, UNLESS the author is submitting a requested revision
+        $isSubmittingRequestedRevision = ($existingAbstractPeek && $existingAbstractPeek->status === 'revision_required');
+        if (!$isSubmittingRequestedRevision && $activeConference && !$activeConference->isAbstractSubmissionOpen()) {
+            throw new SubmissionException('Penerimaan abstrak baru saat ini sedang ditutup atau batas waktu (deadline) telah berakhir.', 403);
         }
 
         $filePath = null;
@@ -151,9 +153,10 @@ class SubmissionService
             // Atomic lock per user prevents double-submit race condition
             return Cache::lock("submit_abstract_user_{$user->id}", 10)->block(5, function () use ($user, $data, $filePath, $activeConference) {
                 return DB::transaction(function () use ($user, $data, $filePath, $activeConference) {
-                    // Check if there is an existing abstract (e.g. revision required) with lockForUpdate
+                    // Check if there is an existing active abstract (pending, under_review, revision_required, accepted)
                     $existingAbstract = AbstractSubmission::where('user_id', $user->id)
                         ->when($activeConference, fn($q) => $q->where('conference_id', $activeConference->id))
+                        ->whereIn('status', ['pending', 'under_review', 'revision_required', 'accepted'])
                         ->lockForUpdate()
                         ->latest()
                         ->first();

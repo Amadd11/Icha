@@ -23,7 +23,7 @@ class UpdateReviewerRequest extends FormRequest
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users')->ignore($reviewer ? $reviewer->id : null),
+                Rule::unique('users')->ignore($reviewer ? $reviewer->id : null)->whereNull('deleted_at'),
             ],
             'password' => 'nullable|string|min:8|max:255',
             'category_ids' => 'nullable|array',

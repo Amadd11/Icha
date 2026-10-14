@@ -21,11 +21,11 @@ class AbstractReviewService
      */
     public function getAbstracts(?string $status = null, int $perPage = 15): LengthAwarePaginator
     {
-        // Auto-assign any pending abstracts to category reviewers
-        $pendingAbstracts = AbstractSubmission::where('status', 'pending')
+        // Auto-assign any pending or under_review abstracts to category reviewers
+        $activeAbstracts = AbstractSubmission::whereIn('status', ['pending', 'under_review'])
             ->whereNotNull('category_id')
             ->get();
-        foreach ($pendingAbstracts as $abs) {
+        foreach ($activeAbstracts as $abs) {
             $this->assignmentService->autoAssignCategoryReviewers($abs);
         }
 

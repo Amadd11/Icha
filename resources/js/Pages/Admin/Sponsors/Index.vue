@@ -55,11 +55,19 @@ function onLogoChange(e) {
     }
 }
 
+function closeModal() {
+    isModalOpen.value = false;
+    editingSponsor.value = null;
+    logoPreview.value = null;
+    form.clearErrors();
+    form.reset();
+}
+
 function openCreateModal() {
     editingSponsor.value = null;
     logoPreview.value = null;
-    form.reset();
     form.clearErrors();
+    form.reset();
     form.conference_id = props.conferences?.[0]?.id || '';
     form.tier = 'gold';
     form.is_active = true;
@@ -71,6 +79,7 @@ function openEditModal(s) {
     editingSponsor.value = s;
     logoPreview.value = formatStorageUrl(s.logo);
     form.clearErrors();
+    form.reset();
     form.conference_id = s.conference_id || (props.conferences?.[0]?.id || '');
     form.name = s.name || '';
     form.website = s.website || '';
@@ -84,15 +93,20 @@ function openEditModal(s) {
 
 function submit() {
     if (editingSponsor.value) {
-        form.transform((data) => ({
-            ...data,
+        router.post(route('admin.sponsors.update', editingSponsor.value.id), {
             _method: 'put',
-        })).post(route('admin.sponsors.update', editingSponsor.value.id), {
+            ...form.data(),
+        }, {
             preserveScroll: true,
             forceFormData: true,
+            onStart: () => { form.processing = true; },
+            onFinish: () => { form.processing = false; },
+            onError: (errors) => {
+                form.clearErrors();
+                form.setError(errors);
+            },
             onSuccess: () => {
-                isModalOpen.value = false;
-                form.reset();
+                closeModal();
             },
         });
     } else {
@@ -100,8 +114,7 @@ function submit() {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
-                isModalOpen.value = false;
-                form.reset();
+                closeModal();
             },
         });
     }
@@ -255,7 +268,7 @@ function destroy(s) {
                             <p class="text-slate-500 text-[11px] mt-0.5">Manage partner branding, tier rank, and official website URL.</p>
                         </div>
                         <button
-                            @click="isModalOpen = false"
+                            @click="closeModal"
                             class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition cursor-pointer"
                         >
                             ✕
@@ -349,7 +362,7 @@ function destroy(s) {
                         <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
                             <button
                                 type="button"
-                                @click="isModalOpen = false"
+                                @click="closeModal"
                                 class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                             >
                                 Cancel

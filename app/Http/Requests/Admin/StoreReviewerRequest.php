@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreReviewerRequest extends FormRequest
 {
@@ -20,7 +21,7 @@ class StoreReviewerRequest extends FormRequest
                 'string',
                 'email',
                 'max:255',
-                \Illuminate\Validation\Rule::unique('users', 'email')->whereNull('deleted_at'),
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
             ],
             'password' => 'required|string|min:8|max:255',
             'category_ids' => 'nullable|array',
