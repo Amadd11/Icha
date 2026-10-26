@@ -44,7 +44,7 @@ class SubmissionService
             ->latest()
             ->first();
 
-        $isPaid = Payment::where('registration_id', $registration?->id)
+        $isPaid = ($registration?->status === 'paid') || Payment::where('registration_id', $registration?->id)
             ->where('status', 'verified')
             ->exists();
 
@@ -56,27 +56,7 @@ class SubmissionService
         $isAbstractRevisionRequired = $abstracts->where('status', 'revision_required')->isNotEmpty();
         $userCode = 'ICHA-' . str_pad($user->id, 4, '0', STR_PAD_LEFT);
 
-        $formattedAbstracts = $abstracts->map(function ($abstract) {
-            $feedbacks = $abstract->reviewRounds->flatMap(function ($round) {
-                return $round->assignments->map(function ($assignment, $idx) use ($round) {
-                    $review = $assignment->review;
-                    if (!$review) return null;
-                    return [
-                        'round_number'      => $round->round_number,
-                        'reviewer_alias'    => 'Reviewer #' . ($idx + 1),
-                        'recommendation'    => $review->recommendation,
-                        'score_criteria_1'  => $review->score_criteria_1,
-                        'score_criteria_2'  => $review->score_criteria_2,
-                        'comments'          => $review->summary,
-                        'reviewed_at'       => $review->created_at?->format('d M Y, H:i'),
-                    ];
-                })->filter();
-            })->values();
-
-            $item = $abstract->toArray();
-            $item['reviewer_feedbacks'] = $feedbacks;
-            return $item;
-        });
+        $formattedAbstracts = $abstracts->map(fn($abstract) => $this->formatAbstractForParticipant($abstract));
 
         return [
             'activeConference' => $activeConference,
@@ -117,7 +97,8 @@ class SubmissionService
             ->latest()
             ->first();
 
-        if ($registration && $registration->registrationFee?->type === 'non_presenter' && Payment::where('registration_id', $registration->id)->where('status', 'verified')->exists()) {
+        $isRegistrationPaid = ($registration?->status === 'paid') || ($registration && Payment::where('registration_id', $registration->id)->where('status', 'verified')->exists());
+        if ($registration && $registration->registrationFee?->type === 'non_presenter' && $isRegistrationPaid) {
             throw new SubmissionException('Peserta dengan tiket Non-Presenter tidak memiliki akses pengunggahan naskah abstrak.', 403);
         }
 
@@ -243,6 +224,7 @@ class SubmissionService
         $latestRound = ReviewRound::where('submission_type', $submissionType)
             ->where('submission_id', $submissionId)
             ->with(['assignments.review'])
+            ->orderByDesc('round_number')
             ->orderByDesc('id')
             ->first();
 
@@ -324,5 +306,51 @@ class SubmissionService
         }
 
         return $revisingReviewerIds;
+    }
+
+    /**
+     * Format abstract submission for participant view, sanitizing internal relations.
+     */
+    private function formatAbstractForParticipant(AbstractSubmission $abstract): array
+    {
+        $item = $abstract->toArray();
+        unset($item['review_rounds']);
+        $item['reviewer_feedbacks'] = $this->extractReviewerFeedbacks($abstract);
+
+        return $item;
+    }
+
+    /**
+     * Extract reviewer feedback cards with consistent, sequential double-blind aliases.
+     * Ensures reviewers are labeled Reviewer #1, Reviewer #2, etc., consistently across rounds.
+     */
+    private function extractReviewerFeedbacks(AbstractSubmission $abstract): array
+    {
+        $reviewerAliasMap = [];
+        $aliasCounter = 1;
+
+        return $abstract->reviewRounds->flatMap(function ($round) use (&$reviewerAliasMap, &$aliasCounter) {
+            return $round->assignments
+                ->filter(fn($assignment) => $assignment->review !== null)
+                ->values()
+                ->map(function ($assignment) use ($round, &$reviewerAliasMap, &$aliasCounter) {
+                    $review = $assignment->review;
+                    $reviewerKey = $assignment->reviewer_id ?? $assignment->id;
+
+                    if (!isset($reviewerAliasMap[$reviewerKey])) {
+                        $reviewerAliasMap[$reviewerKey] = 'Reviewer #' . $aliasCounter++;
+                    }
+
+                    return [
+                        'round_number'      => $round->round_number,
+                        'reviewer_alias'    => $reviewerAliasMap[$reviewerKey],
+                        'recommendation'    => $review->recommendation,
+                        'score_criteria_1'  => $review->score_criteria_1,
+                        'score_criteria_2'  => $review->score_criteria_2,
+                        'comments'          => $review->summary,
+                        'reviewed_at'       => $review->created_at?->format('d M Y, H:i'),
+                    ];
+                });
+        })->values()->all();
     }
 }

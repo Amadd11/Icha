@@ -47,35 +47,62 @@ const REC_MAP = {
     REJECTED: 'REJECT',
 };
 
+function resetToBlank() {
+    form.defaults({
+        score_criteria_1: '',
+        score_criteria_2: '',
+        recommendation: 'ORAL',
+        summary: '',
+    });
+    form.reset();
+    form.clearErrors();
+}
+
+function initFormData() {
+    if (!props.assignment) {
+        resetToBlank();
+        return;
+    }
+
+    if (props.assignment.review) {
+        form.defaults({
+            score_criteria_1: String(props.assignment.review.score_criteria_1 ?? ''),
+            score_criteria_2: String(props.assignment.review.score_criteria_2 ?? ''),
+            recommendation: REC_MAP[(props.assignment.review.recommendation || '').toUpperCase()] ?? 'ORAL',
+            summary: props.assignment.review.summary || '',
+        });
+        form.reset();
+    } else {
+        resetToBlank();
+    }
+    form.clearErrors();
+}
+
 watch(
-    () => props.show,
-    (val) => {
+    [() => props.show, () => props.assignment?.id],
+    ([showVal, assignmentId]) => {
         if (typeof document !== 'undefined') {
-            document.body.classList.toggle('overflow-hidden', val);
+            document.body.classList.toggle('overflow-hidden', Boolean(showVal));
         }
 
-        if (val && props.assignment) {
-            if (props.assignment.review) {
-                form.score_criteria_1 = props.assignment.review.score_criteria_1 || '';
-                form.score_criteria_2 = props.assignment.review.score_criteria_2 || '';
-                form.recommendation = REC_MAP[(props.assignment.review.recommendation || '').toUpperCase()] ?? 'ORAL';
-                form.summary = props.assignment.review.summary || '';
-            } else {
-                form.reset();
-                form.recommendation = 'ORAL';
-            }
-            form.clearErrors();
+        if (showVal && props.assignment) {
+            initFormData();
+        } else {
+            resetToBlank();
         }
-    }
+    },
+    { immediate: true }
 );
 
 onUnmounted(() => {
     if (typeof document !== 'undefined') {
         document.body.classList.remove('overflow-hidden');
     }
+    resetToBlank();
 });
 
 function handleClose() {
+    resetToBlank();
     emit('close');
 }
 
@@ -85,6 +112,7 @@ function submitReview() {
     form.post(route('reviewer.assignments.review', props.assignment.id), {
         preserveScroll: true,
         onSuccess: () => {
+            resetToBlank();
             handleClose();
         },
     });

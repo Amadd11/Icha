@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ReviewRound extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'submission_type',
         'submission_id',
@@ -17,17 +20,17 @@ class ReviewRound extends Model
 
     protected $appends = ['submission'];
 
-    public function assignments()
+    public function assignments(): HasMany
     {
         return $this->hasMany(ReviewAssignment::class);
     }
 
-    public function abstractSubmission()
+    public function abstractSubmission(): BelongsTo
     {
         return $this->belongsTo(AbstractSubmission::class, 'submission_id');
     }
 
-    public function getSubmissionAttribute()
+    public function getSubmissionAttribute(): ?AbstractSubmission
     {
         return $this->abstractSubmission;
     }
@@ -37,32 +40,45 @@ class ReviewRound extends Model
         $this->update(['status' => $status]);
     }
 
-    public function recommendedPresentationType(): string
+    /**
+     * Get the latest completed assignments for each unique reviewer up to this round.
+     * When round > 1, aggregates latest reviews of all unique reviewers across rounds.
+     *
+     * @return array<int, ReviewAssignment>
+     */
+    public function getLatestEvaluationAssignments(): array
     {
         $assignments = $this->assignments()->with('review')->get();
         $completedAssignments = $assignments->filter(function ($a) {
             return $a->status === 'completed' || $a->review !== null;
         });
 
-        if ($this->round_number > 1) {
-            $allRounds = self::where('submission_type', $this->submission_type)
-                ->where('submission_id', $this->submission_id)
-                ->where('round_number', '<=', $this->round_number)
-                ->orderBy('round_number')
-                ->with('assignments.review')
-                ->get();
+        if ($this->round_number <= 1) {
+            return $completedAssignments->all();
+        }
 
-            $evalAssignments = [];
-            foreach ($allRounds as $r) {
-                foreach ($r->assignments as $a) {
-                    if ($a->status === 'completed' || $a->review !== null) {
-                        $evalAssignments[$a->reviewer_id] = $a;
-                    }
+        $allRounds = self::where('submission_type', $this->submission_type)
+            ->where('submission_id', $this->submission_id)
+            ->where('round_number', '<=', $this->round_number)
+            ->orderBy('round_number')
+            ->with('assignments.review')
+            ->get();
+
+        $evalAssignments = [];
+        foreach ($allRounds as $r) {
+            foreach ($r->assignments as $a) {
+                if ($a->status === 'completed' || $a->review !== null) {
+                    $evalAssignments[$a->reviewer_id] = $a;
                 }
             }
-        } else {
-            $evalAssignments = $completedAssignments;
         }
+
+        return $evalAssignments;
+    }
+
+    public function recommendedPresentationType(): string
+    {
+        $evalAssignments = $this->getLatestEvaluationAssignments();
 
         $oralVotes = 0;
         $posterVotes = 0;
@@ -76,11 +92,7 @@ class ReviewRound extends Model
             }
         }
 
-        if ($posterVotes > $oralVotes) {
-            return 'poster';
-        }
-
-        return 'oral';
+        return ($posterVotes > $oralVotes) ? 'poster' : 'oral';
     }
 
     /**
@@ -89,7 +101,7 @@ class ReviewRound extends Model
      */
     public function autoDecisionOutcome(): ?array
     {
-        $assignments = $this->assignments()->with(['review', 'reviewer'])->get();
+        $assignments = $this->assignments()->with('review')->get();
         $completedAssignments = $assignments->filter(function ($a) {
             return $a->status === 'completed' || $a->review !== null;
         });
@@ -104,27 +116,9 @@ class ReviewRound extends Model
             return null;
         }
 
-        // When round > 1, aggregate the latest reviews of all unique reviewers across rounds.
-        // Reviewers who accepted in round 1 will still have their Oral/Poster recommendation counted!
-        if ($this->round_number > 1) {
-            $allRounds = self::where('submission_type', $this->submission_type)
-                ->where('submission_id', $this->submission_id)
-                ->where('round_number', '<=', $this->round_number)
-                ->orderBy('round_number')
-                ->with(['assignments.review', 'assignments.reviewer'])
-                ->get();
-
-            $evalAssignments = [];
-            foreach ($allRounds as $r) {
-                foreach ($r->assignments as $a) {
-                    if ($a->status === 'completed' || $a->review !== null) {
-                        $evalAssignments[$a->reviewer_id] = $a;
-                    }
-                }
-            }
-        } else {
-            $evalAssignments = $completedAssignments;
-        }
+        // Aggregate the latest reviews of all unique reviewers across rounds.
+        // Reviewers who accepted in round 1 will still have their recommendation counted!
+        $evalAssignments = $this->getLatestEvaluationAssignments();
 
         $oralVotes = 0;
         $posterVotes = 0;
@@ -132,9 +126,11 @@ class ReviewRound extends Model
         $rejectVotes = 0;
         $comments = [];
 
+        $reviewerIndex = 1;
         foreach ($evalAssignments as $a) {
             $rec = strtoupper((string) ($a->review?->recommendation ?? ''));
-            $name = $a->reviewer?->name ?? 'Reviewer';
+            $reviewerAlias = 'Reviewer #' . $reviewerIndex;
+            $reviewerIndex++;
             $summary = trim((string) ($a->review?->summary ?? ''));
             $score = $a->review?->total_score;
 
@@ -154,7 +150,7 @@ class ReviewRound extends Model
 
             if (!empty($summary)) {
                 $scoreStr = $score !== null ? " (Skor: {$score}/10)" : '';
-                $comments[] = "• {$name} [{$label}]{$scoreStr}: {$summary}";
+                $comments[] = "• {$reviewerAlias} [{$label}]{$scoreStr}: {$summary}";
             }
         }
 

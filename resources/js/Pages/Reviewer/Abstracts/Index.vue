@@ -102,6 +102,11 @@ function openReviewModal(assignment) {
     activeAssignment.value = assignment;
     isModalOpen.value = true;
 }
+
+function closeReviewModal() {
+    isModalOpen.value = false;
+    activeAssignment.value = null;
+}
 </script>
 
 <template>
@@ -124,7 +129,7 @@ function openReviewModal(assignment) {
                 <div>
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Ditugaskan</span>
                     <span class="text-2xl font-black text-slate-900 mt-1 block">
-                        <AnimatedCounter :target="computedStats.total_assigned" />
+                        <AnimatedCounter :value="computedStats.total_assigned" />
                     </span>
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Sesuai bidang kepakaran Anda</span>
                 </div>
@@ -137,7 +142,7 @@ function openReviewModal(assignment) {
                 <div>
                     <span class="text-xs font-bold text-amber-600 uppercase tracking-wider block">Perlu Ditinjau</span>
                     <span class="text-2xl font-black text-amber-700 mt-1 block">
-                        <AnimatedCounter :target="computedStats.pending_reviews" />
+                        <AnimatedCounter :value="computedStats.pending_reviews" />
                     </span>
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Menunggu penilaian Anda</span>
                 </div>
@@ -150,7 +155,7 @@ function openReviewModal(assignment) {
                 <div>
                     <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider block">Selesai Dinilai</span>
                     <span class="text-2xl font-black text-emerald-700 mt-1 block">
-                        <AnimatedCounter :target="computedStats.completed_reviews" />
+                        <AnimatedCounter :value="computedStats.completed_reviews" />
                     </span>
                     <span class="text-[10px] text-slate-400 mt-0.5 block">Rekomendasi terkirim</span>
                 </div>
@@ -161,7 +166,7 @@ function openReviewModal(assignment) {
         </div>
 
         <!-- 📑 Category / Track Tabs -->
-        <div v-if="reviewerCategories.length > 0" class="mb-5 overflow-x-auto pb-1">
+        <div v-if="reviewerCategories.length > 0" class="mb-5 overflow-x-auto no-scrollbar pb-1 [&::-webkit-scrollbar]:hidden" style="scrollbar-width: none; -ms-overflow-style: none;">
             <div class="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-2xl inline-flex min-w-full sm:min-w-0">
                 <button
                     type="button"
@@ -449,9 +454,11 @@ function openReviewModal(assignment) {
 
         <!-- 📝 Abstract Review Modal Partial -->
         <ReviewModal
+            v-if="isModalOpen && activeAssignment"
+            :key="activeAssignment.id"
             :show="isModalOpen"
             :assignment="activeAssignment"
-            @close="isModalOpen = false"
+            @close="closeReviewModal"
         />
 
     </ReviewerLayout>

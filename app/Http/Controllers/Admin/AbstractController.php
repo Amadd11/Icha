@@ -23,14 +23,20 @@ class AbstractController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->input('status', 'all');
-        $abstracts = $this->abstractReviewService->getAbstracts($status);
+        $perPage = (int) $request->input('per_page', 15);
+        $abstracts = $this->abstractReviewService->getAbstracts($status, $perPage);
         $reviewers = User::where('role', 'reviewer')->with('categories')->orderBy('name')->get();
 
+        $transformedAbstracts = $abstracts->through(function ($abstract) {
+            return (new AdminAbstractResource($abstract))->resolve();
+        });
+
         return Inertia::render('Admin/Abstracts/Index', [
-            'abstracts' => AdminAbstractResource::collection($abstracts)->resolve(),
+            'abstracts' => $transformedAbstracts,
             'reviewers' => ReviewerResource::collection($reviewers)->resolve(),
-            'filters' => [
-                'status' => $status,
+            'filters'   => [
+                'status'   => $status,
+                'per_page' => $perPage,
             ],
         ]);
     }

@@ -28,28 +28,80 @@ function isDocx(filePath) {
 }
 
 function getReviewStats(item) {
-    let completedAssignments = [];
-    let totalAssignments = 0;
-    let roundNumber = 1;
+    if (!item || !item.review_rounds || item.review_rounds.length === 0) {
+        return {
+            roundNumber: 1,
+            hasRevisions: false,
+            completedCount: 0,
+            totalCount: 0,
+            targetCount: 0,
+            latestRoundCompleted: 0,
+            latestRoundTotal: 0,
+            reviews: [],
+            allReviewers: [],
+        };
+    }
 
-    if (item && item.review_rounds && item.review_rounds.length > 0) {
-        const latestRound = item.review_rounds[item.review_rounds.length - 1];
-        roundNumber = latestRound.round_number || item.review_rounds.length;
-        if (latestRound && latestRound.assignments) {
-            totalAssignments = latestRound.assignments.length;
-            latestRound.assignments.forEach(a => {
-                if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
-                    completedAssignments.push(a);
+    const isCompleted = (a) => a.status === 'completed' || !!a.recommendation || !!a.comments || a.total_score !== null;
+
+    // Sort rounds ascending by round_number
+    const sortedRounds = [...item.review_rounds].sort((a, b) => (a.round_number || 1) - (b.round_number || 1));
+    const latestRound = sortedRounds[sortedRounds.length - 1];
+    const roundNumber = latestRound.round_number || sortedRounds.length;
+    const hasRevisions = roundNumber > 1;
+
+    // Aggregate unique reviewers:
+    // Retain reviewers who completed in previous rounds OR are assigned in the active latest round
+    const reviewerMap = new Map();
+
+    sortedRounds.forEach(round => {
+        if (round.assignments && Array.isArray(round.assignments)) {
+            round.assignments.forEach(a => {
+                const key = a.reviewer_id || `assignment_${a.id}`;
+                const completed = isCompleted(a);
+                const isCurrentRound = (round.round_number || 1) === roundNumber;
+
+                if (completed || isCurrentRound) {
+                    reviewerMap.set(key, {
+                        ...a,
+                        round_number: round.round_number || 1,
+                        is_latest_round: isCurrentRound,
+                        is_completed: completed,
+                    });
                 }
             });
         }
+    });
+
+    const allReviewers = Array.from(reviewerMap.values())
+        .sort((a, b) => (a.round_number || 1) - (b.round_number || 1) || (a.id - b.id));
+    const completedReviews = allReviewers.filter(a => a.is_completed);
+
+    let latestRoundTotal = 0;
+    let latestRoundCompleted = 0;
+    if (latestRound && latestRound.assignments) {
+        latestRound.assignments.forEach(a => {
+            latestRoundTotal++;
+            if (isCompleted(a)) {
+                latestRoundCompleted++;
+            }
+        });
     }
+
+    const targetCount = roundNumber === 1
+        ? (latestRoundTotal < 3 ? Math.max(1, latestRoundTotal) : 3)
+        : Math.max(allReviewers.length, 3);
 
     return {
         roundNumber,
-        completedCount: completedAssignments.length,
-        totalCount: totalAssignments,
-        reviews: completedAssignments,
+        hasRevisions,
+        completedCount: completedReviews.length,
+        totalCount: allReviewers.length,
+        targetCount,
+        latestRoundCompleted,
+        latestRoundTotal,
+        reviews: completedReviews,
+        allReviewers,
     };
 }
 
@@ -60,10 +112,9 @@ function isDecisionReady(item) {
     }
     const stats = getReviewStats(item);
     if (stats.roundNumber === 1) {
-        const target = stats.totalCount < 3 ? Math.max(1, stats.totalCount) : 3;
-        return stats.totalCount > 0 && stats.completedCount >= target;
+        return stats.totalCount > 0 && stats.completedCount >= stats.targetCount;
     }
-    return stats.totalCount > 0 && stats.completedCount >= stats.totalCount;
+    return stats.latestRoundTotal > 0 && stats.latestRoundCompleted >= stats.latestRoundTotal && stats.completedCount >= stats.targetCount;
 }
 
 function getSuggestedDecisionStatus(item) {
@@ -101,21 +152,8 @@ function getSuggestedDecisionStatus(item) {
 function getSuggestedPresentationType(item) {
     if (!item) return { type: 'oral', label: 'Oral', oralVotes: 0, posterVotes: 0, reason: '' };
     
-    // Aggregate latest completed assignment of each unique reviewer across all rounds
-    const reviewerMap = new Map();
-    if (item.review_rounds && item.review_rounds.length > 0) {
-        item.review_rounds.forEach(round => {
-            if (round.assignments) {
-                round.assignments.forEach(a => {
-                    if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
-                        reviewerMap.set(a.reviewer_id || a.id, a);
-                    }
-                });
-            }
-        });
-    }
-
-    const reviews = reviewerMap.size > 0 ? Array.from(reviewerMap.values()) : getReviewStats(item).reviews;
+    const stats = getReviewStats(item);
+    const reviews = stats.reviews;
     let oralVotes = 0;
     let posterVotes = 0;
 
@@ -215,20 +253,8 @@ function getReviewerRecommendationInfo(rec) {
 function getVotesBreakdown(item) {
     if (!item) return { oral: 0, poster: 0, revision: 0, reject: 0, total: 0 };
     
-    const reviewerMap = new Map();
-    if (item.review_rounds && item.review_rounds.length > 0) {
-        item.review_rounds.forEach(round => {
-            if (round.assignments) {
-                round.assignments.forEach(a => {
-                    if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
-                        reviewerMap.set(a.reviewer_id || a.id, a);
-                    }
-                });
-            }
-        });
-    }
-
-    const reviews = reviewerMap.size > 0 ? Array.from(reviewerMap.values()) : getReviewStats(item).reviews;
+    const stats = getReviewStats(item);
+    const reviews = stats.reviews;
     let oral = 0;
     let poster = 0;
     let revision = 0;
@@ -249,7 +275,7 @@ function copyReviewerNotesToForm() {
     if (!props.abstract) return;
     const revNotes = getReviewStats(props.abstract).reviews
         .filter(r => r.comments)
-        .map(r => `• ${r.reviewer_name} [${getReviewerRecommendationInfo(r.recommendation).shortLabel}]: ${r.comments}`)
+        .map((r, idx) => `• Reviewer #${idx + 1} [${getReviewerRecommendationInfo(r.recommendation).shortLabel}]: ${r.comments}`)
         .join('\n');
     if (revNotes) {
         reviewForm.review_notes = revNotes;
@@ -280,7 +306,7 @@ watch(
         if (reviewForm.status === 'revision_required' && !reviewForm.review_notes) {
             const revNotes = getReviewStats(item).reviews
                 .filter(r => r.comments && ['REVISION', 'REVISION_REQUIRED'].includes((r.recommendation || '').toUpperCase()))
-                .map(r => `• ${r.reviewer_name}: ${r.comments}`)
+                .map((r, idx) => `• Reviewer #${idx + 1}: ${r.comments}`)
                 .join('\n');
             if (revNotes) {
                 reviewForm.review_notes = `Reviewer Revision Notes:\n${revNotes}`;
@@ -387,18 +413,18 @@ function submitReview() {
                                 class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border shadow-2xs ml-1"
                                 :class="isDecisionReady(abstract) ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'"
                             >
-                                {{ getReviewStats(abstract).completedCount }} / {{ getReviewStats(abstract).roundNumber === 1 ? (getReviewStats(abstract).totalCount < 3 ? getReviewStats(abstract).totalCount : 3) : getReviewStats(abstract).totalCount }} Completed
+                                {{ getReviewStats(abstract).completedCount }} / {{ getReviewStats(abstract).targetCount }} Completed
                             </span>
                         </div>
                     </div>
 
                     <!-- Reviewer Cards Grid -->
                     <div v-if="getReviewStats(abstract).reviews.length === 0" class="rounded-xl bg-white border border-slate-200 p-6 text-center text-slate-400 text-xs">
-                        No reviewers have completed their reviews for this round yet.
+                        No reviewers have completed their reviews yet.
                     </div>
                     <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div
-                            v-for="(rev, idx) in getReviewStats(abstract).reviews"
+                            v-for="(rev, idx) in (getReviewStats(abstract).hasRevisions ? getReviewStats(abstract).allReviewers : getReviewStats(abstract).reviews)"
                             :key="idx"
                             class="rounded-xl border border-slate-200 bg-white p-3 flex flex-col justify-between space-y-2.5 shadow-2xs hover:shadow-xs transition"
                         >
@@ -408,7 +434,20 @@ function submitReview() {
                                         <span class="font-bold text-slate-900 text-xs break-words block leading-tight" :title="rev.reviewer_name">
                                             {{ rev.reviewer_name }}
                                         </span>
-                                        <span class="text-[10px] text-slate-400">Reviewer #{{ idx + 1 }}</span>
+                                        <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                            <span class="text-[10px] text-slate-400">Reviewer #{{ idx + 1 }}</span>
+                                            <span
+                                                v-if="getReviewStats(abstract).hasRevisions"
+                                                :class="[
+                                                    'text-[9px] font-bold px-1.5 py-0.2 rounded border',
+                                                    rev.round_number > 1
+                                                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                                        : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                ]"
+                                            >
+                                                {{ rev.round_number > 1 ? `Round ${rev.round_number} (Revisi)` : 'Round 1 (Approved)' }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <!-- Specific recommendation badge -->
                                     <span :class="[
@@ -448,10 +487,10 @@ function submitReview() {
                     <div class="text-[11px] leading-relaxed">
                         <strong class="font-bold text-amber-900 block text-xs mb-0.5">Decision Form Locked</strong>
                         <template v-if="getReviewStats(abstract).roundNumber === 1">
-                            Awaiting {{ getReviewStats(abstract).totalCount < 3 ? getReviewStats(abstract).totalCount : 3 }} reviewers to complete evaluation (Currently: <strong>{{ getReviewStats(abstract).completedCount }}/{{ getReviewStats(abstract).totalCount < 3 ? getReviewStats(abstract).totalCount : 3 }}</strong> completed). The system will automatically calculate consensus and enable decisions once all required reviewers complete their reviews.
+                            Awaiting {{ getReviewStats(abstract).targetCount }} reviewers to complete evaluation (Currently: <strong>{{ getReviewStats(abstract).completedCount }}/{{ getReviewStats(abstract).targetCount }}</strong> completed). The system will automatically calculate consensus and enable decisions once all required reviewers complete their reviews.
                         </template>
                         <template v-else>
-                            Awaiting all revision stage reviewers to complete evaluation (Currently: <strong>{{ getReviewStats(abstract).completedCount }}/{{ getReviewStats(abstract).totalCount }}</strong> completed).
+                            Awaiting all revision stage reviewers to complete evaluation (Currently: <strong>{{ getReviewStats(abstract).latestRoundCompleted }}/{{ getReviewStats(abstract).latestRoundTotal }}</strong> completed).
                         </template>
                     </div>
                 </div>

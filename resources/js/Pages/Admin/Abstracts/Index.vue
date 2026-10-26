@@ -18,6 +18,7 @@ const props = defineProps({
 
 const { filters, applyFilter } = useTableFilter('admin.abstracts.index', {
     status: props.filters?.status || 'all',
+    per_page: Number(props.filters?.per_page) || 15,
 });
 
 const { getBadgeClass, getStatusLabel } = useStatusBadge();
@@ -117,29 +118,80 @@ function deleteAbstract(item) {
 }
 
 function getReviewStats(item) {
-    let completedAssignments = [];
-    let totalAssignments = 0;
-    let roundNumber = 1;
+    if (!item || !item.review_rounds || item.review_rounds.length === 0) {
+        return {
+            roundNumber: 1,
+            hasRevisions: false,
+            completedCount: 0,
+            totalCount: 0,
+            targetCount: 0,
+            latestRoundCompleted: 0,
+            latestRoundTotal: 0,
+            reviews: [],
+            allReviewers: [],
+        };
+    }
 
-    if (item && item.review_rounds && item.review_rounds.length > 0) {
-        // Look at the latest round
-        const latestRound = item.review_rounds[item.review_rounds.length - 1];
-        roundNumber = latestRound.round_number || item.review_rounds.length;
-        if (latestRound && latestRound.assignments) {
-            totalAssignments = latestRound.assignments.length;
-            latestRound.assignments.forEach(a => {
-                if (a.status === 'completed' || a.recommendation || a.comments || a.total_score !== null) {
-                    completedAssignments.push(a);
+    const isCompleted = (a) => a.status === 'completed' || !!a.recommendation || !!a.comments || a.total_score !== null;
+
+    // Sort rounds ascending by round_number
+    const sortedRounds = [...item.review_rounds].sort((a, b) => (a.round_number || 1) - (b.round_number || 1));
+    const latestRound = sortedRounds[sortedRounds.length - 1];
+    const roundNumber = latestRound.round_number || sortedRounds.length;
+    const hasRevisions = roundNumber > 1;
+
+    // Map unique reviewers across rounds:
+    // Only keep assignments that were completed in earlier rounds OR assigned in the current round
+    const reviewerMap = new Map();
+
+    sortedRounds.forEach(round => {
+        if (round.assignments && Array.isArray(round.assignments)) {
+            round.assignments.forEach(a => {
+                const key = a.reviewer_id || `assignment_${a.id}`;
+                const completed = isCompleted(a);
+                const isCurrentRound = (round.round_number || 1) === roundNumber;
+
+                if (completed || isCurrentRound) {
+                    reviewerMap.set(key, {
+                        ...a,
+                        round_number: round.round_number || 1,
+                        is_latest_round: isCurrentRound,
+                        is_completed: completed,
+                    });
                 }
             });
         }
+    });
+
+    const allReviewers = Array.from(reviewerMap.values())
+        .sort((a, b) => (a.round_number || 1) - (b.round_number || 1) || (a.id - b.id));
+    const completedReviews = allReviewers.filter(a => a.is_completed);
+
+    let latestRoundTotal = 0;
+    let latestRoundCompleted = 0;
+    if (latestRound && latestRound.assignments) {
+        latestRound.assignments.forEach(a => {
+            latestRoundTotal++;
+            if (isCompleted(a)) {
+                latestRoundCompleted++;
+            }
+        });
     }
 
+    const targetCount = roundNumber === 1
+        ? (latestRoundTotal < 3 ? Math.max(1, latestRoundTotal) : 3)
+        : Math.max(allReviewers.length, 3);
+
     return {
-        roundNumber: roundNumber,
-        completedCount: completedAssignments.length,
-        totalCount: totalAssignments,
-        reviews: completedAssignments,
+        roundNumber,
+        hasRevisions,
+        completedCount: completedReviews.length,
+        totalCount: allReviewers.length,
+        targetCount,
+        latestRoundCompleted,
+        latestRoundTotal,
+        reviews: completedReviews,
+        allReviewers,
     };
 }
 
@@ -150,10 +202,9 @@ function isDecisionReady(item) {
     }
     const stats = getReviewStats(item);
     if (stats.roundNumber === 1) {
-        const target = stats.totalCount < 3 ? Math.max(1, stats.totalCount) : 3;
-        return stats.totalCount > 0 && stats.completedCount >= target;
+        return stats.totalCount > 0 && stats.completedCount >= stats.targetCount;
     }
-    return stats.totalCount > 0 && stats.completedCount >= stats.totalCount;
+    return stats.latestRoundTotal > 0 && stats.latestRoundCompleted >= stats.latestRoundTotal && stats.completedCount >= stats.targetCount;
 }
 </script>
 
@@ -170,19 +221,37 @@ function isDecisionReady(item) {
                     <p class="text-xs text-slate-500 mt-0.5">Manage scientific track papers, monitor automated reviewer evaluations by topic category, and record final decisions.</p>
                 </div>
 
-                <!-- Status Filter Pills -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-                    <button
-                        v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
-                        :key="s"
-                        @click="filters.status = s; applyFilter()"
-                        :class="[
-                            'rounded-xl px-3 py-1.5 text-xs font-bold capitalize transition shadow-xs cursor-pointer',
-                            filters.status === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                        ]"
-                    >
-                        {{ s === 'all' ? 'All' : s === 'under_review' ? 'Under Review' : s === 'revision_required' ? 'Revision' : s.replace('_', ' ') }}
-                    </button>
+                <!-- Filters & Controls -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- Per Page Selector -->
+                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-500 shadow-2xs">
+                        <span class="text-[11px] font-semibold text-slate-400">Show:</span>
+                        <select
+                            v-model.number="filters.per_page"
+                            @change="applyFilter()"
+                            class="border-0 bg-transparent py-0 pl-0 pr-6 text-xs font-bold text-slate-800 focus:ring-0 cursor-pointer"
+                        >
+                            <option :value="15">15 per page</option>
+                            <option :value="25">25 per page</option>
+                            <option :value="50">50 per page</option>
+                            <option :value="100">100 per page</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter Pills -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                        <button
+                            v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
+                            :key="s"
+                            @click="filters.status = s; applyFilter()"
+                            :class="[
+                                'rounded-xl px-3 py-1.5 text-xs font-bold capitalize transition shadow-xs cursor-pointer',
+                                filters.status === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                            ]"
+                        >
+                            {{ s === 'all' ? 'All' : s === 'under_review' ? 'Under Review' : s === 'revision_required' ? 'Revision' : s.replace('_', ' ') }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -246,8 +315,10 @@ function isDecisionReady(item) {
                                                 'inline-flex items-center whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-bold border shadow-2xs',
                                                 isDecisionReady(item) ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                                 getReviewStats(item).completedCount > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                                            ]">
-                                                {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).roundNumber === 1 ? (getReviewStats(item).totalCount < 3 ? getReviewStats(item).totalCount : 3) : getReviewStats(item).totalCount }}
+                                            ]"
+                                            :title="getReviewStats(item).hasRevisions ? `${getReviewStats(item).completedCount}/${getReviewStats(item).targetCount} Total Reviewer (${getReviewStats(item).completedCount - getReviewStats(item).latestRoundCompleted} dari Ronde 1 + ${getReviewStats(item).latestRoundCompleted} dari Revisi)` : `${getReviewStats(item).completedCount}/${getReviewStats(item).targetCount} Reviewer selesai`"
+                                            >
+                                                {{ getReviewStats(item).completedCount }} / {{ getReviewStats(item).targetCount }}
                                             </span>
                                             <span v-if="getReviewStats(item).roundNumber > 1" class="whitespace-nowrap text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 rounded-md px-1.5 py-0.5">
                                                 Revision {{ getReviewStats(item).roundNumber - 1 }}
@@ -255,10 +326,10 @@ function isDecisionReady(item) {
                                         </div>
                                         <div v-if="getReviewStats(item).totalCount > 0" class="text-[10px] text-slate-400">
                                             <span v-if="getReviewStats(item).roundNumber > 1">
-                                                Revision Reviewers: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).totalCount }}</strong>
+                                                Revisi: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).latestRoundCompleted }}/{{ getReviewStats(item).latestRoundTotal }} Reviewer</strong>
                                             </span>
                                             <span v-else>
-                                                Target: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).totalCount < 3 ? getReviewStats(item).totalCount : 3 }} Reviewer{{ (getReviewStats(item).totalCount < 3 ? getReviewStats(item).totalCount : 3) > 1 ? 's' : '' }}</strong>
+                                                Target: <strong class="text-slate-600 font-semibold">{{ getReviewStats(item).targetCount }} Reviewer{{ getReviewStats(item).targetCount > 1 ? 's' : '' }}</strong>
                                             </span>
                                         </div>
                                         <p v-else class="text-[10px] text-amber-600 font-medium leading-tight pt-0.5">
@@ -312,7 +383,7 @@ function isDecisionReady(item) {
                                                     ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 hover:text-emerald-950 border-emerald-300'
                                                     : 'bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-950 border-amber-200/90'
                                             ]"
-                                            :title="isDecisionReady(item) ? '3/3 Reviewers completed. Ready for final decision.' : `Waiting for review (${getReviewStats(item).completedCount}/3). Click to inspect.`"
+                                            :title="isDecisionReady(item) ? `${getReviewStats(item).completedCount}/${getReviewStats(item).targetCount} Reviewers completed. Ready for final decision.` : `Waiting for review (${getReviewStats(item).completedCount}/${getReviewStats(item).targetCount}). Click to inspect.`"
                                         >
                                             <svg class="w-3.5 h-3.5" :class="isDecisionReady(item) ? 'text-emerald-600' : 'text-amber-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />

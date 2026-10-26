@@ -4,8 +4,11 @@ import { ref, onMounted, watch, nextTick } from 'vue';
 const props = defineProps({
     value: {
         type: [Number, String],
-        required: true,
-        default: 0,
+        default: null,
+    },
+    target: {
+        type: [Number, String],
+        default: null,
     },
     duration: {
         type: Number,
@@ -21,22 +24,23 @@ const props = defineProps({
     },
 });
 
-function parseNumericTarget(val) {
-    if (typeof val === 'number') return val;
-    if (!val) return 0;
-    const clean = String(val).replace(/[^0-9.]/g, '');
+function getNumericTarget() {
+    const raw = props.value ?? props.target ?? 0;
+    if (typeof raw === 'number') return raw;
+    if (!raw) return 0;
+    const clean = String(raw).replace(/[^0-9.]/g, '');
     const parsed = parseFloat(clean);
     return isNaN(parsed) ? 0 : parsed;
 }
 
 // Initialize with target value directly so it NEVER disappears or shows blank
-const targetVal = parseNumericTarget(props.value);
+const targetVal = getNumericTarget();
 const displayValue = ref(targetVal);
 const elementRef = ref(null);
 let animationFrameId = null;
 
 function runAnimation() {
-    const target = parseNumericTarget(props.value);
+    const target = getNumericTarget();
     if (target === 0) {
         displayValue.value = 0;
         return;
@@ -74,7 +78,7 @@ onMounted(() => {
     });
 });
 
-watch(() => props.value, () => {
+watch([() => props.value, () => props.target], () => {
     nextTick(() => {
         runAnimation();
     });
