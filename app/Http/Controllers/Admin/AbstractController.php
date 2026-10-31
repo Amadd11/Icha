@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ReviewerResource;
 use App\Http\Resources\Submission\AdminAbstractResource;
 use App\Models\AbstractSubmission;
-use App\Models\User;
 use App\Services\Admin\AbstractReviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,8 +22,10 @@ class AbstractController extends Controller
     {
         $status = $request->input('status', 'all');
         $perPage = (int) $request->input('per_page', 15);
+        if ($perPage < 5 || $perPage > 200) {
+            $perPage = 15;
+        }
         $abstracts = $this->abstractReviewService->getAbstracts($status, $perPage);
-        $reviewers = User::where('role', 'reviewer')->with('categories')->orderBy('name')->get();
 
         $transformedAbstracts = $abstracts->through(function ($abstract) {
             return (new AdminAbstractResource($abstract))->resolve();
@@ -33,7 +33,6 @@ class AbstractController extends Controller
 
         return Inertia::render('Admin/Abstracts/Index', [
             'abstracts' => $transformedAbstracts,
-            'reviewers' => ReviewerResource::collection($reviewers)->resolve(),
             'filters'   => [
                 'status'   => $status,
                 'per_page' => $perPage,

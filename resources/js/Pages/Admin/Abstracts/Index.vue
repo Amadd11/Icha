@@ -12,7 +12,6 @@ import { useStatusBadge } from '@/Composables/useStatusBadge';
 
 const props = defineProps({
     abstracts: [Array, Object],
-    reviewers: Array,
     filters: Object,
 });
 
@@ -241,7 +240,7 @@ function isDecisionReady(item) {
                     <!-- Status Filter Pills -->
                     <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                         <button
-                            v-for="s in ['all', 'pending', 'under_review', 'revision_required', 'accepted', 'rejected']"
+                            v-for="s in ['all', 'under_review', 'revision_required', 'accepted', 'rejected']"
                             :key="s"
                             @click="filters.status = s; applyFilter()"
                             :class="[

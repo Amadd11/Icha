@@ -17,6 +17,10 @@ class RegistrationController extends Controller
     public function index(Request $request): Response
     {
         $status = $request->query('status');
+        $perPage = (int) $request->input('per_page', 15);
+        if ($perPage < 5 || $perPage > 200) {
+            $perPage = 15;
+        }
         $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
         $registrations = Registration::with(['user.profile', 'registrationFee', 'payment.verifier', 'conference'])
@@ -29,12 +33,16 @@ class RegistrationController extends Controller
                 }
             })
             ->latest()
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Admin/Registrations/Index', [
             'registrations' => $registrations,
             'currentFilter' => $status,
+            'filters'       => [
+                'status'   => $status,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

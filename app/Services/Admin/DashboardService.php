@@ -45,17 +45,104 @@ class DashboardService
         $participantUsersQuery = User::where('role', 'participant');
         $totalParticipants = (clone $participantUsersQuery)->count();
 
-        $presentersCount = (clone $participantUsersQuery)
+        $presenterUsers = (clone $participantUsersQuery)
             ->whereHas('abstractSubmissions', function ($q) use ($activeConferenceId) {
                 if ($activeConferenceId) {
                     $q->where('conference_id', $activeConferenceId);
                 }
-            })->count();
+            })
+            ->with(['abstractSubmissions' => function ($q) use ($activeConferenceId) {
+                if ($activeConferenceId) {
+                    $q->where('conference_id', $activeConferenceId);
+                }
+                $q->select('id', 'user_id', 'conference_id', 'presentation_type', 'status');
+            }])
+            ->get(['id']);
+
+        $presentersCount = $presenterUsers->count();
+        $oralPresentersCount = 0;
+        $posterPresentersCount = 0;
+
+        foreach ($presenterUsers as $pUser) {
+            $userAbs = $pUser->abstractSubmissions;
+            $targetAbs = $userAbs->firstWhere('status', 'accepted') ?? $userAbs->first();
+            $pType = strtolower($targetAbs?->presentation_type ?? 'oral');
+            if ($pType === 'poster') {
+                $posterPresentersCount++;
+            } else {
+                $oralPresentersCount++;
+            }
+        }
 
         $nonPresentersCount = max(0, $totalParticipants - $presentersCount);
         $totalRegistrations = (clone $registrationQuery)->count();
 
-        // 2. Financial Metrics (Invoiced vs Received)
+        // 2. Attendance & Participation Recap (Online vs Offline - Confirmed: Paid & Accepted Only)
+        $attendanceRegs = (clone $registrationQuery)
+            ->where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhereHas('payment', fn($p) => $p->where('status', 'verified'));
+            })
+            ->with([
+                'registrationFee:id,name,mode,type',
+                'user.abstractSubmissions' => function ($q) use ($activeConferenceId) {
+                    if ($activeConferenceId) {
+                        $q->where('conference_id', $activeConferenceId);
+                    }
+                    $q->select('id', 'user_id', 'conference_id', 'presentation_type', 'status');
+                },
+            ])
+            ->get();
+
+        $onlineOral = 0;
+        $onlinePoster = 0;
+        $onlineNonPresenter = 0;
+
+        $offlineOral = 0;
+        $offlinePoster = 0;
+        $offlineNonPresenter = 0;
+
+        foreach ($attendanceRegs as $reg) {
+            $mode = strtolower($reg->registrationFee?->mode ?? 'offline');
+            $type = strtolower($reg->registrationFee?->type ?? 'non_presenter');
+
+            if ($type === 'presenter') {
+                // Presenter must have an accepted abstract in this conference
+                $userAbs = $reg->user?->abstractSubmissions ?? collect();
+                $acceptedAbs = $userAbs->firstWhere('status', 'accepted');
+
+                if ($acceptedAbs) {
+                    $pType = strtolower($acceptedAbs->presentation_type ?? 'oral');
+
+                    if ($mode === 'online') {
+                        if ($pType === 'poster') {
+                            $onlinePoster++;
+                        } else {
+                            $onlineOral++;
+                        }
+                    } else {
+                        if ($pType === 'poster') {
+                            $offlinePoster++;
+                        } else {
+                            $offlineOral++;
+                        }
+                    }
+                }
+            } else {
+                // Non-presenter confirmed attendance
+                if ($mode === 'online') {
+                    $onlineNonPresenter++;
+                } else {
+                    $offlineNonPresenter++;
+                }
+            }
+        }
+
+        $onlineTotal = $onlineOral + $onlinePoster + $onlineNonPresenter;
+        $offlineTotal = $offlineOral + $offlinePoster + $offlineNonPresenter;
+        $grandTotalAttendance = $onlineTotal + $offlineTotal;
+
+        // 3. Financial Metrics (Invoiced vs Received)
         // A. Total Tagihan Terbit (Seluruh invoice pendaftaran yang tercatat di sistem)
         $totalInvoicedIdr = (clone $registrationQuery)->sum('amount');
 
@@ -81,10 +168,38 @@ class DashboardService
         $rejectedAbstracts    = (clone $abstractQuery)->where('status', 'rejected')->count();
 
         $stats = [
-            'total_participants'     => $totalParticipants,
-            'presenters_count'       => $presentersCount,
-            'non_presenters_count'   => $nonPresentersCount,
-            'total_registrations'    => $totalRegistrations,
+            'total_participants'      => $totalParticipants,
+            'presenters_count'        => $presentersCount,
+            'oral_presenters_count'   => $oralPresentersCount,
+            'poster_presenters_count' => $posterPresentersCount,
+            'non_presenters_count'    => $nonPresentersCount,
+            'total_registrations'     => $totalRegistrations,
+
+            // Attendance & Participation Recap (Online vs Offline)
+            'online_total'           => $onlineTotal,
+            'online_oral'            => $onlineOral,
+            'online_poster'          => $onlinePoster,
+            'online_non_presenter'   => $onlineNonPresenter,
+            'offline_total'          => $offlineTotal,
+            'offline_oral'           => $offlineOral,
+            'offline_poster'         => $offlinePoster,
+            'offline_non_presenter'  => $offlineNonPresenter,
+            'grand_total_attendance' => $grandTotalAttendance,
+            'attendance'             => [
+                'online' => [
+                    'total'         => $onlineTotal,
+                    'oral'          => $onlineOral,
+                    'poster'        => $onlinePoster,
+                    'non_presenter' => $onlineNonPresenter,
+                ],
+                'offline' => [
+                    'total'         => $offlineTotal,
+                    'oral'          => $offlineOral,
+                    'poster'        => $offlinePoster,
+                    'non_presenter' => $offlineNonPresenter,
+                ],
+                'grand_total' => $grandTotalAttendance,
+            ],
 
             // Financial Metrics
             'total_invoiced_idr'     => $totalInvoicedIdr,

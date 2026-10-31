@@ -12,17 +12,20 @@ import { formatDateTime } from '@/Utils/formatters';
 const props = defineProps({
     registrations: Object,
     currentFilter: String,
+    filters: Object,
 });
 
 const { filters, applyFilter } = useTableFilter('admin.registrations.index', {
-    status: props.currentFilter || null,
+    status: props.currentFilter || props.filters?.status || null,
+    per_page: Number(props.filters?.per_page) || 15,
 });
 
 const { getBadgeClass, getStatusLabel } = useStatusBadge();
 const { isOpen: isInvoiceModalOpen, activeItem: selectedRegistration, open: openInvoiceModal, close: closeInvoiceModal } = useModal();
 
 function filterStatus(status) {
-    applyFilter({ status });
+    filters.status = status;
+    applyFilter();
 }
 
 const sendingInvoice = ref(false);
@@ -65,6 +68,22 @@ function isPdf(path) {
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Participant Registrations</h1>
                 <p class="text-xs text-slate-500">{{ registrations.total ?? registrations.data?.length ?? 0 }} participant registration(s) found</p>
+            </div>
+
+            <!-- Per Page Selector -->
+            <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-500 shadow-2xs">
+                <span class="text-[11px] font-semibold text-slate-400">Show:</span>
+                <select
+                    v-model.number="filters.per_page"
+                    @change="applyFilter()"
+                    class="border-0 bg-transparent py-0 pl-0 pr-6 text-xs font-bold text-slate-800 focus:ring-0 cursor-pointer"
+                >
+                    <option :value="10">10 per page</option>
+                    <option :value="15">15 per page</option>
+                    <option :value="25">25 per page</option>
+                    <option :value="50">50 per page</option>
+                    <option :value="100">100 per page</option>
+                </select>
             </div>
         </div>
 

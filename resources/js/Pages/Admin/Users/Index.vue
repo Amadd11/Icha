@@ -17,6 +17,7 @@ const props = defineProps({
 const { filters, applyFilter, resetFilter, isFiltered } = useTableFilter('admin.users.index', {
     search: props.filters?.search || '',
     role: props.filters?.role || 'all',
+    per_page: Number(props.filters?.per_page) || 20,
 });
 
 let searchTimeout = null;
@@ -213,6 +214,21 @@ function formatDate(dateStr) {
                 </div>
 
                 <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <!-- Show Per Page Selector -->
+                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-500 shadow-2xs">
+                        <span class="text-[11px] font-semibold text-slate-400">Show:</span>
+                        <select
+                            v-model.number="filters.per_page"
+                            @change="applyFilter()"
+                            class="border-0 bg-transparent py-0 pl-0 pr-6 text-xs font-bold text-slate-800 focus:ring-0 cursor-pointer"
+                        >
+                            <option :value="10">10 per page</option>
+                            <option :value="20">20 per page</option>
+                            <option :value="50">50 per page</option>
+                            <option :value="100">100 per page</option>
+                        </select>
+                    </div>
+
                     <select
                         v-model="filters.role"
                         @change="applyFilter()"

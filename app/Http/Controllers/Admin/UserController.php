@@ -21,6 +21,10 @@ class UserController extends Controller
     {
         $search = $request->query('search');
         $role = $request->query('role');
+        $perPage = (int) $request->input('per_page', 20);
+        if ($perPage < 5 || $perPage > 200) {
+            $perPage = 20;
+        }
 
         $query = User::with('profile')
             ->when($role && $role !== 'all', function ($q) use ($role) {
@@ -38,7 +42,7 @@ class UserController extends Controller
             })
             ->latest('id');
 
-        $users = $query->paginate(20)->withQueryString();
+        $users = $query->paginate($perPage)->withQueryString();
 
         $roleCounts = [
             'all'         => User::count(),
@@ -51,8 +55,9 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Index', [
             'users'      => $users,
             'filters'    => [
-                'search' => $search ?? '',
-                'role'   => $role ?? 'all',
+                'search'   => $search ?? '',
+                'role'     => $role ?? 'all',
+                'per_page' => $perPage,
             ],
             'roleCounts' => $roleCounts,
         ]);

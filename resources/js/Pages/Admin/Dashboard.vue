@@ -125,19 +125,74 @@ function changeConference(e) {
                 </div>
             </div>
 
+            <!-- 👥 ATTENDANCE RECAP CARDS (ONLINE & OFFLINE) 👥 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Card 1: Kehadiran Online -->
+                <div class="animate-fade-in-up animation-delay-100 rounded-2xl border border-sky-200/90 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-sky-300">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-bold uppercase tracking-wider text-sky-800">Kehadiran Online</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                            ✓ Lunas & ACC
+                        </span>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-2">
+                        <span class="text-xl font-bold text-slate-900 shrink-0">
+                            <AnimatedCounter :value="props.stats?.online_total || 0" />
+                        </span>
+                        <div class="text-right text-xs">
+                            <span class="font-semibold text-slate-700">
+                                {{ (props.stats?.online_oral || 0) + (props.stats?.online_poster || 0) }} Presenters
+                                <span class="text-sky-700 font-medium">({{ props.stats?.online_oral || 0 }} Oral • {{ props.stats?.online_poster || 0 }} Poster)</span>
+                            </span>
+                            <span class="text-slate-300 mx-1.5">•</span>
+                            <span class="font-semibold text-slate-500 whitespace-nowrap">{{ props.stats?.online_non_presenter || 0 }} Non-Presenters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Kehadiran Offline -->
+                <div class="animate-fade-in-up animation-delay-200 rounded-2xl border border-emerald-200/90 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-emerald-300">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Kehadiran Offline</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                            ✓ Lunas & ACC
+                        </span>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-2">
+                        <span class="text-xl font-bold text-slate-900 shrink-0">
+                            <AnimatedCounter :value="props.stats?.offline_total || 0" />
+                        </span>
+                        <div class="text-right text-xs">
+                            <span class="font-semibold text-slate-700">
+                                {{ (props.stats?.offline_oral || 0) + (props.stats?.offline_poster || 0) }} Presenters
+                                <span class="text-emerald-700 font-medium">({{ props.stats?.offline_oral || 0 }} Oral • {{ props.stats?.offline_poster || 0 }} Poster)</span>
+                            </span>
+                            <span class="text-slate-300 mx-1.5">•</span>
+                            <span class="font-semibold text-slate-500 whitespace-nowrap">{{ props.stats?.offline_non_presenter || 0 }} Non-Presenters</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Submissions & Participants Metrics Grid (3 Cards) -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <!-- Card 1: Participants -->
                 <div class="animate-fade-in-up animation-delay-100 rounded-2xl border border-slate-200 bg-white p-4 space-y-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-purple-200">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Participants</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Participants</span>
                         <span class="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-100">Users</span>
                     </div>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold text-slate-900">
+                    <div class="flex items-baseline justify-between gap-2">
+                        <span class="text-xl font-bold text-slate-900 shrink-0">
                             <AnimatedCounter :value="props.stats?.total_participants || 0" />
                         </span>
-                        <span class="text-xs text-slate-500 font-semibold">{{ props.stats?.presenters_count || 0 }} Presenters • {{ props.stats?.non_presenters_count || 0 }} Non-Presenters</span>
+                        <span class="text-xs text-slate-500 font-semibold text-right">
+                            {{ props.stats?.presenters_count || 0 }} Presenters • {{ props.stats?.non_presenters_count || 0 }} Non-Presenters
+                        </span>
                     </div>
                 </div>
 
@@ -177,7 +232,7 @@ function changeConference(e) {
                     <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                         <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Recent Invoices & Payments Queue</h3>
                         <Link :href="route('admin.payments.index')" class="text-xs font-bold text-purple-700 hover:underline">
-                            Manage All Payments →
+                            Manage All Payments
                         </Link>
                     </div>
 
@@ -239,7 +294,7 @@ function changeConference(e) {
                     <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                         <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Track Submissions Breakdown</h3>
                         <Link :href="route('admin.categories.index')" class="text-xs font-bold text-purple-700 hover:underline">
-                            Tracks →
+                            Tracks 
                         </Link>
                     </div>
 
