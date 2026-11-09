@@ -21,6 +21,7 @@ class RegistrationController extends Controller
         if ($perPage < 5 || $perPage > 200) {
             $perPage = 15;
         }
+        $search = trim((string) $request->input('search', ''));
         $confId = $request->query('conference_id') ?? session('admin_conference_id') ?? Conference::where('is_active', true)->first()?->id;
 
         $registrations = Registration::with(['user.profile', 'registrationFee', 'payment.verifier', 'conference'])
@@ -32,6 +33,22 @@ class RegistrationController extends Controller
                     $q->where('status', $status);
                 }
             })
+            ->when($search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($uq) use ($search) {
+                            $uq->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhereHas('profile', function ($pq) use ($search) {
+                                    $pq->where('phone', 'like', "%{$search}%")
+                                        ->orWhere('institution', 'like', "%{$search}%");
+                                });
+                        })
+                        ->orWhereHas('registrationFee', function ($fq) use ($search) {
+                            $fq->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
@@ -42,6 +59,7 @@ class RegistrationController extends Controller
             'filters'       => [
                 'status'   => $status,
                 'per_page' => $perPage,
+                'search'   => $search,
             ],
         ]);
     }

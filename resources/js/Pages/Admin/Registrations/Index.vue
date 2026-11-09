@@ -18,7 +18,21 @@ const props = defineProps({
 const { filters, applyFilter } = useTableFilter('admin.registrations.index', {
     status: props.currentFilter || props.filters?.status || null,
     per_page: Number(props.filters?.per_page) || 15,
+    search: props.filters?.search || '',
 });
+
+let searchTimeout = null;
+function onSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilter();
+    }, 350);
+}
+
+function clearSearch() {
+    filters.search = '';
+    applyFilter();
+}
 
 const { getBadgeClass, getStatusLabel } = useStatusBadge();
 const { isOpen: isInvoiceModalOpen, activeItem: selectedRegistration, open: openInvoiceModal, close: closeInvoiceModal } = useModal();
@@ -67,28 +81,12 @@ function isPdf(path) {
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Participant Registrations</h1>
-                <p class="text-xs text-slate-500">{{ registrations.total ?? registrations.data?.length ?? 0 }} participant registration(s) found</p>
-            </div>
-
-            <!-- Per Page Selector -->
-            <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-500 shadow-2xs">
-                <span class="text-[11px] font-semibold text-slate-400">Show:</span>
-                <select
-                    v-model.number="filters.per_page"
-                    @change="applyFilter()"
-                    class="border-0 bg-transparent py-0 pl-0 pr-6 text-xs font-bold text-slate-800 focus:ring-0 cursor-pointer"
-                >
-                    <option :value="10">10 per page</option>
-                    <option :value="15">15 per page</option>
-                    <option :value="25">25 per page</option>
-                    <option :value="50">50 per page</option>
-                    <option :value="100">100 per page</option>
-                </select>
+                <p class="text-xs text-slate-500 mt-0.5">{{ registrations.total ?? registrations.data?.length ?? 0 }} participant registration(s) found</p>
             </div>
         </div>
 
         <!-- Filter Tabs -->
-        <div class="mb-6 flex gap-2 overflow-x-auto pb-2">
+        <div class="mb-4 flex gap-2 overflow-x-auto pb-1">
             <button
                 v-for="s in [
                     { key: null, label: 'All' },
@@ -100,12 +98,56 @@ function isPdf(path) {
                 :key="s.key"
                 @click="filterStatus(s.key)"
                 :class="[
-                    'rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition cursor-pointer',
-                    (currentFilter === s.key || (!currentFilter && !s.key)) ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    'rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition cursor-pointer whitespace-nowrap',
+                    (currentFilter === s.key || (!currentFilter && !s.key)) ? 'bg-primary text-white shadow-purple-900/10' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 ]"
             >
                 {{ s.label }}
             </button>
+        </div>
+
+        <!-- Search and Filter Control Bar -->
+        <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="relative w-full sm:w-96 flex items-center">
+                <span class="material-symbols-outlined absolute left-3.5 text-slate-400 text-[18px] pointer-events-none leading-none select-none">
+                    search
+                </span>
+                <input
+                    v-model="filters.search"
+                    @input="onSearchInput"
+                    @keyup.enter="applyFilter()"
+                    type="text"
+                    placeholder="Search by participant name, email, invoice #, or institution..."
+                    class="admin-input text-xs !pl-10 !pr-8 w-full"
+                />
+                <button
+                    v-if="filters.search"
+                    @click="clearSearch"
+                    type="button"
+                    class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                    title="Clear search"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <!-- Show Per Page Selector -->
+                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-500 shadow-2xs">
+                    <span class="text-[11px] font-semibold text-slate-400">Show:</span>
+                    <select
+                        v-model.number="filters.per_page"
+                        @change="applyFilter()"
+                        class="border-0 bg-transparent py-0 pl-0 pr-6 text-xs font-bold text-slate-800 focus:ring-0 cursor-pointer"
+                    >
+                        <option :value="10">10 per page</option>
+                        <option :value="15">15 per page</option>
+                        <option :value="25">25 per page</option>
+                        <option :value="50">50 per page</option>
+                        <option :value="100">100 per page</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- Single Clean Registrations Table with Submitted At & Approved At Columns -->
@@ -127,7 +169,7 @@ function isPdf(path) {
                     <tbody class="divide-y divide-slate-100">
                         <tr v-if="registrations.data.length === 0">
                             <td colspan="8" class="px-5 py-10 text-center text-slate-400 text-xs">
-                                No registrations found in the "{{ currentFilter || 'all' }}" queue.
+                                {{ filters.search ? 'No registrations match "' + filters.search + '".' : 'No registrations found in the "' + (currentFilter || 'all') + '" queue.' }}
                             </td>
                         </tr>
                         <tr

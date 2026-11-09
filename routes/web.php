@@ -141,6 +141,7 @@ Route::prefix('admin')
         Route::resource('certificates', AdminCertificateController::class)->only(['index', 'store', 'destroy']);
 
         // Abstract Reviews
+        Route::get('abstracts/export-zip', [AbstractController::class, 'exportZip'])->name('abstracts.export-zip');
         Route::get('abstracts', [AbstractController::class, 'index'])->name('abstracts.index');
         Route::post('abstracts/{abstract}/review', [AbstractController::class, 'review'])->name('abstracts.review');
         Route::post('abstracts/{abstract}/assign', [ReviewAssignmentController::class, 'store'])->name('abstracts.assign');

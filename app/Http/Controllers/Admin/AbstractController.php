@@ -11,12 +11,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AbstractController extends Controller
 {
     public function __construct(
         protected AbstractReviewService $abstractReviewService
     ) {}
+
+    public function exportZip(Request $request): BinaryFileResponse
+    {
+        $confId = $request->query('conference_id');
+        $status = $request->query('status');
+        $result = $this->abstractReviewService->exportZipArchive($confId ? (int) $confId : null, $status);
+
+        return response()->download($result['path'], $result['filename'])->deleteFileAfterSend(true);
+    }
 
     public function index(Request $request): Response
     {
@@ -25,7 +35,8 @@ class AbstractController extends Controller
         if ($perPage < 5 || $perPage > 200) {
             $perPage = 15;
         }
-        $abstracts = $this->abstractReviewService->getAbstracts($status, $perPage);
+        $search = trim((string) $request->input('search', ''));
+        $abstracts = $this->abstractReviewService->getAbstracts($status, $perPage, $search ?: null);
 
         $transformedAbstracts = $abstracts->through(function ($abstract) {
             return (new AdminAbstractResource($abstract))->resolve();
@@ -36,6 +47,7 @@ class AbstractController extends Controller
             'filters'   => [
                 'status'   => $status,
                 'per_page' => $perPage,
+                'search'   => $search,
             ],
         ]);
     }

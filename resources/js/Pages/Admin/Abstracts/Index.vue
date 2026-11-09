@@ -18,7 +18,21 @@ const props = defineProps({
 const { filters, applyFilter } = useTableFilter('admin.abstracts.index', {
     status: props.filters?.status || 'all',
     per_page: Number(props.filters?.per_page) || 15,
+    search: props.filters?.search || '',
 });
+
+let searchTimeout = null;
+function onSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilter();
+    }, 350);
+}
+
+function clearSearch() {
+    filters.search = '';
+    applyFilter();
+}
 
 const { getBadgeClass, getStatusLabel } = useStatusBadge();
 
@@ -220,10 +234,64 @@ function isDecisionReady(item) {
                     <p class="text-xs text-slate-500 mt-0.5">Manage scientific track papers, monitor automated reviewer evaluations by topic category, and record final decisions.</p>
                 </div>
 
-                <!-- Filters & Controls -->
-                <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Primary Action / Export ZIP -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <a
+                        :href="route('admin.abstracts.export-zip', { status: filters.status !== 'all' ? filters.status : null })"
+                        class="inline-flex items-center gap-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 px-3.5 py-2 text-xs font-bold transition shadow-2xs cursor-pointer hover:-translate-y-0.5"
+                        :title="filters.status !== 'all' ? `Download naskah abstrak (${filters.status}) dalam format ZIP` : 'Download seluruh naskah abstrak dalam format ZIP beserta daftar indeks CSV'"
+                    >
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>{{ filters.status && filters.status !== 'all' ? `Download ZIP (${filters.status === 'revision_required' ? 'Revision' : filters.status.replace('_', ' ')})` : 'Download All ZIP' }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Status Filter Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                <button
+                    v-for="s in ['all', 'under_review', 'revision_required', 'accepted', 'rejected']"
+                    :key="s"
+                    @click="filters.status = s; applyFilter()"
+                    :class="[
+                        'rounded-xl px-3.5 py-1.5 text-xs font-bold capitalize transition shadow-xs cursor-pointer whitespace-nowrap',
+                        filters.status === s ? 'bg-primary text-white shadow-purple-900/10' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                    ]"
+                >
+                    {{ s === 'all' ? 'All' : s === 'under_review' ? 'Under Review' : s === 'revision_required' ? 'Revision' : s.replace('_', ' ') }}
+                </button>
+            </div>
+
+            <!-- Search and Filter Control Bar -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                <div class="relative w-full sm:w-96 flex items-center">
+                    <span class="material-symbols-outlined absolute left-3.5 text-slate-400 text-[18px] pointer-events-none leading-none select-none">
+                        search
+                    </span>
+                    <input
+                        v-model="filters.search"
+                        @input="onSearchInput"
+                        @keyup.enter="applyFilter()"
+                        type="text"
+                        placeholder="Search by title, author, code (e.g. ABS-001), or topic..."
+                        class="admin-input text-xs !pl-10 !pr-8 w-full"
+                    />
+                    <button
+                        v-if="filters.search"
+                        @click="clearSearch"
+                        type="button"
+                        class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                        title="Clear search"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                     <!-- Per Page Selector -->
-                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-500 shadow-2xs">
+                    <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-500 shadow-2xs">
                         <span class="text-[11px] font-semibold text-slate-400">Show:</span>
                         <select
                             v-model.number="filters.per_page"
@@ -235,21 +303,6 @@ function isDecisionReady(item) {
                             <option :value="50">50 per page</option>
                             <option :value="100">100 per page</option>
                         </select>
-                    </div>
-
-                    <!-- Status Filter Pills -->
-                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                        <button
-                            v-for="s in ['all', 'under_review', 'revision_required', 'accepted', 'rejected']"
-                            :key="s"
-                            @click="filters.status = s; applyFilter()"
-                            :class="[
-                                'rounded-xl px-3 py-1.5 text-xs font-bold capitalize transition shadow-xs cursor-pointer',
-                                filters.status === s ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                            ]"
-                        >
-                            {{ s === 'all' ? 'All' : s === 'under_review' ? 'Under Review' : s === 'revision_required' ? 'Revision' : s.replace('_', ' ') }}
-                        </button>
                     </div>
                 </div>
             </div>
@@ -270,7 +323,7 @@ function isDecisionReady(item) {
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="abstractList.length === 0">
                                 <td colspan="5" class="px-4 py-8 text-center text-xs text-slate-400">
-                                    No abstracts found in this filter view.
+                                    {{ filters.search ? 'No abstracts match "' + filters.search + '" in this filter view.' : 'No abstracts found in this filter view.' }}
                                 </td>
                             </tr>
                             <tr
